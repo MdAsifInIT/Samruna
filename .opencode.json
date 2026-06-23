@@ -1,0 +1,48 @@
+{
+  "$schema": "https://opencode.ai/schema",
+  "comment": "Autonomous fire-and-forget multi-agent pipeline with strict loop prevention and automated PR creation.",
+  "agents": {
+    "plan": {
+      "mode": "primary",
+      "model": "openai/gpt-5.5",
+      "description": "Orchestrator. Analyzes ticket, delegates to build agents, evaluates test results, and opens a PR upon success. Aborts on max iteration failure.",
+      "permissions": {
+        "file_edits": "deny",
+        "bash": "allow",
+        "git": "allow"
+      },
+      "system_prompt_overrides": {
+        "definition_of_done": "Workflow is ONLY complete when the 'check' agent reports 0 lint/test errors. Upon success, use git tools to commit changes and open a PR. If build agents fail 3 times, commit the WIP with a [FAILED] prefix and abort."
+      }
+    },
+    "build_heavy": {
+      "mode": "subagent",
+      "model": "openai/gpt-5.3-codex",
+      "description": "Heavy runner for high-complexity features. Modifies code based on plan.",
+      "max_iterations": 3,
+      "permissions": {
+        "file_edits": "allow",
+        "bash": "allow"
+      }
+    },
+    "build_fast": {
+      "mode": "subagent",
+      "model": "openai/gpt-5.3-codex-spark",
+      "description": "Lightweight runner for simple typos or logic tweaks. Modifies code based on plan.",
+      "max_iterations": 2,
+      "permissions": {
+        "file_edits": "allow",
+        "bash": "allow"
+      }
+    },
+    "check": {
+      "mode": "subagent",
+      "model": "openai/gpt-5.5",
+      "description": "Strict validation agent. Executes `npm run lint` and `npm test` (or equivalent). Returns raw stdout/stderr to the orchestrator.",
+      "permissions": {
+        "file_edits": "deny",
+        "bash": "allow"
+      }
+    }
+  }
+}
