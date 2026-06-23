@@ -1,10 +1,24 @@
-import { demoFixtures } from "../fixtures/demoData";
-import type { DemoFixtureSet, FixtureValidationResult, SourceChannel } from "./types";
+import { demoFixtures, demoScenarios } from "../fixtures/demoData";
+import type { DemoFixtureSet, DemoScenario, FixtureValidationResult, ScenarioId, SourceChannel } from "./types";
 
 const channels: SourceChannel[] = ["email", "ticket", "chat", "approval_log", "system_action"];
 
 export function loadDemoFixtures(): DemoFixtureSet {
   return demoFixtures;
+}
+
+export function listDemoScenarios(): DemoScenario[] {
+  return demoScenarios;
+}
+
+export function loadDemoScenario(scenarioId: ScenarioId = "it-access"): DemoScenario {
+  const scenario = demoScenarios.find((item) => item.id === scenarioId);
+
+  if (!scenario) {
+    throw new Error(`Unknown demo scenario: ${scenarioId}`);
+  }
+
+  return scenario;
 }
 
 export function validateDemoFixtures(fixtures: DemoFixtureSet): FixtureValidationResult {

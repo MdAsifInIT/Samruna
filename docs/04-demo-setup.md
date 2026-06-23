@@ -23,10 +23,10 @@ Install:
 npm install
 ```
 
-Start dev server:
+Start the local demo server:
 
 ```powershell
-npm run dev
+npm run demo:dev
 ```
 
 Open the printed local URL.
@@ -48,89 +48,96 @@ Start with the dashboard. Explain that Work Graph Foundry begins from traces, no
 
 Point out:
 
-- `Load Sample`
-- `Run Case`
+- scenario selector
+- `Load Scenario`
+- `Analyze`
+- `Generate Proposal`
+- `Approve` and `Reject`
+- `Run Mock`
+- `Export Summary`
 - `Reset`
-- script path strip
 - deterministic mock AI mode
 - governed execution state
 
-### 4.3.2 Load Sample Data
+### 4.3.2 Choose A Scenario
 
-Click `Load Sample`.
+Use `IT access requests` for the default story. Use `Procurement intake` to show the same engine on software purchase, vendor onboarding, and invoice exception traces.
 
-Explain:
+All names, tickets, vendors, systems, approvals, and amounts are synthetic.
 
-"The sample data represents access requests spread across email, tickets, chat, approval logs, and system actions."
+### 4.3.3 Load Scenario Data
 
-Show:
-
-- raw traces count
-- normalized items count
-- warning count
-- top system
-
-### 4.3.3 Show Raw-To-Normalized Evidence
+Click `Load Scenario`.
 
 Explain:
 
-"The system converts messy traces into a canonical work item with requester, department, request type, system, status, and source links."
+"The scenario data represents work spread across email, tickets, chat, approval logs, and system actions."
+
+Show raw traces, cases, policies, approvals, and source channel counts.
+
+### 4.3.4 Analyze Workflow
+
+Click `Analyze`.
+
+Show normalized items, warnings, top system, and raw-to-normalized evidence.
+
+Explain:
+
+"The system converts messy traces into canonical work items with requester, department, request type, system, status, and source links."
 
 This is the observe step.
 
-### 4.3.4 Show The Work Graph
+### 4.3.5 Show The Work Graph
 
 Explain:
 
-"The work graph shows the process path: requester, manager approval, policy check, provisioning, audit log, exception review, and outcome."
+"The work graph shows the process path: requester, manager approval, policy check, system action, audit log, exception review, and outcome."
 
 This is the map step.
 
-### 4.3.5 Show Pattern Detection
+### 4.3.6 Show Pattern Detection
 
 Explain:
 
-"The system discovers standard application access as a repeated workflow and identifies manager approval as the bottleneck."
+"The system discovers repeated workflow patterns and identifies manager approval as a bottleneck."
 
 This is the understand and reason step.
 
-### 4.3.6 Show The Proposal
+### 4.3.7 Generate The Proposal
+
+Click `Generate Proposal`.
 
 Explain:
 
-"The planner generates a structured automation proposal with trigger, rules, actions, escalations, confidence, risk, expected value, and audit rationale."
+"The planner generates a structured automation proposal with trigger, required data, rules, actions, escalations, confidence, risk, expected value, audit rationale, and assumptions."
 
 This is the plan step.
 
-### 4.3.7 Show Simulation
+### 4.3.8 Show Simulation And Governance
 
 Explain:
 
 "The proposal is replayed against historical cases before it can run."
 
-Point out:
-
-- pass
-- needs human
-- policy risk
-- avoided delay
-- execution gate blocked
+Point out pass, needs-human, policy-risk, avoided delay, governance/security notes, and blocked execution gate.
 
 This is the simulate step.
 
-### 4.3.8 Approve
+### 4.3.9 Approve Or Reject
 
 Click `Approve`.
 
 Explain:
 
-"Approval creates an audit event and opens the execution gate."
+"Approval creates an audit event and opens the execution gate for this proposal version."
+
+Optional branch: click `Reject` to show that the execution gate remains blocked.
 
 This is the govern step.
 
-### 4.3.9 Run Case
+### 4.3.10 Run Mock Execution
 
-Click `Run Case`.
+Click `Run Mock`.
 
 Explain:
 
@@ -138,42 +145,50 @@ Explain:
 
 This is the execute step.
 
-### 4.3.10 Show Learning
+### 4.3.11 Show Learning And Audit
 
 Explain:
 
 "The learning loop recommends splitting exception-heavy cases into a human-review lane."
 
+Show the persisted audit trail and exported run summary. Explain that the summary is portable demo state, not production evidence.
+
 This is the improve step.
 
 ## 4.4 Reset And Recovery
 
-Click `Reset` to replay the demo.
+Click `Reset` to replay the demo. Reset clears generated local state for the selected scenario and writes a deterministic seeded baseline back to browser localStorage.
+
+Seed state helper:
+
+```powershell
+npm run demo:seed
+npm run demo:seed -- procurement-intake
+```
+
+Browser reset snippet helper:
+
+```powershell
+npm run demo:reset
+npm run demo:reset -- procurement-intake
+```
 
 If the app appears stale:
 
 1. Refresh the browser.
-2. Restart the dev or preview server.
-3. Rebuild with `npm run build`.
+2. Click `Reset`.
+3. Restart the dev or preview server.
+4. Rebuild with `npm run build`.
 
 If live AI is unavailable:
 
 Use the default mock mode. The demo is designed for this.
 
-If dev server fails:
-
-Use:
-
-```powershell
-npm run build
-npm run preview
-```
-
 ## 4.5 Presenter Talk Track
 
 Short version:
 
-"Work Graph Foundry observes how work actually moves, builds a live graph, finds repeated patterns and bottlenecks, proposes governed automation, simulates it against history, requires human approval, executes safely, and learns from exceptions."
+"Work Graph Foundry observes how work actually moves, builds a live graph, finds repeated patterns and bottlenecks, proposes governed automation, simulates it against history, requires human approval, executes safely through mock tools, persists the audit trail locally, and learns from exceptions."
 
 ## 4.6 Demo Acceptance Checklist
 
@@ -181,10 +196,14 @@ Before presenting:
 
 - `npm run build` passes.
 - `npm test` passes.
-- `Load Sample` renders all main panels.
+- `Load Scenario` renders source counts.
+- `Analyze` renders normalized evidence, graph, and patterns.
+- `Generate Proposal` renders proposal, simulation, and governance notes.
 - `Approve` opens the execution gate.
-- `Run Case` shows mock tool calls.
+- `Reject` keeps the execution gate blocked.
+- `Run Mock` shows mock tool calls.
 - Learning recommendation appears.
-- `Reset` clears demo state.
+- `Export Summary` produces JSON.
+- `Reset` restores seeded demo state.
 - No API key is required.
 - Mobile layout has no horizontal overflow.

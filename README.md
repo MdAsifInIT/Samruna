@@ -6,7 +6,12 @@ The demo is intentionally not a chatbot or landing page. It is an operating dash
 
 ## What The Demo Shows
 
-The MVP uses IT access requests as the workflow:
+The demo includes two synthetic workflow scenarios:
+
+1. IT access requests: employees request access through email, tickets, chat, approvals, and system logs.
+2. Procurement intake: teams request software purchases, vendor onboarding, and invoice exception handling through intake traces, approvals, and procurement-system updates.
+
+The default scenario is IT access requests:
 
 1. Employees request access through email, tickets, chat, approvals, and system logs.
 2. The app loads realistic multi-channel traces.
@@ -18,7 +23,8 @@ The MVP uses IT access requests as the workflow:
 8. It simulates that proposal against historical cases.
 9. A human reviewer approves the proposal.
 10. A new request runs through safe mock tools.
-11. The learning loop recommends a future improvement.
+11. The state persists locally for replay, export, import, and reset.
+12. The learning loop recommends a future improvement.
 
 ## Tech Stack
 
@@ -34,7 +40,7 @@ The MVP uses IT access requests as the workflow:
 
 ```powershell
 npm install
-npm run dev
+npm run demo:dev
 ```
 
 Open the local URL printed by Vite.
@@ -48,18 +54,24 @@ npm run preview
 
 ## Demo Path
 
-1. Click `Load Sample`.
-2. Review the normalized work item, graph, pattern, bottleneck, and proposal panels.
-3. Review historical simulation results and execution gate state.
-4. Click `Approve`.
-5. Click `Run Case`.
-6. Review mock tool calls and the learning-loop recommendation.
-7. Click `Reset` to replay.
+1. Choose `IT access requests` or `Procurement intake`.
+2. Click `Load Scenario`.
+3. Click `Analyze`.
+4. Inspect normalized evidence, graph, patterns, and bottlenecks.
+5. Click `Generate Proposal`.
+6. Review required data, assumptions, policy checks, escalations, simulation results, and governance notes.
+7. Click `Approve` or `Reject`.
+8. Click `Run Mock`.
+9. Review mock tool calls, audit trail, and learning-loop recommendation.
+10. Use `Export Summary` for a portable run summary or `Reset` to restore seeded state.
 
 ## Scripts
 
 ```powershell
 npm run dev        # Start local development server
+npm run demo:dev   # Start local demo server
+npm run demo:seed  # Print deterministic seed state JSON
+npm run demo:reset # Print browser localStorage reset snippet
 npm run build      # Typecheck and build production artifact
 npm run preview    # Preview production build
 npm run typecheck  # Run TypeScript checks
@@ -71,8 +83,8 @@ npm test           # Run Vitest suite
 ```text
 src/
   ai/          # AI provider abstraction, mock provider, optional OpenAI provider
-  domain/      # Ingestion, graph, patterns, planner, simulation, governance, execution
-  fixtures/    # Seeded IT access request traces and policy data
+  domain/      # Scenarios, persistence, ingestion, graph, patterns, planner, simulation, governance, execution
+  fixtures/    # Seeded synthetic scenario traces and policy data
   test/        # Test setup
 docs/
   README.md
@@ -83,6 +95,9 @@ docs/
   05-data-access-and-security.md
   06-testing-and-validation.md
   07-roadmap.md
+  08-continuation-plan.md
+  09-agentic-build-guide.md
+  10-demo-operations.md
   archive/
 ```
 
@@ -96,6 +111,9 @@ docs/
 - [5. Data Access And Security](docs/05-data-access-and-security.md): organization access, data needs, non-needs, governance, and compliance FAQ.
 - [6. Testing And Validation](docs/06-testing-and-validation.md): unit tests, integration checks, UI smoke tests, and agentic verification steps.
 - [7. Roadmap](docs/07-roadmap.md): current limitations, future improvements, productionization, and testing roadmap.
+- [8. Continuation Plan](docs/08-continuation-plan.md): current implementation plan and guardrails.
+- [9. Agentic Build Guide](docs/09-agentic-build-guide.md): safe continuation checklist for future agents.
+- [10. Demo Operations](docs/10-demo-operations.md): operator runbook, reset, import/export, and recovery.
 
 Historical planning prompts and phase notes are archived under `docs/archive/`.
 
@@ -124,8 +142,8 @@ npm audit --audit-level=low
 
 Current verified baseline:
 
-- 9 test files
-- 21 tests
+- 10 test files
+- 28 tests
 - production build passes
 - audit reports 0 vulnerabilities
 

@@ -10,7 +10,7 @@ export function buildWorkGraph(items: NormalizedWorkItem[], patternId = "pattern
     node("node-requester", "actor", "Requester", total, "low"),
     node("node-manager-approval", "approval", "Manager approval", total, "medium"),
     node("node-policy-check", "policy", "Policy check", total, exceptionCount ? "medium" : "low"),
-    node("node-it-provisioning", "system", "IT provisioning", provisionedCount, "low"),
+    node("node-it-provisioning", "system", "System action", provisionedCount, "low"),
     node("node-audit-log", "action", "Audit log", provisionedCount, "low"),
     node("node-exception-review", "exception", "Exception review", humanReviewCount, humanReviewCount ? "high" : "low"),
     node("node-outcome", "outcome", "Outcome", total, exceptionCount ? "medium" : "low")
@@ -31,7 +31,7 @@ export function buildWorkGraph(items: NormalizedWorkItem[], patternId = "pattern
       "edge-policy-provisioning",
       "node-policy-check",
       "node-it-provisioning",
-      "eligible for provisioning",
+      "eligible for action",
       provisionedCount,
       1.1,
       0

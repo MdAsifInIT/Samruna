@@ -1,33 +1,46 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { App } from "./App";
 
 describe("App", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
   it("renders the dashboard-first foundation shell", () => {
     render(<App />);
 
     expect(screen.getByRole("heading", { name: /Enterprise Work Intelligence Console/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Load sample traces/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Reset demo/i })).toBeInTheDocument();
-    expect(screen.getByText(/1 Load traces/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Load scenario/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Reset seeded demo state/i })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: /Select demo scenario/i })).toBeInTheDocument();
+    expect(screen.getByText(/1 Load scenario/i)).toBeInTheDocument();
     expect(screen.getByText(/Work Pattern Clusters/i)).toBeInTheDocument();
     expect(screen.getByText(/Deterministic mock/i)).toBeInTheDocument();
+    expect(screen.getByText(/Local state saved/i)).toBeInTheDocument();
   });
 
-  it("loads sample traces and shows normalized evidence", async () => {
+  it("runs the staged IT access demo path", async () => {
     render(<App />);
 
-    fireEvent.click(screen.getByRole("button", { name: /Load sample traces/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Load scenario/i }));
 
     expect(screen.getByText("Raw traces")).toBeInTheDocument();
-    expect(screen.getByText("Normalized items")).toBeInTheDocument();
+    expect(screen.getByText("Cases")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Analyze workflow/i }));
+
+    expect(screen.getAllByText("Normalized items")[0]).toBeInTheDocument();
     expect(screen.getByText(/Raw trace to normalized work item/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Maya Chen" })).toBeInTheDocument();
     expect(screen.getByText(/standard access/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /IT access request flow/i })).toBeInTheDocument();
     expect(screen.getByText("Manager approval")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Repeated workflows and automation opportunities/i })).toBeInTheDocument();
-    expect(screen.getByText(/Manager approval delay/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Manager approval delay/i).length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole("button", { name: /Generate automation proposal/i }));
+
     expect(screen.getByRole("heading", { name: /Governed automation proposal/i })).toBeInTheDocument();
     expect(screen.getByText(/Write immutable audit event/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Historical replay before execution/i })).toBeInTheDocument();
@@ -37,14 +50,36 @@ describe("App", () => {
 
     expect(screen.getByText("Open")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /Run new request/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Run safe mock execution/i }));
 
     expect(screen.getByRole("heading", { name: /Approved workflow runner/i })).toBeInTheDocument();
-    expect(screen.getByText(/provisioning task WGF-2001 created/i)).toBeInTheDocument();
-    expect(screen.getByText(/human-review lane/i)).toBeInTheDocument();
+    expect(screen.getByText(/mock task IT-2001 created/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/human-review lane/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Mock execution run/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /Reset demo/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Export Summary/i }));
+
+    expect((screen.getByRole("textbox", { name: "Run summary JSON" }) as HTMLTextAreaElement).value).toContain(
+      "it-access"
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Reset seeded demo state/i }));
 
     expect(screen.queryByRole("heading", { name: /Approved workflow runner/i })).not.toBeInTheDocument();
+  });
+
+  it("switches to the procurement intake scenario", () => {
+    render(<App />);
+
+    fireEvent.change(screen.getByRole("combobox", { name: /Select demo scenario/i }), {
+      target: { value: "procurement-intake" }
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Load scenario/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Analyze workflow/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Generate automation proposal/i }));
+
+    expect(screen.getByRole("heading", { name: /Procurement intake flow/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/Software procurement intake/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/No new vendor or invoice exception requested/i)).toBeInTheDocument();
   });
 });

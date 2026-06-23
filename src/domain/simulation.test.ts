@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { loadDemoFixtures } from "./fixtures";
 import { buildWorkGraph } from "./graph";
-import { createGovernanceRecord, auditFromGovernance, canExecute } from "./governance";
+import { createGovernanceRecord, auditFromGovernance, canExecute, createAuditEvent } from "./governance";
 import { ingestWorkTraces } from "./ingestion";
 import { detectWorkPatterns } from "./patterns";
 import { generateAutomationProposal } from "./planner";
@@ -64,5 +64,18 @@ describe("simulation and governance", () => {
     expect(canExecute([pending], proposal)).toBe(false);
     expect(canExecute([pending, approved], proposal)).toBe(true);
     expect(auditFromGovernance(approved).action).toBe("Proposal approved");
+  });
+
+  it("creates auditable agent events for non-governance actions", () => {
+    const event = createAuditEvent({
+      id: "audit-agent-analysis",
+      timestamp: "2026-05-16T09:20:00Z",
+      actor: "observer_agent",
+      action: "Workflow analyzed",
+      detail: "Normalized synthetic workflow traces."
+    });
+
+    expect(event.actor).toBe("observer_agent");
+    expect(event.detail).toMatch(/synthetic workflow traces/i);
   });
 });

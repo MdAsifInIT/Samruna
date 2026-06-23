@@ -102,7 +102,13 @@ function getRiskLevel(exceptionRate: number, requestType: RequestType): RiskLeve
     return "high";
   }
 
-  if (requestType === "contractor_access" || requestType === "finance_system_access" || exceptionRate >= 0.3) {
+  if (
+    requestType === "contractor_access" ||
+    requestType === "finance_system_access" ||
+    requestType === "vendor_onboarding" ||
+    requestType === "invoice_exception" ||
+    exceptionRate >= 0.3
+  ) {
     return "medium";
   }
 
@@ -115,7 +121,10 @@ function labelForRequestType(requestType: RequestType): string {
     privileged_access: "Privileged access review",
     contractor_access: "Contractor access review",
     finance_system_access: "Finance system access",
-    analytics_access: "Analytics access"
+    analytics_access: "Analytics access",
+    software_procurement: "Software procurement intake",
+    vendor_onboarding: "Vendor onboarding review",
+    invoice_exception: "Invoice exception review"
   };
 
   return labels[requestType];

@@ -13,7 +13,7 @@ describe("buildWorkGraph", () => {
       "Requester",
       "Manager approval",
       "Policy check",
-      "IT provisioning",
+      "System action",
       "Audit log",
       "Exception review",
       "Outcome"

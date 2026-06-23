@@ -58,6 +58,7 @@ describe("execution and learning", () => {
 
     expect(run.status).toBe("completed");
     expect(run.mockToolCalls.map((call) => call.tool)).toContain("audit-log.write");
+    expect(run.mockToolCalls.map((call) => call.tool)).toContain("work-orchestrator.create-task");
   });
 
   it("recommends learning updates from simulation and execution signals", () => {

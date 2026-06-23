@@ -17,7 +17,10 @@ const requestTypeLabels: Record<RequestType, string> = {
   privileged_access: "privileged_access",
   contractor_access: "contractor_access",
   finance_system_access: "finance_system_access",
-  analytics_access: "analytics_access"
+  analytics_access: "analytics_access",
+  software_procurement: "software_procurement",
+  vendor_onboarding: "vendor_onboarding",
+  invoice_exception: "invoice_exception"
 };
 
 export function ingestWorkTraces(
@@ -130,6 +133,18 @@ function inferRequestType(text: string): RequestType {
     return "analytics_access";
   }
 
+  if (normalized.includes("vendor_onboarding") || normalized.includes("vendor onboarding")) {
+    return "vendor_onboarding";
+  }
+
+  if (normalized.includes("invoice_exception") || normalized.includes("invoice exception")) {
+    return "invoice_exception";
+  }
+
+  if (normalized.includes("software_procurement") || normalized.includes("procurement") || normalized.includes("purchase")) {
+    return "software_procurement";
+  }
+
   return "standard_access";
 }
 
@@ -160,6 +175,18 @@ function inferPolicyFlags(requestType: RequestType, exceptions: string[]): strin
 
   if (requestType === "finance_system_access") {
     flags.add("finance_audit_required");
+  }
+
+  if (requestType === "software_procurement") {
+    flags.add("budget_check_required");
+  }
+
+  if (requestType === "vendor_onboarding") {
+    flags.add("vendor_risk_review_required");
+  }
+
+  if (requestType === "invoice_exception") {
+    flags.add("finance_exception_review_required");
   }
 
   if (exceptions.length > 0) {

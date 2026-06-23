@@ -15,7 +15,7 @@ It does not connect to:
 - document repositories
 - databases
 
-All demo data is seeded locally in `src/fixtures/demoData.ts`.
+All demo data is seeded locally in `src/fixtures/demoData.ts`. Browser-local demo run state is stored in localStorage so operators can reload, reset, export, or import a run summary.
 
 ## 5.2 What Data The Solution Needs In A Real Deployment
 
@@ -25,10 +25,16 @@ A production version would need read access to work traces such as:
 - email metadata or approved message excerpts
 - chat thread metadata or approved excerpts
 - approval logs
+- task events
+- timestamps
+- statuses
+- owners and roles
+- comments if available
 - identity and employment status
 - application catalog metadata
 - policy catalog metadata
 - provisioning task history
+- procurement, vendor, or finance system identifiers for procurement workflows
 - audit events
 
 The system does not need unrestricted access to every document or message. It needs scoped work-trace data with provenance.
@@ -49,6 +55,7 @@ The MVP uses local fixture fields:
 - outcome
 - raw trace text
 - source channel
+- synthetic vendor names, purchase request identifiers, and estimated amounts in the procurement scenario
 
 This data is fictional and committed as demo fixtures.
 
@@ -75,6 +82,7 @@ Current safety controls:
 - no live enterprise connectors
 - no real write actions
 - no browser-side secret usage
+- browser-local persistence only
 - deterministic mock AI provider by default
 - typed proposal contract
 - simulation before execution
@@ -148,6 +156,18 @@ Simulation classifies privileged or policy-sensitive cases as human-review or po
 ### 5.8.10 How should data retention work in production?
 
 Retention should be configurable by source and policy. Store enough provenance for auditability, but avoid retaining unnecessary raw content.
+
+### 5.8.11 What is stored by the local demo?
+
+The local demo stores selected scenario, staged workflow flags, generated graph, proposals, governance decisions, simulation result, mock execution result, learning recommendation, and audit events in browser localStorage.
+
+### 5.8.12 Does reset delete production data?
+
+No. Reset only restores the local browser demo state for the selected synthetic scenario. There is no production connector or write path.
+
+### 5.8.13 Can run summaries contain real customer data?
+
+They should not. Run summaries should only contain synthetic demo data unless a future production system adds approved export controls and redaction.
 
 ## 5.9 Production Security Checklist
 

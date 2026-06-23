@@ -9,5 +9,8 @@ Read these guides in order if you are new to the repository. They are numbered s
 5. [Data Access And Security](05-data-access-and-security.md)
 6. [Testing And Validation](06-testing-and-validation.md)
 7. [Roadmap](07-roadmap.md)
+8. [Continuation Plan](08-continuation-plan.md)
+9. [Agentic Build Guide](09-agentic-build-guide.md)
+10. [Demo Operations](10-demo-operations.md)
 
-Historical implementation plans, prompts, and phase notes are kept in [archive](archive/). They are not required for normal development.
+The canonical run path is in [Demo Operations](10-demo-operations.md). Historical implementation plans, prompts, and phase notes are kept in [archive](archive/). They are not required for normal development.

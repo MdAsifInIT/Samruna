@@ -1,5 +1,21 @@
 import type { AuditEvent, AutomationProposal, GovernanceDecision, GovernanceRecord } from "./types";
 
+export function createAuditEvent(input: {
+  id: string;
+  timestamp: string;
+  actor: string;
+  action: string;
+  detail: string;
+}): AuditEvent {
+  return {
+    id: input.id,
+    timestamp: input.timestamp,
+    actor: input.actor,
+    action: input.action,
+    detail: input.detail
+  };
+}
+
 export function createGovernanceRecord(input: {
   proposal: AutomationProposal;
   decision: GovernanceDecision;

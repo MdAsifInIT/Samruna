@@ -17,7 +17,12 @@ export type RequestType =
   | "privileged_access"
   | "contractor_access"
   | "finance_system_access"
-  | "analytics_access";
+  | "analytics_access"
+  | "software_procurement"
+  | "vendor_onboarding"
+  | "invoice_exception";
+
+export type ScenarioId = "it-access" | "procurement-intake";
 
 export interface RawWorkTrace {
   id: string;
@@ -210,14 +215,14 @@ export interface PolicyRule {
   appliesTo: RequestType[];
   riskLevel: RiskLevel;
   requiresHumanReview: boolean;
-  escalationRole: "manager" | "compliance" | "security" | "it_operations";
+  escalationRole: "manager" | "compliance" | "security" | "it_operations" | "procurement" | "finance" | "legal";
 }
 
 export interface ApprovalHistoryRecord {
   id: string;
   caseId: string;
   approver: string;
-  role: "manager" | "system_owner" | "compliance";
+  role: "manager" | "system_owner" | "compliance" | "finance" | "legal" | "procurement";
   decision: "approved" | "rejected" | "requested_changes";
   requestedAt: string;
   decidedAt: string;
@@ -229,6 +234,20 @@ export interface DemoFixtureSet {
   policyRules: PolicyRule[];
   approvalHistory: ApprovalHistoryRecord[];
   newIncomingTrace: RawWorkTrace;
+}
+
+export interface DemoScenario {
+  id: ScenarioId;
+  label: string;
+  workflowName: string;
+  description: string;
+  operatorGoal: string;
+  graphTitle: string;
+  topSystemLabel: string;
+  syntheticDataNotice: string;
+  requiredOrgData: string[];
+  excludedOrgData: string[];
+  fixtures: DemoFixtureSet;
 }
 
 export interface NormalizationIssue {

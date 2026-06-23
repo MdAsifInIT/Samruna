@@ -11,7 +11,7 @@ The MVP is intentionally scoped. Current limitations:
 - no live enterprise connectors
 - no real provisioning
 - no server-side OpenAI call path
-- no persisted audit history
+- no durable server-side audit history
 - no interactive graph canvas
 - no browser automation test suite
 
@@ -22,10 +22,10 @@ These limitations are acceptable for a local-first demo but should be addressed 
 Recommended next improvements:
 
 1. Add a server-side API layer for live OpenAI calls.
-2. Add persistent storage for traces, proposals, simulations, governance records, execution runs, and audit events.
+2. Add durable server-side storage for traces, proposals, simulations, governance records, execution runs, and audit events.
 3. Add an interactive graph view with selectable nodes and edge details.
-4. Add dataset import and export.
-5. Add proposal versioning.
+4. Add dataset import beyond the current run-summary import/export.
+5. Add richer proposal versioning and comparison.
 6. Add browser smoke tests.
 7. Add more workflow templates.
 8. Add authentication and role-based access control.
@@ -68,25 +68,14 @@ Connector principles:
 
 ## 7.5 Workflow Expansion
 
+Implemented local scenarios:
+
+- IT access requests
+- Procurement intake
+
 Good next workflows:
 
-### 7.5.1 Procurement
-
-Flow:
-
-- vendor request
-- finance review
-- legal review
-- compliance screening
-- purchase order creation
-
-Why it fits:
-
-- approval-heavy
-- policy-sensitive
-- strong audit story
-
-### 7.5.2 Employee Onboarding
+### 7.5.1 Employee Onboarding
 
 Flow:
 
@@ -101,6 +90,22 @@ Why it fits:
 - cross-functional
 - graph-friendly
 - clear orchestration value
+
+### 7.5.2 Incident Triage
+
+Flow:
+
+- alert intake
+- severity classification
+- owner assignment
+- customer communication
+- remediation tracking
+
+Why it fits:
+
+- time-sensitive
+- strong escalation model
+- clear human-review boundary
 
 ### 7.5.3 Finance Exceptions
 

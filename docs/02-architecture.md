@@ -2,7 +2,7 @@
 
 ## 2.1 Architecture Summary
 
-Work Graph Foundry is implemented as a local-first browser MVP. React renders the dashboard, while TypeScript domain modules perform the product logic. There is no backend in the current MVP because the demo uses local fixtures, safe mock execution, and deterministic provider behavior.
+Work Graph Foundry is implemented as a local-first browser MVP. React renders the dashboard, while TypeScript domain modules perform the product logic. There is no backend in the current MVP because the demo uses local fixtures, browser-local persistence, safe mock execution, and deterministic provider behavior.
 
 This architecture keeps the solution easy to run, easy to test, and easy for a new developer or agent to inspect.
 
@@ -10,7 +10,10 @@ This architecture keeps the solution easy to run, easy to test, and easy for a n
 
 ```mermaid
 flowchart LR
-  A["Raw work traces"] --> B["Fixture validation"]
+  S["Scenario selector"] --> A["Raw work traces"]
+  A --> P["Local persistence"]
+  P --> A
+  A --> B["Fixture validation"]
   B --> C["Ingestion and normalization"]
   C --> D["Normalized work items"]
   D --> E["Work graph builder"]
@@ -23,6 +26,7 @@ flowchart LR
   J --> K["Execution gate"]
   K --> L["Safe mock tool calls"]
   L --> M["Learning recommendation"]
+  M --> P
   N["AI provider boundary"] --> H
   O["React dashboard"] --> B
   O --> C
@@ -44,14 +48,17 @@ flowchart LR
 Current React state:
 
 - `sampleLoaded`: whether fixture data has been loaded.
-- `approved`: whether the proposal has a governance approval.
-- `runRequested`: whether the user has run the new request.
+- `selectedScenarioId`: the active synthetic scenario.
+- `analysisRequested`: whether ingestion, graphing, and pattern detection have run.
+- `proposalRequested`: whether a governed proposal has been generated.
+- `governanceDecision`: pending, approved, rejected, or changes requested.
+- `runRequested`: whether the user has attempted safe mock execution.
 
-Derived data is calculated from these states. The dashboard intentionally keeps the flow visible instead of hiding it behind a chat interface.
+Derived data is calculated from these states and persisted to local storage with generated graph, proposal, simulation, governance, execution, recommendation, and audit snapshots. The dashboard intentionally keeps the flow visible instead of hiding it behind a chat interface.
 
 ### 2.3.2 Fixture Loading
 
-`src/domain/fixtures.ts` loads and validates data from `src/fixtures/demoData.ts`.
+`src/domain/fixtures.ts` loads and validates scenario data from `src/fixtures/demoData.ts`.
 
 It checks:
 
@@ -75,7 +82,7 @@ This module converts messy source signals into structured fields that later modu
 - requester
 - manager approval
 - policy check
-- IT provisioning
+- system action
 - audit log
 - exception review
 - outcome
@@ -142,7 +149,7 @@ Mock tools:
 
 - `employee-directory.validate`
 - `policy-catalog.evaluate`
-- `it-provisioning.create-task`
+- `work-orchestrator.create-task`
 - `audit-log.write`
 
 No real enterprise system is called.
@@ -157,11 +164,33 @@ No real enterprise system is called.
 
 The mock provider is the default. The OpenAI provider is a boundary for future trusted server-side integration.
 
+### 2.3.11 Scenario And Persistence
+
+`src/domain/fixtures.ts` exposes:
+
+- `listDemoScenarios()`
+- `loadDemoScenario(scenarioId)`
+- `loadDemoFixtures()` for the default IT access scenario
+
+`src/domain/persistence.ts` owns browser-local demo state:
+
+- selected scenario
+- staged operator flags
+- generated graph
+- proposals
+- governance records
+- simulation result
+- execution runs
+- learning recommendations
+- audit events
+
+The app persists these snapshots to `localStorage` under a versioned key. Reset returns the selected scenario to a deterministic seeded baseline.
+
 ## 2.4 Data Flow
 
 The data flow is strictly ordered:
 
-1. `loadDemoFixtures()`
+1. `loadDemoScenario(scenarioId)`
 2. `validateDemoFixtures(fixtures)`
 3. `ingestWorkTraces(rawTraces, approvalHistory)`
 4. `buildWorkGraph(items)`
@@ -172,6 +201,7 @@ The data flow is strictly ordered:
 9. `canExecute(records, proposal)`
 10. `runApprovedWorkflow(...)`
 11. `recommendLearningUpdate(...)`
+12. `saveDemoState(snapshot)`
 
 Do not skip earlier stages when adding features. Later stages assume earlier contracts are valid.
 
@@ -195,6 +225,8 @@ This approach keeps behavior deterministic for demos and tests while preserving 
 The dashboard includes:
 
 - demo controls
+- scenario selector
+- operator checklist
 - scripted demo path
 - system status metrics
 - ingestion summary
@@ -206,6 +238,8 @@ The dashboard includes:
 - simulation panel
 - governance approval
 - execution and learning loop
+- persisted audit trail
+- run summary import/export
 
 The layout is responsive and avoids marketing-style hero content.
 
@@ -216,7 +250,7 @@ The current MVP does not need a backend because:
 - data is local
 - execution is mocked
 - there is no authentication
-- there is no persistence
+- persistence is browser-local and does not require a server
 - live OpenAI calls are optional and not used by browser default
 
 Add a backend when implementing:

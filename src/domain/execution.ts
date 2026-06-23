@@ -17,6 +17,7 @@ export function runApprovedWorkflow(input: {
   }
 
   const system = input.requestTrace.metadata.system ?? "unknown system";
+  const ticketId = input.requestTrace.metadata.ticketId ?? input.requestTrace.caseId;
 
   return {
     id: `run-${input.requestTrace.caseId}`,
@@ -35,9 +36,9 @@ export function runApprovedWorkflow(input: {
         output: "eligible with manager approval"
       },
       {
-        tool: "it-provisioning.create-task",
+        tool: "work-orchestrator.create-task",
         input: `${input.requestTrace.actor} -> ${system}`,
-        output: "provisioning task WGF-2001 created"
+        output: `mock task ${ticketId} created`
       },
       {
         tool: "audit-log.write",

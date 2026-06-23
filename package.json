@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --configLoader runner",
+    "demo:dev": "vite --host 127.0.0.1 --configLoader runner",
+    "demo:reset": "node scripts/demo-state.mjs reset",
+    "demo:seed": "node scripts/demo-state.mjs seed",
     "build": "tsc -b && vite build --configLoader runner",
     "preview": "vite preview --host 127.0.0.1 --configLoader runner",
     "typecheck": "tsc -b",

@@ -23,8 +23,10 @@ Work Graph Foundry demonstrates a different loop: discover the workflow from wor
 The repository currently contains a complete local MVP:
 
 - React/Vite/TypeScript dashboard
-- seeded IT access request fixture data
+- seeded IT access request and procurement intake fixture data
 - typed domain contracts
+- scenario selection and validation
+- browser-local persisted demo state
 - deterministic ingestion and normalization
 - work graph generation
 - pattern detection and bottleneck scoring
@@ -33,6 +35,7 @@ The repository currently contains a complete local MVP:
 - governance approval and audit state
 - safe mock execution
 - learning-loop recommendation
+- run summary export/import
 - deterministic mock AI provider
 - optional OpenAI Responses API provider boundary
 - unit and component tests
@@ -43,18 +46,18 @@ The MVP is demo-ready and does not require enterprise credentials or an OpenAI A
 
 The golden path is:
 
-1. User clicks `Load Sample`.
-2. App loads seeded raw work traces.
-3. App validates and normalizes traces into work items.
-4. App builds a work graph for IT access requests.
-5. App detects repeated patterns and the manager approval bottleneck.
-6. App generates a governed automation proposal.
-7. App simulates the proposal against historical cases.
-8. User approves the proposal.
-9. User clicks `Run Case`.
-10. App executes a new request through safe mock tools.
-11. App recommends a learning-loop improvement.
-12. User clicks `Reset` to replay.
+1. User chooses a scenario.
+2. User clicks `Load Scenario`.
+3. App validates seeded raw work traces.
+4. User clicks `Analyze`.
+5. App normalizes traces, builds a work graph, and detects repeated patterns.
+6. User clicks `Generate Proposal`.
+7. App generates and simulates a governed automation proposal.
+8. User approves or rejects the proposal.
+9. User clicks `Run Mock`.
+10. App executes a new request through safe mock tools only when governance allows it.
+11. App records audit events and recommends a learning-loop improvement.
+12. User exports a run summary or clicks `Reset` to restore seeded state.
 
 ## 1.5 Agentic Loop
 
@@ -91,17 +94,19 @@ Start with:
 - `docs/02-architecture.md` for how the app is built.
 - `docs/03-development.md` for how to continue development.
 - `docs/06-testing-and-validation.md` for test and agentic verification steps.
+- `docs/10-demo-operations.md` for the operator runbook.
 
 Important source files:
 
 - `src/App.tsx`: dashboard orchestration.
 - `src/domain/types.ts`: shared contracts.
-- `src/fixtures/demoData.ts`: seeded demo data.
+- `src/domain/persistence.ts`: local demo state persistence.
+- `src/fixtures/demoData.ts`: seeded synthetic scenario data.
 - `src/ai/providers.ts`: mock and optional OpenAI provider boundary.
 
 ## 1.8 Current Demo Story
 
-The demo centers on IT access requests:
+The default story centers on IT access requests:
 
 - Employees request application access.
 - Requests arrive through several channels.
@@ -111,3 +116,5 @@ The demo centers on IT access requests:
 - The system discovers this pattern, proposes an automation, tests it, and executes only after governance approval.
 
 The strongest demo moment is that the workflow is discovered from traces rather than predefined by the user.
+
+The second scenario, procurement intake, demonstrates that the same domain pipeline can handle another realistic enterprise workflow without a backend or live connector. It keeps low-risk software procurement on a candidate fast path while vendor onboarding and invoice exceptions remain human-reviewed.
