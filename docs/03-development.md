@@ -55,6 +55,12 @@ Run dependency audit:
 npm audit --audit-level=low
 ```
 
+Run the full non-browser local POC verification gate:
+
+```powershell
+npm run verify:demo
+```
+
 ## 3.4 Extend
 
 When adding new behavior, work from domain logic outward:
@@ -166,10 +172,7 @@ Before commit:
 
 ```powershell
 git status --short
-npm run typecheck
-npm test
-npm run build
-npm audit --audit-level=low
+npm run verify:demo
 ```
 
 ## 3.11 Common Development Mistakes

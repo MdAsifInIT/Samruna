@@ -9,9 +9,10 @@
     "demo:reset": "node scripts/demo-state.mjs reset",
     "demo:seed": "node scripts/demo-state.mjs seed",
     "build": "tsc -b && vite build --configLoader runner",
+    "verify:demo": "npm run typecheck && npm test && npm run build && npm audit --audit-level=low",
     "preview": "vite preview --host 127.0.0.1 --configLoader runner",
     "typecheck": "tsc -b",
-    "test": "vitest run --configLoader runner"
+    "test": "vitest run --configLoader runner --pool vmThreads"
   },
   "dependencies": {
     "@vitejs/plugin-react": "5.2.0",

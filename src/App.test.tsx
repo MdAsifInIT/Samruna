@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { App } from "./App";
+import { DEMO_STORAGE_KEY } from "./domain/persistence";
 
 describe("App", () => {
   beforeEach(() => {
@@ -22,6 +23,18 @@ describe("App", () => {
     expect(screen.getByText(/Local state saved/i)).toBeInTheDocument();
     expect(screen.getByText(/Mock-only, no external writes/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Run safe mock execution/i })).toBeDisabled();
+  });
+
+  it("recovers from malformed persisted localStorage state", async () => {
+    window.localStorage.setItem(DEMO_STORAGE_KEY, "{not-json");
+
+    render(<App />);
+
+    expect(screen.getByRole("heading", { name: /Enterprise Work Intelligence Console/i })).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(window.localStorage.getItem(DEMO_STORAGE_KEY)).toContain('"selectedScenarioId":"it-access"');
+    });
   });
 
   it("runs the staged IT access demo path", async () => {
@@ -55,7 +68,7 @@ describe("App", () => {
 
     expect(screen.getByRole("heading", { name: /Governed automation proposal/i })).toBeInTheDocument();
     expect(screen.getByText(/Write immutable audit event/i)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Historical replay before execution/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Governance-gated replay before execution/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Run safe mock execution/i })).toBeDisabled();
     expect(screen.getAllByText("Blocked").length).toBeGreaterThan(0);
 
@@ -66,7 +79,7 @@ describe("App", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Run safe mock execution/i }));
 
-    expect(screen.getByRole("heading", { name: /Approved workflow runner/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Governance-gated workflow runner/i })).toBeInTheDocument();
     expect(screen.getByText(/mock task IT-2001 created/i)).toBeInTheDocument();
     expect(screen.getAllByText(/human-review lane/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Mock execution run/i)).toBeInTheDocument();
@@ -80,7 +93,10 @@ describe("App", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Reset seeded demo state/i }));
 
-    expect(screen.queryByRole("heading", { name: /Approved workflow runner/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /Governance-gated workflow runner/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /IT access request flow/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /Repeated workflows and automation opportunities/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Run safe mock execution/i })).toBeDisabled();
   });
 
   it("blocks mock execution when governance rejects the proposal", () => {
@@ -96,20 +112,56 @@ describe("App", () => {
     expect(screen.getAllByText(/Blocked/i).length).toBeGreaterThan(0);
   });
 
-  it("switches to the procurement intake scenario", () => {
+  it.each([
+    {
+      scenarioId: "it-access",
+      graphTitle: /IT access request flow/i,
+      patternLabel: /Standard application access/i,
+      workflowHeading: /Access request operations/i
+    },
+    {
+      scenarioId: "procurement-intake",
+      graphTitle: /Procurement intake flow/i,
+      patternLabel: /Software procurement intake/i,
+      workflowHeading: /Procurement operations/i
+    }
+  ])("generates proposals and inspects details for $scenarioId", ({ scenarioId, graphTitle, patternLabel, workflowHeading }) => {
     render(<App />);
 
     fireEvent.change(screen.getByRole("combobox", { name: /Select demo scenario/i }), {
-      target: { value: "procurement-intake" }
+      target: { value: scenarioId }
     });
     fireEvent.click(screen.getByRole("button", { name: /Load scenario/i }));
     fireEvent.click(screen.getByRole("button", { name: /Analyze workflow/i }));
-    fireEvent.click(screen.getByRole("button", { name: /Vendor onboarding review/i }));
+
+    expect(screen.getByRole("heading", { name: workflowHeading })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: graphTitle })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Manager approval/i }));
+    expect(screen.getByRole("heading", { name: /Manager approval/i })).toBeInTheDocument();
+    expect(screen.getByText(/Audit relevance:/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: patternLabel }));
+    expect(screen.getByRole("heading", { name: patternLabel })).toBeInTheDocument();
+    expect(screen.getByText(/Representative cases:/i)).toBeInTheDocument();
+
     fireEvent.click(screen.getByRole("button", { name: /Generate automation proposal/i }));
 
-    expect(screen.getByRole("heading", { name: /Procurement intake flow/i })).toBeInTheDocument();
-    expect(screen.getAllByText(/Software procurement intake/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/No new vendor or invoice exception requested/i)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Vendor onboarding review/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Governed automation proposal/i })).toBeInTheDocument();
+    expect(screen.getByText(/Write immutable audit event/i)).toBeInTheDocument();
+  });
+
+  it("shows a safe error for malformed import summaries", () => {
+    render(<App />);
+
+    fireEvent.change(screen.getByRole("textbox", { name: /Import run summary JSON/i }), {
+      target: {
+        value: '{"exportedAt":'
+      }
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Import Summary/i }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(/Import failed: the pasted run summary is not valid JSON\./i);
+    expect(screen.getByRole("heading", { name: /Enterprise Work Intelligence Console/i })).toBeInTheDocument();
   });
 });

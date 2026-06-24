@@ -10,6 +10,14 @@ npm run demo:dev
 
 Open the local URL printed by Vite.
 
+Local POC verification without browser automation:
+
+```powershell
+npm run verify:demo
+```
+
+That command typechecks, runs the test suite, builds the app, and audits dependencies. Use it as the non-browser verification gate in this environment.
+
 Production-preview fallback:
 
 ```powershell
@@ -64,6 +72,8 @@ npm run demo:reset -- procurement-intake
 
 The CLI helper prints deterministic JSON or a browser-console localStorage snippet. The app itself owns the normal reset path because the persisted state lives in the browser profile.
 
+If you do have browser access, pair the CLI helpers with `npm run demo:dev` or `npm run preview` to confirm the seeded state in the UI.
+
 ## 10.5 Import And Export
 
 `Export Summary` writes JSON to the dashboard textbox. It includes:
@@ -102,9 +112,18 @@ If the UI looks stale:
 If tests or build fail, run:
 
 ```powershell
-npm run typecheck
-npm test
-npm run build
+npm run verify:demo
 ```
 
 Fix deterministic domain failures before changing the UI.
+
+## 10.8 Browserless POC Verification
+
+When browser automation is not available, verify the local POC with:
+
+1. `npm install`
+2. `npm run demo:dev` to confirm the app starts
+3. `npm run verify:demo` to confirm typecheck, tests, build, and audit
+4. `npm run demo:seed` and `npm run demo:reset` to confirm the operator helpers still emit deterministic output
+
+Playwright and other browser automation remain deferred in this environment because browser access is unavailable.

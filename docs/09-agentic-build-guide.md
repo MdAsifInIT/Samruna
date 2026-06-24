@@ -33,19 +33,20 @@ Use this checklist before and after meaningful changes:
 1. Observe current repo state with `git status --short`.
 2. Map workflows and data model from `src/domain/types.ts` and `src/fixtures/demoData.ts`.
 3. Run `npm run typecheck`.
-4. Run `npm test`.
-5. Run `npm run build`.
-6. Run `npm audit --audit-level=low`.
-7. Start local demo with `npm run demo:dev`.
-8. Walk the UI flow: scenario, load, analyze, generate proposal, approve, run mock, export, reset.
-9. Switch to procurement and verify load, analyze, proposal generation.
-10. Verify reset/recovery restores seeded local state.
-11. Verify mock AI fallback by leaving `OPENAI_API_KEY` unset.
-12. Verify no secrets, exported local state files, or customer data are committed.
+4. Run `npm run verify:demo`.
+5. Start local demo with `npm run demo:dev`.
+6. Walk the UI flow: scenario, load, analyze, generate proposal, approve, run mock, export, reset.
+7. Switch to procurement and verify load, analyze, proposal generation.
+8. Verify reset/recovery restores seeded local state.
+9. Verify mock AI fallback by leaving `OPENAI_API_KEY` unset.
+10. Verify no secrets, exported local state files, or customer data are committed.
+
+Browser automation is deferred in this environment because browser access is unavailable.
 
 Expected outcomes:
 
 - typecheck passes
+- verify:demo passes
 - test suite passes
 - build passes
 - audit reports no low-or-higher vulnerabilities
@@ -60,6 +61,7 @@ Expected outcomes:
 - Persist new demo state only through `src/domain/persistence.ts`.
 - Keep live OpenAI calls server-side only if they are added.
 - Keep execution mock-only unless a future production architecture adds authenticated, allowlisted tool execution with approvals.
+- Keep browser automation out of the local POC verification path unless browser access is available.
 
 ## 9.5 Common Failure Modes
 

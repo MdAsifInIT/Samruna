@@ -194,6 +194,7 @@ Short version:
 
 Before presenting:
 
+- `npm run verify:demo` passes for non-browser verification.
 - `npm run build` passes.
 - `npm test` passes.
 - `Load Scenario` renders source counts.
@@ -207,3 +208,5 @@ Before presenting:
 - `Reset` restores seeded demo state.
 - No API key is required.
 - Mobile layout has no horizontal overflow.
+
+Browser e2e and Playwright checks are deferred in this environment because browser access is unavailable.

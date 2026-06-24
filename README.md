@@ -73,6 +73,7 @@ npm run demo:dev   # Start local demo server
 npm run demo:seed  # Print deterministic seed state JSON
 npm run demo:reset # Print browser localStorage reset snippet
 npm run build      # Typecheck and build production artifact
+npm run verify:demo # Run typecheck, tests, build, and audit
 npm run preview    # Preview production build
 npm run typecheck  # Run TypeScript checks
 npm test           # Run Vitest suite
@@ -134,18 +135,17 @@ Do not expose `OPENAI_API_KEY` directly in browser code.
 Before handoff or push, run:
 
 ```powershell
-npm run typecheck
-npm test
-npm run build
-npm audit --audit-level=low
+npm run verify:demo
 ```
 
 Current verified baseline:
 
 - 10 test files
-- 29 tests
+- 34 tests
 - production build passes
 - audit reports 0 vulnerabilities
+
+Browser e2e, Playwright, and other browser automation are deferred in this environment because browser access is unavailable.
 
 ## Troubleshooting
 

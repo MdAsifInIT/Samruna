@@ -7,7 +7,8 @@ import {
   loadPersistedDemoState,
   resetPersistedDemoState,
   saveDemoState,
-  type DemoStorage
+  type DemoStorage,
+  type PersistedDemoState
 } from "./persistence";
 
 function makeStorage(): DemoStorage & { values: Map<string, string> } {
@@ -34,11 +35,47 @@ describe("demo persistence", () => {
 
   it("resets local demo state to a known baseline", () => {
     const storage = makeStorage();
-    const dirty = {
+    const dirty: PersistedDemoState = {
       ...createSeedDemoState("it-access"),
       sampleLoaded: true,
       analysisRequested: true,
-      governanceDecision: "approved" as const
+      proposalRequested: true,
+      governanceDecision: "approved" as const,
+      runRequested: true,
+      graph: { id: "graph-it-access", patternId: "pattern-it-access", nodes: [], edges: [], metrics: { averageCycleTimeHours: 1, exceptionRate: 0, approvalDelayHours: 1 } },
+      proposals: [{ id: "proposal-test", patternId: "pattern-it-access", trigger: "trigger", requiredData: [], eligibilityRules: [], policyChecks: [], actions: [], escalations: [], confidence: 1, riskLevel: "low", expectedValue: "value", auditRationale: "rationale", version: 1 }],
+      governanceRecords: [
+        {
+          id: "governance-test",
+          proposalId: "proposal-test",
+          reviewerRole: "process_owner",
+          decision: "approved",
+          comments: "ok",
+          timestamp: "2026-05-16T10:00:00Z",
+          proposalVersion: 1
+        }
+      ],
+      executionRuns: [
+        {
+          id: "run-test",
+          proposalId: "proposal-test",
+          requestTraceId: "trace-test",
+          status: "completed",
+          mockToolCalls: [],
+          auditTrail: []
+        }
+      ],
+      recommendations: [
+        {
+          id: "rec-test",
+          source: "delay",
+          recommendation: "Test",
+          expectedImpact: "None",
+          riskLevel: "low",
+          suggestedProposalChange: "None"
+        }
+      ],
+      auditEvents: [{ id: "audit-test", timestamp: "2026-05-16T09:00:00Z", actor: "test", action: "Loaded", detail: "Dirty" }]
     };
 
     saveDemoState(dirty, storage);
@@ -46,8 +83,24 @@ describe("demo persistence", () => {
 
     expect(reset.sampleLoaded).toBe(false);
     expect(reset.analysisRequested).toBe(false);
+    expect(reset.proposalRequested).toBe(false);
     expect(reset.governanceDecision).toBe("pending");
+    expect(reset.runRequested).toBe(false);
+    expect(reset.graph).toBeUndefined();
+    expect(reset.proposals).toEqual([]);
+    expect(reset.governanceRecords).toEqual([]);
+    expect(reset.executionRuns).toEqual([]);
+    expect(reset.recommendations).toEqual([]);
+    expect(reset.auditEvents).toEqual([]);
     expect(loadPersistedDemoState(storage)).toEqual(reset);
+  });
+
+  it("ignores malformed JSON in storage", () => {
+    const storage = makeStorage();
+
+    storage.setItem(DEMO_STORAGE_KEY, "{not-json");
+
+    expect(loadPersistedDemoState(storage)).toBeUndefined();
   });
 
   it("exports and imports run summaries", () => {

@@ -12,27 +12,32 @@ The MVP is intentionally scoped. Current limitations:
 - no real provisioning
 - no server-side OpenAI call path
 - no durable server-side audit history
-- no interactive graph canvas
+- no richer visual graph canvas beyond the current selectable graph/pattern inspection
 - no browser automation test suite
 
 These limitations are acceptable for a local-first demo but should be addressed before production use.
 
-## 7.2 Future Improvements
+## 7.2 Hackathon Local POC Needs
 
-Recommended next improvements:
+Recommended local POC improvements:
+
+1. Add a richer visual graph canvas.
+2. Add browser smoke tests when browser access is available.
+3. Add more workflow templates.
+4. Add dataset import beyond the current run-summary import/export.
+5. Add richer proposal versioning and comparison.
+
+## 7.3 Production-Only Roadmap
+
+Production-ready next steps:
 
 1. Add a server-side API layer for live OpenAI calls.
 2. Add durable server-side storage for traces, proposals, simulations, governance records, execution runs, and audit events.
-3. Add an interactive graph view with selectable nodes and edge details.
-4. Add dataset import beyond the current run-summary import/export.
-5. Add richer proposal versioning and comparison.
-6. Add browser smoke tests.
-7. Add more workflow templates.
-8. Add authentication and role-based access control.
-9. Add connector framework for enterprise systems.
-10. Add observability for model calls and execution outcomes.
+3. Add authentication and role-based access control.
+4. Add connector framework for enterprise systems.
+5. Add observability for model calls and execution outcomes.
 
-## 7.3 Server-Side OpenAI Integration
+## 7.4 Server-Side OpenAI Integration
 
 A production-ready OpenAI integration should:
 
@@ -45,7 +50,7 @@ A production-ready OpenAI integration should:
 
 This can start with a small API route for proposal generation.
 
-## 7.4 Enterprise Connector Roadmap
+## 7.5 Enterprise Connector Roadmap
 
 Potential connectors:
 
@@ -66,7 +71,7 @@ Connector principles:
 - source-specific retention
 - no write actions without approval
 
-## 7.5 Workflow Expansion
+## 7.6 Workflow Expansion
 
 Implemented local scenarios:
 
@@ -75,7 +80,7 @@ Implemented local scenarios:
 
 Good next workflows:
 
-### 7.5.1 Employee Onboarding
+### 7.6.1 Employee Onboarding
 
 Flow:
 
@@ -91,7 +96,7 @@ Why it fits:
 - graph-friendly
 - clear orchestration value
 
-### 7.5.2 Incident Triage
+### 7.6.2 Incident Triage
 
 Flow:
 
@@ -107,7 +112,7 @@ Why it fits:
 - strong escalation model
 - clear human-review boundary
 
-### 7.5.3 Finance Exceptions
+### 7.6.3 Finance Exceptions
 
 Flow:
 
@@ -123,7 +128,7 @@ Why it fits:
 - strong governance requirements
 - clear human-review lane
 
-## 7.6 Productionization Path
+## 7.7 Productionization Path
 
 Suggested order:
 
@@ -138,7 +143,7 @@ Suggested order:
 9. Add tool execution allowlists.
 10. Add deployment configuration.
 
-## 7.7 Security Roadmap
+## 7.8 Security Roadmap
 
 Security work should include:
 
@@ -151,11 +156,11 @@ Security work should include:
 - secure tool execution
 - incident review for failed automations
 
-## 7.8 Testing Roadmap
+## 7.9 Testing Roadmap
 
 Add:
 
-- Playwright or equivalent browser tests
+- Playwright or equivalent browser tests when browser access is available
 - accessibility checks
 - imported fixture schema tests
 - provider fallback tests
@@ -163,7 +168,7 @@ Add:
 - server route tests
 - visual regression checks for the dashboard
 
-## 7.9 Definition Of Production Readiness
+## 7.10 Definition Of Production Readiness
 
 The product is production-ready only when:
 

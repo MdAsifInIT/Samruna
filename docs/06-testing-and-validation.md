@@ -69,43 +69,39 @@ When an agent validates this repo, it should perform these steps:
 1. Read `README.md`.
 2. Read numbered docs in `docs/`.
 3. Run `rg --files` to inspect the repo.
-4. Run `npm run typecheck`.
-5. Run `npm test`.
-6. Run `npm run build`.
-7. Run `npm audit --audit-level=low`.
-8. Start preview with `npm run preview`.
-9. Open the app.
-10. Click `Load Scenario`.
-11. Click `Analyze`.
-12. Confirm normalized evidence, graph, and patterns render.
-13. Click `Generate Proposal`.
-14. Confirm proposal, simulation, governance, execution, and audit panels render.
-15. Click `Approve`.
-16. Confirm execution gate is open.
-17. Click `Run Mock`.
-18. Confirm mock tool calls and learning recommendation.
-19. Click `Export Summary`.
-20. Confirm JSON includes the selected scenario id.
-21. Click `Reset`.
-22. Confirm generated state clears.
-23. Switch to `Procurement intake`.
-24. Repeat load, analyze, generate proposal.
-25. Check mobile width for horizontal overflow.
+4. Run `npm run verify:demo`.
+5. If browser access is available, start preview with `npm run preview`.
+6. Open the app.
+7. Click `Load Scenario`.
+8. Click `Analyze`.
+9. Confirm normalized evidence, selectable graph inspection, and pattern details render.
+10. Click `Generate Proposal`.
+11. Confirm proposal, simulation, governance, execution, and audit panels render.
+12. Click `Approve`.
+13. Confirm execution gate is open.
+14. Click `Run Mock`.
+15. Confirm mock tool calls and learning recommendation.
+16. Click `Export Summary`.
+17. Confirm JSON includes the selected scenario id.
+18. Click `Reset`.
+19. Confirm generated state clears.
+20. Switch to `Procurement intake`.
+21. Repeat load, analyze, generate proposal.
+22. Check mobile width for horizontal overflow.
+
+Browser automation and Playwright coverage are deferred here because this environment lacks browser access.
 
 ## 6.5 Full Verification Command Set
 
 ```powershell
-npm run typecheck
-npm test
-npm run build
-npm audit --audit-level=low
+npm run verify:demo
 ```
 
 Expected current baseline:
 
 - typecheck passes
 - 10 test files pass
-- 29 tests pass
+- 34 tests pass
 - build passes
 - audit reports 0 vulnerabilities
 
@@ -145,6 +141,8 @@ Manual smoke path:
 14. Confirm summary JSON appears.
 15. Click `Reset`.
 16. Confirm run output disappears.
+
+If browser access is unavailable, treat `npm run verify:demo` as the local POC verification gate and skip browser automation.
 
 ## 6.8 Mobile Validation
 

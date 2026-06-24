@@ -66,6 +66,50 @@ describe("simulation and governance", () => {
     expect(auditFromGovernance(approved).action).toBe("Proposal approved");
   });
 
+  it("keeps canExecute false for non-eligible governance records", () => {
+    const { proposal } = makeProposal();
+
+    const rejected = createGovernanceRecord({
+      proposal,
+      decision: "rejected",
+      reviewerRole: "compliance",
+      comments: "Rejected due to policy risk.",
+      timestamp: "2026-05-16T11:00:00Z"
+    });
+    const changesRequested = createGovernanceRecord({
+      proposal,
+      decision: "changes_requested",
+      reviewerRole: "process_owner",
+      comments: "Revise escalation path.",
+      timestamp: "2026-05-16T11:15:00Z"
+    });
+    const wrongProposalId = {
+      ...createGovernanceRecord({
+        proposal,
+        decision: "approved",
+        reviewerRole: "compliance",
+        comments: "Approved.",
+        timestamp: "2026-05-16T11:30:00Z"
+      }),
+      proposalId: "proposal-other"
+    };
+    const staleProposalVersion = {
+      ...createGovernanceRecord({
+        proposal,
+        decision: "approved",
+        reviewerRole: "compliance",
+        comments: "Approved.",
+        timestamp: "2026-05-16T11:45:00Z"
+      }),
+      proposalVersion: proposal.version - 1
+    };
+
+    expect(canExecute([rejected], proposal)).toBe(false);
+    expect(canExecute([changesRequested], proposal)).toBe(false);
+    expect(canExecute([wrongProposalId], proposal)).toBe(false);
+    expect(canExecute([staleProposalVersion], proposal)).toBe(false);
+  });
+
   it("creates auditable agent events for non-governance actions", () => {
     const event = createAuditEvent({
       id: "audit-agent-analysis",

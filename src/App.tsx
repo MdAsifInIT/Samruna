@@ -42,6 +42,7 @@ import type {
   IngestionResult,
   LearningRecommendation,
   ScenarioId,
+  SimulationCaseStatus,
   SourceChannel
 } from "./domain/types";
 
@@ -73,6 +74,13 @@ interface WorkflowStageSnapshot {
   label: string;
   detail: string;
   state: WorkflowStageState;
+}
+
+interface SimulationCasePreviewItem {
+  caseId: string;
+  reason: string;
+  status: SimulationCaseStatus;
+  statusLabel: string;
 }
 
 function buildWorkflowStages(input: {
@@ -144,7 +152,7 @@ function buildWorkflowStages(input: {
       (stage.id === "generate-proposal" && input.proposalRequested) ||
       (stage.id === "review-governance" && input.proposalRequested) ||
       (stage.id === "approve-reject" && input.governanceDecision !== "pending") ||
-      (stage.id === "run-mock" && input.executionRun) ||
+      (stage.id === "run-mock" && input.executionRun && input.executionReady) ||
       (stage.id === "review-audit" && input.executionRun && input.learningRecommendation);
 
     const locked =
@@ -153,7 +161,7 @@ function buildWorkflowStages(input: {
       (stage.id === "generate-proposal" && !input.graphReady) ||
       (stage.id === "review-governance" && !input.proposalRequested) ||
       (stage.id === "approve-reject" && !input.proposalRequested) ||
-      (stage.id === "run-mock" && !input.proposalRequested) ||
+      (stage.id === "run-mock" && !input.executionReady) ||
       (stage.id === "review-audit" && !input.executionRun && !input.learningRecommendation);
 
     return {
@@ -191,13 +199,29 @@ function firstIncompleteIndex(
       case "approve-reject":
         return input.governanceDecision === "pending";
       case "run-mock":
-        return !input.executionRun;
+        return !(input.executionRun && input.executionReady);
       case "review-audit":
         return !(input.executionRun && input.learningRecommendation);
       default:
         return false;
     }
   });
+}
+
+function simulationCaseStatusLabel(status: SimulationCaseStatus): string {
+  if (status === "needs_human") {
+    return "Needs human";
+  }
+
+  if (status === "policy_risk") {
+    return "Policy risk";
+  }
+
+  if (status === "fail") {
+    return "Failed";
+  }
+
+  return "Pass";
 }
 
 export function App() {
@@ -263,10 +287,38 @@ export function App() {
         : undefined,
     [demoState.runRequested, executionReady, fixtures.newIncomingTrace, proposal]
   );
+  const executionGateLabel = executionReady
+    ? executionRun?.status ?? "Governance approved"
+    : demoState.governanceDecision === "rejected"
+      ? "Blocked by rejection"
+      : "Blocked until approval";
+  const executionGateCopy = executionReady
+    ? "Governance has opened the mock execution gate for this proposal version."
+    : demoState.governanceDecision === "rejected"
+      ? "This proposal was rejected, so mock execution stays blocked until a new review approves it."
+      : "This proposal is still awaiting approval, so mock execution stays blocked by governance.";
   const learningRecommendation = useMemo(
     () => (simulation && executionRun ? recommendLearningUpdate({ simulation, execution: executionRun }) : undefined),
     [executionRun, simulation]
   );
+  const simulationCasePreview = useMemo<SimulationCasePreviewItem[]>(() => {
+    if (!simulation) {
+      return [];
+    }
+
+    return ["needs_human", "policy_risk"].reduce<SimulationCasePreviewItem[]>((items, status) => {
+      const caseResult = simulation.caseResults.find((result) => result.status === status);
+
+      if (caseResult) {
+        items.push({
+          ...caseResult,
+          statusLabel: simulationCaseStatusLabel(caseResult.status)
+        });
+      }
+
+      return items;
+    }, []);
+  }, [simulation]);
   const selectedGraphNode = useMemo(() => {
     if (!graph) {
       return undefined;
@@ -390,7 +442,13 @@ export function App() {
       saveDemoState(imported);
       setImportError("");
     } catch (error) {
-      setImportError(error instanceof Error ? error.message : "Import failed");
+      setImportError(
+        error instanceof SyntaxError
+          ? "Import failed: the pasted run summary is not valid JSON."
+          : error instanceof Error
+            ? error.message
+            : "Import failed: the pasted run summary is not valid JSON."
+      );
     }
   };
 
@@ -465,7 +523,7 @@ export function App() {
           <button
             type="button"
             aria-label="Run safe mock execution"
-            title={executionReady ? "Run safe mock execution" : "Approve the proposal to unlock mock execution"}
+            title={executionReady ? "Run safe mock execution" : "Governance approval is required before mock execution can run"}
             disabled={!executionReady}
             onClick={() =>
               updateState((state) => ({
@@ -932,7 +990,7 @@ export function App() {
           <div className="graph-header">
             <div>
               <p className="eyebrow">Simulation and governance</p>
-              <h2>Historical replay before execution</h2>
+              <h2>Governance-gated replay before execution</h2>
             </div>
             <div className="governance-actions">
               <button
@@ -967,7 +1025,7 @@ export function App() {
           </div>
           <div className="governance-summary" data-decision={demoState.governanceDecision}>
             <div>
-              <span>Governance state</span>
+              <span>Governance gate</span>
               <strong>{governanceDecisionLabel}</strong>
             </div>
             <div>
@@ -998,12 +1056,21 @@ export function App() {
             </article>
             <article>
               <span>Execution gate</span>
-              <strong>{executionReady ? "Open" : "Blocked"}</strong>
+              <strong>{executionGateLabel}</strong>
             </article>
             <article>
               <span>Avoided delay</span>
               <strong>{simulation.avoidedDelayHours}h</strong>
             </article>
+          </div>
+          <div className="simulation-case-preview" aria-label="Case-level simulation preview">
+            {simulationCasePreview.map((caseResult) => (
+              <article key={caseResult.caseId}>
+                <span>{caseResult.caseId}</span>
+                <strong>{caseResult.statusLabel}</strong>
+                <p>{caseResult.reason}</p>
+              </article>
+            ))}
           </div>
           <div className="audit-log">
             <h3>Governance and security notes</h3>
@@ -1032,11 +1099,11 @@ export function App() {
           <div className="graph-header">
             <div>
               <p className="eyebrow">Execution layer</p>
-              <h2>Approved workflow runner</h2>
+              <h2>Governance-gated workflow runner</h2>
             </div>
-            <strong className="opportunity-score">{executionRun?.status ?? "ready"}</strong>
+            <strong className="opportunity-score">{executionGateLabel}</strong>
           </div>
-          <p className="execution-boundary">Mock-only execution path. No production system is mutated and no external write call is made.</p>
+          <p className="execution-boundary">{executionGateCopy}</p>
           <div className="execution-grid">
             <article>
               <h3>Incoming request</h3>
@@ -1053,7 +1120,15 @@ export function App() {
                   ))}
                 </ul>
               ) : (
-                <p>{executionRun ? executionRun.auditTrail[0] : executionReady ? "Run the approved mock workflow to generate tool calls." : "Approve the proposal first to unlock mock execution."}</p>
+                <p>
+                  {executionRun
+                    ? executionRun.auditTrail[0]
+                    : executionReady
+                      ? "Run the approved mock workflow to generate tool calls."
+                      : demoState.governanceDecision === "rejected"
+                        ? "Mock execution is blocked by rejection until the proposal is revised and approved."
+                        : "Mock execution is blocked until governance approval opens the gate."}
+                </p>
               )}
             </article>
             <article>
@@ -1125,7 +1200,7 @@ export function App() {
               onChange={(event) => setImportText(event.target.value)}
               placeholder="Paste a Work Graph Foundry run summary JSON to restore a demo state."
             />
-            {importError ? <p className="import-error">{importError}</p> : null}
+            {importError ? <p className="import-error" role="alert">{importError}</p> : null}
           </article>
         </div>
       </section>

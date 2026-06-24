@@ -68,10 +68,7 @@ Status: implemented in this continuation pass. Keep this file as the short recor
 Run before handoff:
 
 ```powershell
-npm run typecheck
-npm test
-npm run build
-npm audit --audit-level=low
+npm run verify:demo
 git status --short
 ```
 
@@ -82,6 +79,7 @@ Expected outcome:
 - production build passes
 - audit has no low-or-higher vulnerabilities
 - only intentional source, docs, script, and test files are changed
+- browser e2e and Playwright checks remain deferred when browser access is unavailable
 
 ## 8.5 Guardrails
 
