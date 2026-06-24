@@ -2,7 +2,7 @@
 
 ## 2.1 Architecture Summary
 
-Work Graph Foundry is implemented as a local-first browser MVP. React renders the dashboard, while TypeScript domain modules perform the product logic. There is no backend in the current MVP because the demo uses local fixtures, browser-local persistence, safe mock execution, and deterministic provider behavior.
+Work Graph Foundry is implemented as a local-first browser MVP. React renders a menu-based operations console, while TypeScript domain modules perform the product logic. There is no backend in the current MVP because the demo uses local fixtures, browser-local persistence, safe mock execution, and deterministic provider behavior.
 
 This architecture keeps the solution easy to run, easy to test, and easy for a new developer or agent to inspect.
 
@@ -28,7 +28,7 @@ flowchart LR
   L --> M["Learning recommendation"]
   M --> P
   N["AI provider boundary"] --> H
-  O["React dashboard"] --> B
+  O["React menu console"] --> B
   O --> C
   O --> E
   O --> F
@@ -41,9 +41,22 @@ flowchart LR
 
 ## 2.3 Source Components
 
-### 2.3.1 Dashboard
+### 2.3.1 Frontend Shell
 
-`src/App.tsx` orchestrates the demo state and renders the product panels.
+`src/App.tsx` is a thin composition root. It creates the demo controller, owns the local active view state, and renders `src/app/AppShell.tsx` plus the selected feature view.
+
+The frontend is split into:
+
+- `src/app/useWorkGraphDemoController.ts`: demo state, derived workflow data, persistence snapshot, and workflow actions.
+- `src/app/navigation.ts`: menu metadata and the `ViewId` union.
+- `src/app/AppShell.tsx`: sidebar navigation, mobile view selector, top command bar, scenario selector, workflow controls, and main content region.
+- `src/features/overview/OverviewView.tsx`: Command Center.
+- `src/features/observe/ObserveView.tsx`: intake, source channels, validation, ingestion, and normalized evidence.
+- `src/features/analyze/AnalyzeView.tsx`: graph visualization, graph details, patterns, bottlenecks, and opportunity signals.
+- `src/features/plan/PlanView.tsx`: governed proposal, versions, required and forbidden data, eligibility rules, actions, assumptions, and status.
+- `src/features/govern/GovernView.tsx`: simulation, policy context, approval or rejection, and gate state.
+- `src/features/execute/ExecuteView.tsx`: incoming request, mock tool calls, execution result, audit trail, and learning loop.
+- `src/features/review/ReviewView.tsx`: audit events, export, import, and recovery controls.
 
 Current React state:
 
@@ -54,7 +67,7 @@ Current React state:
 - `governanceDecision`: pending, approved, rejected, or changes requested.
 - `runRequested`: whether the user has attempted safe mock execution.
 
-Derived data is calculated from these states and persisted to local storage with generated graph, proposal, simulation, governance, execution, recommendation, and audit snapshots. The dashboard intentionally keeps the flow visible instead of hiding it behind a chat interface.
+Derived data is calculated from these states and persisted to local storage with generated graph, proposal, simulation, governance, execution, recommendation, and audit snapshots. The menu shell keeps the flow visible without turning the product into a single overloaded dashboard.
 
 ### 2.3.2 Fixture Loading
 
@@ -222,24 +235,16 @@ This approach keeps behavior deterministic for demos and tests while preserving 
 
 ## 2.6 UI Architecture
 
-The dashboard includes:
+The menu-based console includes:
 
-- demo controls
-- scenario selector
-- operator checklist
-- scripted demo path
-- system status metrics
-- ingestion summary
-- raw-to-normalized evidence
-- work graph
-- pattern detection
-- bottleneck insight
-- proposal panel
-- simulation panel
-- governance approval
-- execution and learning loop
-- persisted audit trail
-- run summary import/export
+- global demo controls and scenario selector in the shell command bar
+- Command Center overview with operator checklist, scripted demo path, readiness state, and operational metrics
+- Observe view for scenario evidence, channel counts, fixture validation, ingestion summary, and normalized work item details
+- Analyze view for the work graph, node inspection, patterns, bottlenecks, and opportunity/risk signals
+- Plan view for proposal generation, proposal versions, rules, assumptions, actions, and proposal status
+- Govern view for simulation, policy checks, rationale, approval/rejection, and execution gate state
+- Execute view for incoming request replay, mock tool calls, execution result, and learning recommendation
+- Review view for audit trail, run summary export/import, localStorage recovery, and reset verification
 
 The layout is responsive and avoids marketing-style hero content.
 

@@ -24,7 +24,7 @@ Browser e2e verification:
 npm run test:e2e
 ```
 
-That command starts the Vite app through Playwright, runs deterministic local Chromium tests, and verifies both golden scenarios plus localStorage reload and reset recovery.
+That command starts the Vite app through Playwright, runs deterministic local Chromium tests, and verifies both golden scenarios plus menu navigation, localStorage reload, reset recovery, export/import, rejection, and mobile overflow.
 
 Production-preview fallback:
 
@@ -46,19 +46,24 @@ All scenario data is synthetic and stored in `src/fixtures/demoData.ts`.
 
 1. Select `IT access requests`.
 2. Click `Load Scenario`.
-3. Click `Analyze`.
-4. Inspect evidence, graph, patterns, and bottleneck.
-5. Click `Generate Proposal`.
-6. Review required data, forbidden data, assumptions, policy checks, escalations, simulation, and governance notes.
-7. Click `Approve` or `Reject`.
-8. Confirm the approval gate state changes.
-9. Click `Run Mock` after approval.
-10. Confirm mock tool calls, audit trail, and learning recommendation.
-11. Click `Export Summary`.
-12. Click `Reset`.
-13. Switch to `Procurement intake` and repeat load, analyze, inspect graph, and proposal generation.
+3. Confirm Observe shows loaded source counts and channel evidence.
+4. Click `Analyze`.
+5. Inspect Analyze for graph nodes, patterns, bottlenecks, and opportunity/risk signals.
+6. Open Observe if normalized evidence needs to be shown.
+7. Click `Generate Proposal`.
+8. Review Plan for required data, forbidden data, assumptions, eligibility rules, policy checks, escalations, actions, proposal status, and versions.
+9. Open Govern to review simulation, governance notes, approval state, policy context, and execution gate state.
+10. Click `Approve` or `Reject`.
+11. Confirm the approval gate state changes.
+12. Click `Run Mock` after approval.
+13. Confirm Execute shows the incoming request, mock tool calls, execution audit trail, and learning recommendation.
+14. Open Review and click `Export Summary`.
+15. Confirm the exported run summary JSON appears.
+16. Click `Reset`.
+17. Confirm generated output clears from Analyze, Plan, Execute, and Review.
+18. Switch to `Procurement intake` and repeat load, analyze, inspect graph, and proposal generation.
 
-The Playwright e2e suite exercises this path for both scenarios with deterministic demo data. On failure, Playwright captures screenshots, videos, and traces for debugging; do not commit those artifacts unless they are intentionally attached to an investigation.
+The Playwright e2e suite exercises this path for both scenarios with deterministic demo data and the menu-based shell. On failure, Playwright captures screenshots, videos, and traces for debugging; do not commit those artifacts unless they are intentionally attached to an investigation.
 
 ## 10.4 Reset And Seed
 
@@ -84,7 +89,7 @@ The CLI helper prints deterministic JSON or a browser-console localStorage snipp
 
 If you do have browser access, pair the CLI helpers with `npm run demo:dev` or `npm run preview` to confirm the seeded state in the UI.
 
-The e2e suite also validates browser recovery behavior by reloading persisted localStorage state, then resetting the app and confirming generated run state stays cleared after another reload.
+The e2e suite also validates browser recovery behavior by reloading persisted localStorage state, opening the relevant menu views, then resetting the app and confirming generated run state stays cleared after another reload.
 
 ## 10.5 Import And Export
 
@@ -119,8 +124,9 @@ If the UI looks stale:
 1. Click `Reset`.
 2. Refresh the browser.
 3. Restart `npm run demo:dev`.
-4. Use `npm run build` and `npm run preview` as a fallback.
-5. If localStorage still appears stale, run the Playwright e2e suite to validate reload and reset recovery.
+4. Use the Command Center menu to confirm the current scenario state, then open Analyze, Plan, Execute, and Review to check whether generated artifacts remain.
+5. Use `npm run build` and `npm run preview` as a fallback.
+6. If localStorage still appears stale, run the Playwright e2e suite to validate reload and reset recovery.
 
 If tests or build fail, run:
 

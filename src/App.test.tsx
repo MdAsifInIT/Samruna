@@ -8,10 +8,17 @@ describe("App", () => {
     window.localStorage.clear();
   });
 
-  it("renders the dashboard-first foundation shell", () => {
+  it("renders the menu-based command center shell", () => {
     render(<App />);
 
     expect(screen.getByRole("heading", { name: /Enterprise Work Intelligence Console/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Command Center" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("button", { name: "Observe" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Analyze" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Plan" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Govern" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Execute" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Review" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Load scenario/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Reset seeded demo state/i })).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: /Select demo scenario/i })).toBeInTheDocument();
@@ -47,15 +54,18 @@ describe("App", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Analyze workflow/i }));
 
+    expect(screen.getByRole("heading", { name: /IT access request flow/i })).toBeInTheDocument();
+    expect(screen.getAllByText("Manager approval").length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { name: /Repeated workflows and automation opportunities/i })).toBeInTheDocument();
+    expect(screen.getByText(/Score drivers/i)).toBeInTheDocument();
+
+    openView("Observe");
     expect(screen.getAllByText("Normalized items")[0]).toBeInTheDocument();
     expect(screen.getByText(/Raw trace to normalized work item/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Maya Chen" })).toBeInTheDocument();
     expect(screen.getByText(/standard access/i)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /IT access request flow/i })).toBeInTheDocument();
-    expect(screen.getAllByText("Manager approval").length).toBeGreaterThan(0);
-    expect(screen.getByRole("heading", { name: /Repeated workflows and automation opportunities/i })).toBeInTheDocument();
-    expect(screen.getAllByText(/Manager approval delay/i).length).toBeGreaterThan(0);
 
+    openView("Analyze");
     fireEvent.click(screen.getAllByRole("button", { name: /Exception review/i })[0]);
     expect(screen.getByRole("heading", { name: /Exception review/i })).toBeInTheDocument();
     expect(screen.getByText(/Audit relevance/i)).toBeInTheDocument();
@@ -68,11 +78,12 @@ describe("App", () => {
 
     expect(screen.getByRole("heading", { name: /Governed automation proposal/i })).toBeInTheDocument();
     expect(screen.getByText(/Write immutable audit event/i)).toBeInTheDocument();
+    openView("Govern");
     expect(screen.getByRole("heading", { name: /Governance-gated replay before execution/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Run safe mock execution/i })).toBeDisabled();
     expect(screen.getAllByText("Blocked").length).toBeGreaterThan(0);
 
-    fireEvent.click(screen.getByRole("button", { name: /Approve/i }));
+    fireEvent.click(screen.getAllByRole("button", { name: /Approve/i })[0]);
 
     expect(screen.getAllByText("Open").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: /Run safe mock execution/i })).not.toBeDisabled();
@@ -82,10 +93,12 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: /Governance-gated workflow runner/i })).toBeInTheDocument();
     expect(screen.getByText(/mock task IT-2001 created/i)).toBeInTheDocument();
     expect(screen.getAllByText(/human-review lane/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Mock execution run/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Execution audit trail/i })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /Export Summary/i }));
+    openView("Review");
+    expect(screen.getByText(/Mock execution run/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole("button", { name: /Export Summary/i })[0]);
 
     expect((screen.getByRole("textbox", { name: "Run summary JSON" }) as HTMLTextAreaElement).value).toContain(
       "it-access"
@@ -94,6 +107,7 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: /Reset seeded demo state/i }));
 
     expect(screen.queryByRole("heading", { name: /Governance-gated workflow runner/i })).not.toBeInTheDocument();
+    openView("Analyze");
     expect(screen.queryByRole("heading", { name: /IT access request flow/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /Repeated workflows and automation opportunities/i })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Run safe mock execution/i })).toBeDisabled();
@@ -107,7 +121,7 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: /Generate automation proposal/i }));
     fireEvent.click(screen.getByRole("button", { name: /Reject/i }));
 
-    expect(screen.getAllByText(/Proposal rejected/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Rejected/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: /Run safe mock execution/i })).toBeDisabled();
     expect(screen.getAllByText(/Blocked/i).length).toBeGreaterThan(0);
   });
@@ -134,9 +148,11 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: /Load scenario/i }));
     fireEvent.click(screen.getByRole("button", { name: /Analyze workflow/i }));
 
-    expect(screen.getByRole("heading", { name: workflowHeading })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: graphTitle })).toBeInTheDocument();
 
+    openView("Command Center");
+    expect(screen.getByRole("heading", { name: workflowHeading })).toBeInTheDocument();
+    openView("Analyze");
     fireEvent.click(screen.getAllByRole("button", { name: /Manager approval/i })[0]);
     expect(screen.getByRole("heading", { name: /Manager approval/i })).toBeInTheDocument();
     expect(screen.getByText(/Audit relevance:/i)).toBeInTheDocument();
@@ -191,6 +207,7 @@ describe("App", () => {
   it("shows a safe error for malformed import summaries", () => {
     render(<App />);
 
+    openView("Review");
     fireEvent.change(screen.getByRole("textbox", { name: /Import run summary JSON/i }), {
       target: {
         value: '{"exportedAt":'
@@ -202,3 +219,7 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: /Enterprise Work Intelligence Console/i })).toBeInTheDocument();
   });
 });
+
+function openView(name: string) {
+  fireEvent.click(screen.getByRole("button", { name }));
+}
