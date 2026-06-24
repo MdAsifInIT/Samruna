@@ -21,7 +21,7 @@ export function ExecuteView({ controller }: ExecuteViewProps) {
     <>
       <section className="view-heading">
         <p className="eyebrow">Execute</p>
-        <h2>Mock execution and workflow operations</h2>
+        <h2>Simulated execution and workflow operations</h2>
       </section>
 
       {proposal ? (
@@ -40,7 +40,7 @@ export function ExecuteView({ controller }: ExecuteViewProps) {
               <p>{fixtures.newIncomingTrace.body}</p>
             </article>
             <article>
-              <h3>Mock tool calls</h3>
+              <h3>Simulated tool calls</h3>
               {executionRun?.mockToolCalls.length ? (
                 <ul>
                   {executionRun.mockToolCalls.map((call) => (
@@ -54,10 +54,10 @@ export function ExecuteView({ controller }: ExecuteViewProps) {
                   {executionRun
                     ? executionRun.auditTrail[0]
                     : executionReady
-                      ? "Run the approved mock workflow to generate tool calls."
+                      ? "Run the approved simulation to generate tool calls."
                       : demoState.governanceDecision === "rejected"
-                        ? "Mock execution is blocked by rejection until the proposal is revised and approved."
-                        : "Mock execution is blocked until governance approval opens the gate."}
+                        ? "Simulated execution is blocked by rejection until the proposal is revised and approved."
+                        : "Simulated execution is blocked until governance approval opens the gate."}
                 </p>
               )}
             </article>
@@ -66,7 +66,7 @@ export function ExecuteView({ controller }: ExecuteViewProps) {
               <p>
                 {learningRecommendation
                   ? `${learningRecommendation.recommendation} ${learningRecommendation.expectedImpact}`
-                  : "Learning recommendation appears after a mock execution run."}
+                  : "Learning recommendation appears after a simulated execution run."}
               </p>
             </article>
           </div>
@@ -82,7 +82,7 @@ export function ExecuteView({ controller }: ExecuteViewProps) {
           ) : null}
         </section>
       ) : (
-        <EmptyState title="No execution plan" action="Generate and approve a proposal before running mock execution." />
+        <EmptyState title="No execution plan" action="Generate and approve a proposal before running the simulation." />
       )}
     </>
   );

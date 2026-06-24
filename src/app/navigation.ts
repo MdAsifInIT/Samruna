@@ -22,7 +22,7 @@ export const navigationItems: NavigationItem[] = [
   {
     id: "overview",
     label: "Command Center",
-    purpose: "Executive and operator overview",
+    purpose: "Executive and operations overview",
     icon: LayoutDashboard
   },
   {
@@ -52,7 +52,7 @@ export const navigationItems: NavigationItem[] = [
   {
     id: "execute",
     label: "Execute",
-    purpose: "Mock execution and workflow operations",
+    purpose: "Simulated execution and workflow operations",
     icon: Play
   },
   {

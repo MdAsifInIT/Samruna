@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const port = 4174;
+const browserExecutablePath = process.env.E2E_BROWSER_EXECUTABLE;
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -19,7 +20,10 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] }
+      use: {
+        ...devices["Desktop Chrome"],
+        launchOptions: browserExecutablePath ? { executablePath: browserExecutablePath } : undefined
+      }
     }
   ],
   webServer: {

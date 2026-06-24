@@ -1,11 +1,30 @@
-import { Activity, CheckCircle2, GitBranch, ListChecks, ShieldAlert, ShieldCheck, Sparkles } from "lucide-react";
-import { MetricCard } from "../../components/shared/MetricCard";
+import { ListChecks, ShieldAlert } from "lucide-react";
 import { StatusPill } from "../../components/shared/StatusPill";
 import type { WorkGraphDemoController } from "../../app/useWorkGraphDemoController";
 
 interface OverviewViewProps {
   controller: WorkGraphDemoController;
 }
+
+const activeSafetyBoundaries = [
+  "Deterministic simulation mode active",
+  "Synthetic data only",
+  "No external writes",
+  "No browser-side secrets",
+  "Simulation before execution",
+  "Approval gate required",
+  "Audit trail enabled"
+];
+
+const productionPathRequirements = [
+  "Backend",
+  "DB",
+  "Auth/RBAC",
+  "Connectors",
+  "Server-side OpenAI",
+  "Immutable audit",
+  "Tool allowlists"
+];
 
 export function OverviewView({ controller }: OverviewViewProps) {
   const {
@@ -19,29 +38,43 @@ export function OverviewView({ controller }: OverviewViewProps) {
     validation,
     workflowStages
   } = controller;
+  const operatingCards = foundationPanels.filter((panel) =>
+    ["Work Pattern Clusters", "Work Graph", "Governance", "Persistence"].includes(panel.title)
+  );
 
   return (
     <>
-      <section className="status-grid" aria-label="Operational summary">
-        <MetricCard icon={ListChecks} label="Selected scenario" value={scenario.label} />
-        <MetricCard icon={GitBranch} label="Demo path" value={scenario.workflowName} />
-        <MetricCard icon={GitBranch} label="Current stage" value={currentStage?.label ?? "Load Scenario"} />
-        <MetricCard icon={Sparkles} label="AI mode" value={aiProvider.status.label} />
-        <MetricCard icon={ShieldCheck} label="Governance" value={governanceDecisionLabel} />
-        <MetricCard icon={ShieldAlert} label="Mock safety boundary" value="Mock-only, no external writes" />
-      </section>
-
-      <section className="operator-console" aria-label="Scenario operator console">
-        <div>
-          <p className="eyebrow">Selected workflow</p>
+      <section className="command-center" aria-label="Operational summary">
+        <div className="scenario-summary">
+          <p className="eyebrow">Current workflow</p>
           <h2>{scenario.workflowName}</h2>
           <p>{scenario.description}</p>
           <strong>{scenario.operatorGoal}</strong>
+          <div className="scenario-facts" aria-label="Workflow context">
+            <span>{scenario.label}</span>
+            <span>{demoState.sampleLoaded ? "Loaded" : "Baseline"}</span>
+            <span>{aiProvider.status.label}</span>
+            <span>{governanceDecisionLabel}</span>
+          </div>
         </div>
+
+        <div className="next-action-card" aria-label="Next best action">
+          <div>
+            <p className="eyebrow">Next best action</p>
+            <h2>{currentStage?.label ?? "Load Workflow"}</h2>
+            <p>{currentStage?.detail ?? "Load the selected workflow to begin."}</p>
+          </div>
+          <StatusPill tone={executionReady ? "good" : demoState.governanceDecision === "rejected" ? "blocked" : "warn"}>
+            {executionReady ? "Ready for simulation" : governanceDecisionLabel}
+          </StatusPill>
+        </div>
+      </section>
+
+      <section className="operator-console" aria-label="Workflow operations console">
         <div className="operator-card">
           <div className="panel-heading">
             <ListChecks size={18} />
-            <h2>Operator path</h2>
+            <h2>Workflow sequence</h2>
           </div>
           <ol>
             {workflowStages.map((stage) => (
@@ -77,46 +110,37 @@ export function OverviewView({ controller }: OverviewViewProps) {
             </div>
             <div>
               <dt>Safety</dt>
-              <dd>Mock tools only, approval gated, no external writes.</dd>
+              <dd>Simulated tools only, approval gated, no external writes.</dd>
             </div>
           </dl>
         </div>
       </section>
 
-      <section className="demo-strip" aria-label="Scripted demo path">
-        {workflowStages.map((stage) => (
-          <span
-            key={stage.id}
-            data-active={stage.state === "complete"}
-            data-current={stage.state === "current"}
-            data-locked={stage.state === "locked"}
-            title={stage.detail}
-          >
-            {stage.index} {stage.label}
-          </span>
-        ))}
-      </section>
-
-      <section className="status-grid" aria-label="System status">
-        <MetricCard icon={Activity} label="Scenario state" value={demoState.sampleLoaded ? "Loaded" : "Seeded"} />
-        <MetricCard icon={Sparkles} label="AI mode" value={aiProvider.status.label} />
-        <MetricCard icon={ShieldCheck} label="Execution" value={executionReady ? "Approved gate" : "Governed gate"} />
-        <MetricCard icon={CheckCircle2} label="Fixture validation" value={validation.valid ? "Valid" : "Needs review"} />
-      </section>
-
-      <section className="quick-action-panel" aria-label="Current readiness state">
+      <section className="readiness-panel" aria-label="Production readiness and trust safety">
         <div>
-          <p className="eyebrow">Quick next action</p>
-          <h2>{currentStage?.label ?? "Load Scenario"}</h2>
-          <p>{currentStage?.detail ?? "Load the selected scenario to begin."}</p>
+          <p className="eyebrow">Production readiness</p>
+          <h2>Trust &amp; Safety boundary</h2>
+          <p>
+            Evaluation guardrails are visible and enforced in the Command Center; this is not presented as
+            full enterprise production.
+          </p>
         </div>
-        <StatusPill tone={executionReady ? "good" : demoState.governanceDecision === "rejected" ? "blocked" : "warn"}>
-          {executionReady ? "Ready to run mock" : governanceDecisionLabel}
-        </StatusPill>
+        <div>
+          <h3>Active in this environment</h3>
+          <ul>
+            {activeSafetyBoundaries.map((boundary) => (
+              <li key={boundary}>{boundary}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h3>Production path still requires</h3>
+          <p>{productionPathRequirements.join(", ")}.</p>
+        </div>
       </section>
 
       <section className="dashboard-grid" aria-label="Operating dashboard">
-        {foundationPanels.map((panel) => {
+        {operatingCards.map((panel) => {
           const Icon = panel.icon;
 
           return (
@@ -131,6 +155,17 @@ export function OverviewView({ controller }: OverviewViewProps) {
           );
         })}
       </section>
+
+      {!validation.valid && (
+        <section className="quick-action-panel" aria-label="Fixture validation">
+          <div>
+            <p className="eyebrow">Fixture validation</p>
+            <h2>Needs review</h2>
+            <p>Fixture validation reported issues. Review baseline data before relying on the workflow sequence.</p>
+          </div>
+          <StatusPill tone="blocked">Needs review</StatusPill>
+        </section>
+      )}
     </>
   );
 }

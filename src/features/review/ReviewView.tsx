@@ -17,10 +17,10 @@ export function ReviewView({ controller }: ReviewViewProps) {
       </section>
 
       <SectionPanel
-        ariaLabel="Audit trail and run summary"
+        ariaLabel="Audit trail and execution summary"
         className="audit-panel"
         eyebrow="Audit trail"
-        title="Persisted demo state and reviewable agent behavior"
+        title="Persisted workflow state and reviewable agent behavior"
         actions={
           <div className="governance-actions">
             <button className="export-button" type="button" onClick={actions.exportSummary}>
@@ -44,25 +44,25 @@ export function ReviewView({ controller }: ReviewViewProps) {
                 </p>
               ))
             ) : (
-              <p>No run events yet. Load the scenario to begin the audit trail.</p>
+              <p>No execution events recorded. Load the workflow to begin the audit trail.</p>
             )}
           </article>
           <article>
-            <h3>Run summary export</h3>
+            <h3>Execution summary export</h3>
             <textarea
-              aria-label="Run summary JSON"
+              aria-label="Execution summary JSON"
               value={exportText}
               onChange={(event) => actions.setExportText(event.target.value)}
-              placeholder="Exported run summary JSON appears here."
+              placeholder="Exported execution summary JSON appears here."
             />
           </article>
           <article>
             <h3>Import summary</h3>
             <textarea
-              aria-label="Import run summary JSON"
+              aria-label="Import execution summary JSON"
               value={importText}
               onChange={(event) => actions.setImportText(event.target.value)}
-              placeholder="Paste a Work Graph Foundry run summary JSON to restore a demo state."
+              placeholder="Provide a Work Graph Foundry execution summary JSON to restore workflow state."
             />
             {importError ? (
               <p className="import-error" role="alert">

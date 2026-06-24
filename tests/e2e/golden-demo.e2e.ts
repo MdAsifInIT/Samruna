@@ -55,14 +55,14 @@ const scenarios: ScenarioExpectation[] = [
     label: "IT access requests",
     graphTitle: "IT access request flow",
     patternLabel: "Standard application access",
-    mockOutput: "mock task IT-2001 created"
+    mockOutput: "simulated task IT-2001 created"
   },
   {
     id: "procurement-intake",
     label: "Procurement intake",
     graphTitle: "Procurement intake flow",
     patternLabel: "Software procurement intake",
-    mockOutput: "mock task PR-4001 created"
+    mockOutput: "simulated task PR-4001 created"
   }
 ];
 
@@ -85,7 +85,7 @@ test("loads the baseline screen without browser page or console errors", async (
 });
 
 for (const scenario of scenarios) {
-  test(`runs the ${scenario.id} golden demo path and reset clears generated output`, async ({ page }) => {
+  test(`runs the ${scenario.id} workflow demo path and reset clears generated output`, async ({ page }) => {
     await runGoldenPath(page, scenario);
 
     const exported = await exportSummary(page);
@@ -98,17 +98,17 @@ for (const scenario of scenarios) {
   });
 }
 
-test("keeps mock execution blocked after governance rejects a proposal", async ({ page }) => {
+test("keeps simulated execution blocked after governance rejects a proposal", async ({ page }) => {
   const scenario = scenarios[0];
 
   await generateProposal(page, scenario);
-  await page.getByLabel("Demo controls").getByRole("button", { name: "Reject" }).click();
+  await page.getByLabel("Workflow controls").getByRole("button", { name: "Reject" }).click();
 
   await expect(page.getByText("Rejected").first()).toBeVisible();
   await expect(page.getByText("Blocked by rejection").first()).toBeVisible();
   await openView(page, "Execute");
-  await expect(page.getByText("Mock execution is blocked by rejection until the proposal is revised and approved.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Run safe mock execution" })).toBeDisabled();
+  await expect(page.getByText("Simulated execution is blocked by rejection until the proposal is revised and approved.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Run simulation" })).toBeDisabled();
   await expect(page.getByText(scenario.mockOutput)).toHaveCount(0);
 
   await waitForStoredDemoStateField(page, "governanceDecision", "rejected");
@@ -139,7 +139,7 @@ test("recovers a generated run after reload and restores seeded localStorage aft
   await openView(page, "Execute");
   await expect(page.getByRole("heading", { name: "Governance-gated workflow runner" })).toBeVisible();
   await expect(page.getByText(scenario.mockOutput)).toBeVisible();
-  await expect(page.getByRole("button", { name: "Run safe mock execution" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Run simulation" })).toBeEnabled();
 
   await resetDemo(page, scenario);
 
@@ -164,7 +164,7 @@ test("recovers a generated run after reload and restores seeded localStorage aft
   await openView(page, "Execute");
   await expect(page.getByRole("heading", { name: "Governance-gated workflow runner" })).toHaveCount(0);
   await expect(page.getByText(scenario.mockOutput)).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Run safe mock execution" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Run simulation" })).toBeDisabled();
 });
 
 test("restores a generated run from an exported summary import round trip", async ({ page }) => {
@@ -173,12 +173,12 @@ test("restores a generated run from an exported summary import round trip", asyn
   await runGoldenPath(page, exportedScenario);
   const exportedSummaryText = await exportSummaryText(page);
 
-  await page.getByLabel("Select demo scenario").selectOption(scenarios[0].id);
+  await page.getByLabel("Select workflow").selectOption(scenarios[0].id);
   await expect(page.getByLabel("Operational summary").getByText(scenarios[0].label, { exact: true })).toBeVisible();
   await expect(page.getByText(exportedScenario.mockOutput)).toHaveCount(0);
 
   await openView(page, "Review");
-  await page.getByRole("textbox", { name: "Import run summary JSON", exact: true }).fill(exportedSummaryText);
+  await page.getByRole("textbox", { name: "Import execution summary JSON", exact: true }).fill(exportedSummaryText);
   await page.getByRole("button", { name: "Import Summary" }).click();
 
   await openView(page, "Command Center");
@@ -205,7 +205,7 @@ test("recovers to seeded state when persisted localStorage is malformed", async 
   await openView(page, "Analyze");
   await expect(page.getByRole("heading", { name: scenarios[0].graphTitle })).toHaveCount(0);
   await openView(page, "Execute");
-  await expect(page.getByRole("button", { name: "Run safe mock execution" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Run simulation" })).toBeDisabled();
 
   await waitForStoredDemoStateField(page, "selectedScenarioId", scenarios[0].id);
   const recoveredState = await readStoredDemoState(page);
@@ -264,20 +264,20 @@ test("does not create horizontal overflow at 390px mobile width", async ({ page 
 async function runGoldenPath(page: Page, scenario: ScenarioExpectation) {
   await generateProposal(page, scenario);
 
-  await page.getByLabel("Demo controls").getByRole("button", { name: "Approve" }).click();
-  await expect(page.getByText("Open").first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Run safe mock execution" })).toBeEnabled();
+  await page.getByLabel("Workflow controls").getByRole("button", { name: "Approve" }).click();
+  await expect(page.getByText("Available").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Run simulation" })).toBeEnabled();
 
-  await page.getByRole("button", { name: "Run safe mock execution" }).click();
+  await page.getByRole("button", { name: "Run simulation" }).click();
   await expect(page.getByRole("heading", { name: "Governance-gated workflow runner" })).toBeVisible();
   await expect(page.getByText(scenario.mockOutput)).toBeVisible();
 }
 
 async function generateProposal(page: Page, scenario: ScenarioExpectation) {
-  await page.getByLabel("Select demo scenario").selectOption(scenario.id);
+  await page.getByLabel("Select workflow").selectOption(scenario.id);
   await expect(page.getByLabel("Operational summary").getByText(scenario.label, { exact: true })).toBeVisible();
 
-  await page.getByRole("button", { name: "Load scenario" }).click();
+  await page.getByRole("button", { name: "Load workflow" }).click();
   await expect(page.getByText("Raw traces")).toBeVisible();
   await expect(page.getByText("Cases")).toBeVisible();
 
@@ -288,8 +288,8 @@ async function generateProposal(page: Page, scenario: ScenarioExpectation) {
   await page.getByRole("button", { name: "Generate automation proposal" }).click();
   await expect(page.getByRole("heading", { name: "Governed automation proposal" })).toBeVisible();
   await openView(page, "Govern");
-  await expect(page.getByRole("heading", { name: "Governance-gated replay before execution" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Run safe mock execution" })).toBeDisabled();
+  await expect(page.getByRole("heading", { name: "Governance review before execution" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Run simulation" })).toBeDisabled();
   await expect(page.getByText("Blocked").first()).toBeVisible();
 }
 
@@ -305,16 +305,16 @@ async function exportSummary(page: Page) {
 }
 
 async function exportSummaryText(page: Page) {
-  await page.getByLabel("Demo controls").getByRole("button", { name: "Export Summary" }).click();
+  await page.getByLabel("Workflow controls").getByRole("button", { name: "Export Summary" }).click();
 
-  const runSummary = page.getByRole("textbox", { name: "Run summary JSON", exact: true });
+  const runSummary = page.getByRole("textbox", { name: "Execution summary JSON", exact: true });
   await expect(runSummary).not.toHaveValue("");
 
   return runSummary.inputValue();
 }
 
 async function resetDemo(page: Page, scenario: ScenarioExpectation) {
-  await page.getByLabel("Demo controls").getByRole("button", { name: "Reset seeded demo state" }).click();
+  await page.getByLabel("Workflow controls").getByRole("button", { name: "Reset workflow state" }).click();
 
   await expect(page.getByLabel("Operational summary").getByText(scenario.label, { exact: true })).toBeVisible();
   await openView(page, "Analyze");
@@ -324,7 +324,7 @@ async function resetDemo(page: Page, scenario: ScenarioExpectation) {
   await openView(page, "Execute");
   await expect(page.getByRole("heading", { name: "Governance-gated workflow runner" })).toHaveCount(0);
   await expect(page.getByText(scenario.mockOutput)).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Run safe mock execution" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Run simulation" })).toBeDisabled();
 }
 
 async function openView(page: Page, name: string) {

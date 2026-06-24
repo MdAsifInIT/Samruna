@@ -18,7 +18,7 @@ export function ObserveView({ controller }: ObserveViewProps) {
 
       {demoState.sampleLoaded ? (
         <>
-          <section className="ingestion-summary" aria-label="Loaded scenario summary">
+          <section className="ingestion-summary" aria-label="Loaded workflow summary">
             <div>
               <span>Raw traces</span>
               <strong>{validation.summary.rawTraceCount}</strong>
@@ -37,7 +37,7 @@ export function ObserveView({ controller }: ObserveViewProps) {
             </div>
           </section>
 
-          <section className="channel-strip" aria-label="Synthetic source channels">
+          <section className="channel-strip" aria-label="Sample source channels">
             {Object.entries(validation.summary.channelCounts).map(([channel, count]) => (
               <span key={channel}>
                 {channelLabels[channel as SourceChannel]}: <strong>{count}</strong>
@@ -46,7 +46,7 @@ export function ObserveView({ controller }: ObserveViewProps) {
           </section>
         </>
       ) : (
-        <EmptyState title="No scenario loaded" action="Load Scenario to inspect source channels and fixture validation." />
+        <EmptyState title="No workflow loaded" action="Load Workflow to inspect source channels and fixture validation." />
       )}
 
       {ingestion ? (
@@ -69,7 +69,7 @@ export function ObserveView({ controller }: ObserveViewProps) {
           </div>
         </section>
       ) : demoState.sampleLoaded ? (
-        <EmptyState title="Evidence loaded" action="Analyze the workflow to normalize source traces into work items." />
+        <EmptyState title="Evidence available" action="Analyze the workflow to normalize source traces into work items." />
       ) : null}
 
       {sampleItem ? (

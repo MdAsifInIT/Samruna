@@ -587,7 +587,7 @@ function makeProcurementTrace(seed: ProcurementCaseSeed, channel: SourceChannel,
     approval_log: `${seed.manager} approved request ${ticketId} for ${seed.requester}.`,
     system_action:
       seed.outcome === "approved"
-        ? `Procurement created a mock purchase workflow in ${seed.system} and wrote audit log for ${ticketId}.`
+        ? `Procurement created a simulated purchase workflow in ${seed.system} and wrote audit log for ${ticketId}.`
         : `Procurement routed ${ticketId} for manual review before vendor or purchase order action.`
   };
 
@@ -673,7 +673,7 @@ export const demoScenarios: DemoScenario[] = [
     operatorGoal: "Show how the system discovers manager approval delay and proposes governed access automation.",
     graphTitle: "IT access request flow",
     topSystemLabel: "Top application",
-    syntheticDataNotice: "All access request names, tickets, approvals, and systems are synthetic demo fixtures.",
+    syntheticDataNotice: "All access request names, tickets, approvals, and systems are synthetic evaluation fixtures.",
     requiredOrgData: [
       "workflow metadata",
       "task events",
@@ -700,7 +700,7 @@ export const demoScenarios: DemoScenario[] = [
     operatorGoal: "Show how repeated low-risk software procurement can be accelerated while vendor and invoice exceptions stay human-reviewed.",
     graphTitle: "Procurement intake flow",
     topSystemLabel: "Top procurement system",
-    syntheticDataNotice: "All procurement requesters, vendors, amounts, tickets, and approvals are synthetic demo fixtures.",
+    syntheticDataNotice: "All procurement requesters, vendors, amounts, tickets, and approvals are synthetic evaluation fixtures.",
     requiredOrgData: [
       "workflow metadata",
       "purchase request events",

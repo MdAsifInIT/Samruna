@@ -25,6 +25,7 @@ interface AppShellProps {
 export function AppShell({ activeView, children, controller, onViewChange }: AppShellProps) {
   const {
     actions,
+    aiProvider,
     demoState,
     executionReady,
     governanceDecisionLabel,
@@ -62,7 +63,7 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
       </aside>
 
       <main className="main-shell">
-        <section className="topbar" aria-label="Demo controls">
+        <section className="topbar" aria-label="Workflow controls">
           <div className="topbar-title">
             <p className="eyebrow">{activeNavigationItem.label}</p>
             <h1>Enterprise Work Intelligence Console</h1>
@@ -85,127 +86,143 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
             </label>
           </div>
           <div className="toolbar">
-            <label className="scenario-picker">
-              <span>Scenario</span>
-              <select
-                aria-label="Select demo scenario"
-                value={demoState.selectedScenarioId}
-                onChange={(event) => {
-                  actions.selectScenario(event.target.value as ScenarioId);
+            <div className="toolbar-row toolbar-row-primary" aria-label="Primary workflow controls">
+              <label className="scenario-picker">
+                <span>Workflow</span>
+                <select
+                  aria-label="Select workflow"
+                  value={demoState.selectedScenarioId}
+                  onChange={(event) => {
+                    actions.selectScenario(event.target.value as ScenarioId);
+                    onViewChange("overview");
+                  }}
+                >
+                  {scenarioOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <ToolbarButton
+                icon={Database}
+                aria-label="Load workflow"
+                title="Load workflow"
+                className="toolbar-button-primary"
+                onClick={() => {
+                  actions.loadSelectedScenario();
+                  onViewChange("observe");
+                }}
+              >
+                Load Workflow
+              </ToolbarButton>
+              <ToolbarButton
+                icon={Network}
+                aria-label="Analyze workflow"
+                title="Analyze workflow"
+                className="toolbar-button-primary"
+                disabled={!demoState.sampleLoaded}
+                onClick={() => {
+                  actions.analyzeWorkflow();
+                  onViewChange("analyze");
+                }}
+              >
+                Analyze
+              </ToolbarButton>
+              <ToolbarButton
+                icon={Brain}
+                aria-label="Generate automation proposal"
+                title="Generate automation proposal"
+                className="toolbar-button-primary"
+                disabled={!demoState.analysisRequested || !proposalGenerationReady}
+                onClick={() => {
+                  actions.generateProposalFromCurrentState();
+                  onViewChange("plan");
+                }}
+              >
+                Generate Proposal
+              </ToolbarButton>
+            </div>
+            <div className="toolbar-row toolbar-row-secondary" aria-label="Governance and utility controls">
+              <ToolbarButton
+                icon={ShieldCheck}
+                aria-label="Approve"
+                title="Approve proposal"
+                className="toolbar-button-approve"
+                disabled={!proposal}
+                onClick={() => {
+                  actions.approveProposal();
+                  onViewChange("govern");
+                }}
+              >
+                Approve
+              </ToolbarButton>
+              <ToolbarButton
+                icon={XCircle}
+                aria-label="Reject"
+                title="Reject proposal"
+                className="toolbar-button-secondary toolbar-button-danger"
+                disabled={!proposal}
+                onClick={() => {
+                  actions.rejectProposal();
+                  onViewChange("govern");
+                }}
+              >
+                Reject
+              </ToolbarButton>
+              <ToolbarButton
+                icon={Play}
+                aria-label="Run simulation"
+                title={executionReady ? "Run simulation" : "Governance approval is required before simulation can run"}
+                className="toolbar-button-run"
+                disabled={!executionReady}
+                onClick={() => {
+                  actions.runMockExecution();
+                  onViewChange("execute");
+                }}
+              >
+                Run Simulation
+              </ToolbarButton>
+              <ToolbarButton
+                icon={Download}
+                aria-label="Export Summary"
+                title="Export Summary"
+                className="toolbar-button-secondary"
+                onClick={() => {
+                  actions.exportSummary();
+                  onViewChange("review");
+                }}
+              >
+                Export Summary
+              </ToolbarButton>
+              <ToolbarButton
+                icon={RotateCcw}
+                aria-label="Reset workflow state"
+                title="Reset workflow state"
+                className="toolbar-button-secondary"
+                onClick={() => {
+                  actions.resetDemo();
                   onViewChange("overview");
                 }}
               >
-                {scenarioOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <ToolbarButton
-              icon={Database}
-              aria-label="Load scenario"
-              title="Load scenario"
-              onClick={() => {
-                actions.loadSelectedScenario();
-                onViewChange("observe");
-              }}
-            >
-              Load Scenario
-            </ToolbarButton>
-            <ToolbarButton
-              icon={Network}
-              aria-label="Analyze workflow"
-              title="Analyze workflow"
-              disabled={!demoState.sampleLoaded}
-              onClick={() => {
-                actions.analyzeWorkflow();
-                onViewChange("analyze");
-              }}
-            >
-              Analyze
-            </ToolbarButton>
-            <ToolbarButton
-              icon={Brain}
-              aria-label="Generate automation proposal"
-              title="Generate automation proposal"
-              disabled={!demoState.analysisRequested || !proposalGenerationReady}
-              onClick={() => {
-                actions.generateProposalFromCurrentState();
-                onViewChange("plan");
-              }}
-            >
-              Generate Proposal
-            </ToolbarButton>
-            <ToolbarButton
-              icon={ShieldCheck}
-              aria-label="Approve"
-              title="Approve proposal"
-              disabled={!proposal}
-              onClick={() => {
-                actions.approveProposal();
-                onViewChange("govern");
-              }}
-            >
-              Approve
-            </ToolbarButton>
-            <ToolbarButton
-              icon={XCircle}
-              aria-label="Reject"
-              title="Reject proposal"
-              disabled={!proposal}
-              onClick={() => {
-                actions.rejectProposal();
-                onViewChange("govern");
-              }}
-            >
-              Reject
-            </ToolbarButton>
-            <ToolbarButton
-              icon={Play}
-              aria-label="Run safe mock execution"
-              title={executionReady ? "Run safe mock execution" : "Governance approval is required before mock execution can run"}
-              disabled={!executionReady}
-              onClick={() => {
-                actions.runMockExecution();
-                onViewChange("execute");
-              }}
-            >
-              Run Mock
-            </ToolbarButton>
-            <ToolbarButton
-              icon={Download}
-              aria-label="Export Summary"
-              title="Export Summary"
-              onClick={() => {
-                actions.exportSummary();
-                onViewChange("review");
-              }}
-            >
-              Export Summary
-            </ToolbarButton>
-            <ToolbarButton
-              icon={RotateCcw}
-              aria-label="Reset seeded demo state"
-              title="Reset seeded demo state"
-              onClick={() => {
-                actions.resetDemo();
-                onViewChange("overview");
-              }}
-            >
-              Reset
-            </ToolbarButton>
+                Reset
+              </ToolbarButton>
+            </div>
           </div>
         </section>
 
         <section className="shell-context" aria-label="Shell context">
           <span>{scenario.label}</span>
           <StatusPill tone={demoState.sampleLoaded ? "good" : "neutral"}>
-            {demoState.sampleLoaded ? "Loaded" : "Seeded"}
+            {demoState.sampleLoaded ? "Workflow loaded" : "Baseline state"}
           </StatusPill>
-          <StatusPill tone={executionReady ? "good" : "warn"}>{executionReady ? "Execution open" : "Governed gate"}</StatusPill>
+          <StatusPill tone="neutral">{aiProvider.status.label}</StatusPill>
+          <StatusPill tone="neutral">Controlled local environment</StatusPill>
           <StatusPill tone={demoState.governanceDecision === "rejected" ? "blocked" : "neutral"}>
-            {governanceDecisionLabel}
+            {`Governance ${governanceDecisionLabel}`}
+          </StatusPill>
+          <StatusPill tone={executionReady ? "good" : "warn"}>
+            {executionReady ? "Execution available" : "Governed gate"}
           </StatusPill>
         </section>
 

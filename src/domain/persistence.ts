@@ -130,7 +130,7 @@ export function importRunSummary(raw: string): PersistedDemoState {
     return state;
   }
 
-  throw new Error("Imported run summary did not match the demo state contract");
+  throw new Error("Imported execution summary did not match the workflow state contract");
 }
 
 function resolveDemoStorage(): DemoStorage | undefined {

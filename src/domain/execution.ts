@@ -38,7 +38,7 @@ export function runApprovedWorkflow(input: {
       {
         tool: "work-orchestrator.create-task",
         input: `${input.requestTrace.actor} -> ${system}`,
-        output: `mock task ${ticketId} created`
+        output: `simulated task ${ticketId} created`
       },
       {
         tool: "audit-log.write",
@@ -49,7 +49,7 @@ export function runApprovedWorkflow(input: {
     auditTrail: [
       "Confirmed proposal approval.",
       "Validated request eligibility.",
-      "Created mock provisioning task.",
+      "Created simulated provisioning task.",
       "Recorded execution audit event."
     ]
   };

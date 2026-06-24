@@ -30,7 +30,7 @@ export function GovernView({ controller }: GovernViewProps) {
           <div className="graph-header">
             <div>
               <p className="eyebrow">Simulation and governance</p>
-              <h2>Governance-gated replay before execution</h2>
+              <h2>Governance review before execution</h2>
             </div>
             <div className="governance-actions">
               <button className="approve-button" type="button" disabled={!proposal} onClick={actions.approveProposal}>
@@ -50,7 +50,7 @@ export function GovernView({ controller }: GovernViewProps) {
             </div>
             <div>
               <span>Approval gate</span>
-              <strong>{executionReady ? "Open" : "Blocked"}</strong>
+              <strong>{executionReady ? "Available" : "Blocked"}</strong>
             </div>
             <div>
               <span>Policy context</span>
@@ -63,15 +63,15 @@ export function GovernView({ controller }: GovernViewProps) {
           </div>
           <div className="simulation-grid">
             <article>
-              <span>Pass</span>
+              <span>Passed</span>
               <strong>{simulation.passed}</strong>
             </article>
             <article>
-              <span>Needs human</span>
+              <span>Requires human review</span>
               <strong>{simulation.needsHuman}</strong>
             </article>
             <article>
-              <span>Policy risk</span>
+              <span>Policy concern</span>
               <strong>{simulation.policyRisk}</strong>
             </article>
             <article>
@@ -103,17 +103,17 @@ export function GovernView({ controller }: GovernViewProps) {
               access, or unrestricted admin access.
             </p>
             <p>
-              <strong>Approval rule</strong> · Execution opens only when an approved record exists for proposal version{" "}
+              <strong>Approval rule</strong> · Execution becomes available only when an approved record exists for proposal version{" "}
               {proposal.version}.
             </p>
             <p>
-              <strong>Safety boundary</strong> · Mock execution is deterministic, read-only to external systems, and limited to
-              synthetic demo records.
+              <strong>Safety boundary</strong> · Simulated execution is deterministic, read-only to external systems, and limited to
+              synthetic evaluation records.
             </p>
           </div>
         </section>
       ) : (
-        <EmptyState title="Governance not ready" action="Generate Proposal to run simulation and open review controls." />
+        <EmptyState title="Governance not ready" action="Generate Proposal to run simulation and access review controls." />
       )}
     </>
   );

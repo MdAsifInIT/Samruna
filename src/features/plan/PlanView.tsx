@@ -20,7 +20,7 @@ export function PlanView({ controller }: PlanViewProps) {
         <section className="proposal-panel" aria-label="Automation proposal">
           <div className="graph-header">
             <div>
-              <p className="eyebrow">Agentic workflow planner</p>
+              <p className="eyebrow">Workflow planner</p>
               <h2>Governed automation proposal</h2>
             </div>
             <div className="proposal-version-controls">
@@ -130,7 +130,7 @@ export function PlanView({ controller }: PlanViewProps) {
               <ul>
                 <li>{aiProvider.status.label} is the active provider.</li>
                 <li>Inputs are synthetic workflow metadata and approvals.</li>
-                <li>Mock execution cannot mutate external systems.</li>
+                <li>Simulated execution cannot mutate external systems.</li>
               </ul>
             </article>
           </div>

@@ -32,7 +32,7 @@ export interface AiProvider {
 export class MockAiProvider implements AiProvider {
   status: AiProviderStatus = {
     mode: "mock",
-    label: "Deterministic mock",
+    label: "Deterministic simulation",
     available: true
   };
 

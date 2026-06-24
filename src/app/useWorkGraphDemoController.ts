@@ -162,10 +162,10 @@ export function useWorkGraphDemoController() {
       ? "Blocked by rejection"
       : "Blocked until approval";
   const executionGateCopy = executionReady
-    ? "Governance has opened the mock execution gate for this proposal version."
+    ? "Governance has opened the simulated execution gate for this proposal version."
     : demoState.governanceDecision === "rejected"
-      ? "This proposal was rejected, so mock execution stays blocked until a new review approves it."
-      : "This proposal is still awaiting approval, so mock execution stays blocked by governance.";
+      ? "This proposal was rejected, so simulated execution stays blocked until a new review approves it."
+      : "This proposal is still awaiting approval, so simulated execution stays blocked by governance.";
   const learningRecommendation = useMemo(
     () => (simulation && executionRun ? recommendLearningUpdate({ simulation, execution: executionRun }) : undefined),
     [executionRun, simulation]
@@ -329,10 +329,10 @@ export function useWorkGraphDemoController() {
     } catch (error) {
       setImportError(
         error instanceof SyntaxError
-          ? "Import failed: the pasted run summary is not valid JSON."
+          ? "Import failed: the provided execution summary is not valid JSON."
           : error instanceof Error
             ? error.message
-            : "Import failed: the pasted run summary is not valid JSON."
+            : "Import failed: the provided execution summary is not valid JSON."
       );
     }
   };
@@ -494,7 +494,7 @@ function buildWorkflowStages(input: {
     {
       id: "load-scenario",
       index: 1,
-      label: "Load Scenario",
+      label: "Load Workflow",
       detail: "Load the selected synthetic trace set and validate fixture counts."
     },
     {
@@ -530,8 +530,8 @@ function buildWorkflowStages(input: {
     {
       id: "run-mock",
       index: 7,
-      label: "Run Mock",
-      detail: "Execute safe mock tools only after governance approval."
+      label: "Run Simulation",
+      detail: "Execute simulated tools only after governance approval."
     },
     {
       id: "review-audit",
@@ -607,18 +607,18 @@ function firstIncompleteIndex(
 
 function simulationCaseStatusLabel(status: SimulationCaseStatus): string {
   if (status === "needs_human") {
-    return "Needs human";
+    return "Requires human review";
   }
 
   if (status === "policy_risk") {
-    return "Policy risk";
+    return "Policy concern";
   }
 
   if (status === "fail") {
     return "Failed";
   }
 
-  return "Pass";
+  return "Passed";
 }
 
 function pickProposalVersion(
@@ -727,7 +727,7 @@ function buildGovernanceRecords(proposal: AutomationProposal, decision: Governan
         proposal,
         decision: "rejected",
         reviewerRole: "compliance",
-        comments: "Rejected pending additional control evidence before mock execution.",
+        comments: "Rejected pending additional control evidence before simulated execution.",
         timestamp: "2026-05-16T11:00:00Z"
       })
     ];
@@ -753,8 +753,8 @@ function buildAuditEvents(input: {
         id: `audit-${input.scenario.id}-loaded`,
         timestamp: "2026-05-16T09:05:00Z",
         actor: "demo_operator",
-        action: "Scenario loaded",
-        detail: `${input.scenario.label} fixture set loaded from synthetic local data.`
+        action: "Workflow loaded",
+        detail: `${input.scenario.label} fixture set loaded from local sample data.`
       })
     );
   }
@@ -793,8 +793,8 @@ function buildAuditEvents(input: {
         id: `audit-${input.scenario.id}-execution-${input.executionStatus}`,
         timestamp: "2026-05-16T11:20:00Z",
         actor: "executor_agent",
-        action: "Mock execution run",
-        detail: `Safe mock execution finished with status ${input.executionStatus}.`
+        action: "Simulated execution run",
+        detail: `Simulated execution finished with status ${input.executionStatus}.`
       })
     );
   }
@@ -822,12 +822,12 @@ function buildFoundationPanels(
 ): FoundationPanel[] {
   return [
     {
-      title: "Scenario Dataset",
+      title: "Workflow Dataset",
       icon: Database,
-      value: state.sampleLoaded ? scenario.label : "Seeded baseline",
+      value: state.sampleLoaded ? scenario.label : "Baseline state",
       detail: state.sampleLoaded
         ? scenario.syntheticDataNotice
-        : "Load the selected scenario to inspect typed synthetic traces."
+        : "Load the selected workflow to inspect typed synthetic traces."
     },
     {
       title: "Work Pattern Clusters",
@@ -835,7 +835,7 @@ function buildFoundationPanels(
       value: ingestion ? `${ingestion.summary.normalizedItemCount} normalized items` : "Awaiting analysis",
       detail: ingestion
         ? "Repeated work patterns, exceptions, and bottlenecks are ready for inspection."
-        : "Analyze the workflow after loading a scenario."
+        : "Analyze the workflow after loading a workflow."
     },
     {
       title: "Work Graph",
@@ -846,7 +846,7 @@ function buildFoundationPanels(
     {
       title: "Agentic Planner",
       icon: Brain,
-      value: state.proposalRequested ? "Proposal generated" : "Mock provider default",
+      value: state.proposalRequested ? "Proposal generated" : "Deterministic provider default",
       detail: proposalRationale ?? "Structured automation proposals are generated from graph insights."
     },
     {
@@ -864,7 +864,7 @@ function buildFoundationPanels(
       title: "Persistence",
       icon: ClipboardCheck,
       value: "Local state saved",
-      detail: "Scenario, generated artifacts, decisions, execution results, recommendations, and audits persist in this browser."
+      detail: "Workflow, generated artifacts, decisions, execution results, recommendations, and audits persist in this browser."
     }
   ];
 }
@@ -879,7 +879,7 @@ export function graphNodeAuditRelevance(kind: string, scenarioLabel: string, bot
   }
 
   if (kind === "system") {
-    return "System actions are logged to preserve mock execution traceability.";
+    return "System actions are logged to preserve simulated execution traceability.";
   }
 
   return `${scenarioLabel} uses this node in the deterministic replay model.`;
