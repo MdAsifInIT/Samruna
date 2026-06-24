@@ -59,9 +59,9 @@ npm run preview
 3. Click `Analyze`.
 4. Inspect normalized evidence, graph, patterns, and bottlenecks.
 5. Click `Generate Proposal`.
-6. Review required data, assumptions, policy checks, escalations, simulation results, and governance notes.
+6. Review required data, forbidden data, assumptions, policy checks, escalations, simulation results, and governance notes.
 7. Click `Approve` or `Reject`.
-8. Click `Run Mock`.
+8. Click `Run Mock` after approval.
 9. Review mock tool calls, audit trail, and learning-loop recommendation.
 10. Use `Export Summary` for a portable run summary or `Reset` to restore seeded state.
 
@@ -143,7 +143,7 @@ npm audit --audit-level=low
 Current verified baseline:
 
 - 10 test files
-- 28 tests
+- 29 tests
 - production build passes
 - audit reports 0 vulnerabilities
 

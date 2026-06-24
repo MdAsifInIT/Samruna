@@ -55,6 +55,151 @@ const channelLabels: Record<SourceChannel, string> = {
   system_action: "System actions"
 };
 
+type WorkflowStageId =
+  | "load-scenario"
+  | "analyze-workflow"
+  | "inspect-graph"
+  | "generate-proposal"
+  | "review-governance"
+  | "approve-reject"
+  | "run-mock"
+  | "review-audit";
+
+type WorkflowStageState = "complete" | "current" | "available" | "locked";
+
+interface WorkflowStageSnapshot {
+  id: WorkflowStageId;
+  index: number;
+  label: string;
+  detail: string;
+  state: WorkflowStageState;
+}
+
+function buildWorkflowStages(input: {
+  sampleLoaded: boolean;
+  analysisRequested: boolean;
+  graphReady: boolean;
+  proposalRequested: boolean;
+  governanceDecision: string;
+  executionReady: boolean;
+  executionRun?: boolean;
+  learningRecommendation?: boolean;
+}): WorkflowStageSnapshot[] {
+  const stages: Array<Omit<WorkflowStageSnapshot, "state">> = [
+    {
+      id: "load-scenario",
+      index: 1,
+      label: "Load Scenario",
+      detail: "Load the selected synthetic trace set and validate fixture counts."
+    },
+    {
+      id: "analyze-workflow",
+      index: 2,
+      label: "Analyze Workflow",
+      detail: "Normalize traces into canonical work items and surface issues."
+    },
+    {
+      id: "inspect-graph",
+      index: 3,
+      label: "Inspect Graph",
+      detail: "Review the work graph, node risk, delays, and exception paths."
+    },
+    {
+      id: "generate-proposal",
+      index: 4,
+      label: "Generate Proposal",
+      detail: "Produce a governed automation proposal from the top pattern."
+    },
+    {
+      id: "review-governance",
+      index: 5,
+      label: "Review Governance",
+      detail: "Scan assumptions, policy checks, escalations, and simulation results."
+    },
+    {
+      id: "approve-reject",
+      index: 6,
+      label: "Approve/Reject",
+      detail: "Human review opens or blocks the execution gate for this version."
+    },
+    {
+      id: "run-mock",
+      index: 7,
+      label: "Run Mock",
+      detail: "Execute safe mock tools only after governance approval."
+    },
+    {
+      id: "review-audit",
+      index: 8,
+      label: "Review Audit/Recommendation",
+      detail: "Inspect the persisted audit trail and learning-loop output."
+    }
+  ];
+
+  return stages.map((stage, index) => {
+    const complete =
+      (stage.id === "load-scenario" && input.sampleLoaded) ||
+      (stage.id === "analyze-workflow" && input.analysisRequested) ||
+      (stage.id === "inspect-graph" && input.graphReady) ||
+      (stage.id === "generate-proposal" && input.proposalRequested) ||
+      (stage.id === "review-governance" && input.proposalRequested) ||
+      (stage.id === "approve-reject" && input.governanceDecision !== "pending") ||
+      (stage.id === "run-mock" && input.executionRun) ||
+      (stage.id === "review-audit" && input.executionRun && input.learningRecommendation);
+
+    const locked =
+      (stage.id === "analyze-workflow" && !input.sampleLoaded) ||
+      (stage.id === "inspect-graph" && !input.analysisRequested) ||
+      (stage.id === "generate-proposal" && !input.graphReady) ||
+      (stage.id === "review-governance" && !input.proposalRequested) ||
+      (stage.id === "approve-reject" && !input.proposalRequested) ||
+      (stage.id === "run-mock" && !input.proposalRequested) ||
+      (stage.id === "review-audit" && !input.executionRun && !input.learningRecommendation);
+
+    return {
+      ...stage,
+      state: complete ? "complete" : locked ? "locked" : index === firstIncompleteIndex(stages, input) ? "current" : "available"
+    };
+  });
+}
+
+function firstIncompleteIndex(
+  stages: Array<Omit<WorkflowStageSnapshot, "state">>,
+  input: {
+    sampleLoaded: boolean;
+    analysisRequested: boolean;
+    graphReady: boolean;
+    proposalRequested: boolean;
+    governanceDecision: string;
+    executionReady: boolean;
+    executionRun?: boolean;
+    learningRecommendation?: boolean;
+  }
+): number {
+  return stages.findIndex((stage) => {
+    switch (stage.id) {
+      case "load-scenario":
+        return !input.sampleLoaded;
+      case "analyze-workflow":
+        return !input.analysisRequested;
+      case "inspect-graph":
+        return !input.graphReady;
+      case "generate-proposal":
+        return !input.proposalRequested;
+      case "review-governance":
+        return !input.proposalRequested;
+      case "approve-reject":
+        return input.governanceDecision === "pending";
+      case "run-mock":
+        return !input.executionRun;
+      case "review-audit":
+        return !(input.executionRun && input.learningRecommendation);
+      default:
+        return false;
+    }
+  });
+}
+
 export function App() {
   const [demoState, setDemoState] = useState<PersistedDemoState>(
     () => loadPersistedDemoState() ?? createSeedDemoState()
@@ -62,6 +207,8 @@ export function App() {
   const [exportText, setExportText] = useState("");
   const [importText, setImportText] = useState("");
   const [importError, setImportError] = useState("");
+  const [selectedGraphNodeId, setSelectedGraphNodeId] = useState<string>();
+  const [selectedPatternId, setSelectedPatternId] = useState<string>();
   const aiProvider = useMemo(() => createAiProvider(), []);
   const scenario = useMemo(() => loadDemoScenario(demoState.selectedScenarioId), [demoState.selectedScenarioId]);
   const fixtures = scenario.fixtures;
@@ -92,21 +239,73 @@ export function App() {
         })
       : undefined;
   const simulation = proposal && ingestion ? simulateAutomation(proposal, ingestion.items) : undefined;
+  const governanceDecisionLabel =
+    demoState.governanceDecision === "approved"
+      ? "Approved"
+      : demoState.governanceDecision === "rejected"
+        ? "Rejected"
+        : demoState.governanceDecision === "changes_requested"
+          ? "Changes requested"
+          : "Pending";
   const governanceRecords = useMemo(
     () => (proposal ? buildGovernanceRecords(proposal, demoState.governanceDecision) : []),
     [demoState.governanceDecision, proposal]
   );
   const executionReady = proposal ? canExecute(governanceRecords, proposal) : false;
-  const executionRun =
-    proposal && demoState.runRequested
-      ? runApprovedWorkflow({
-          proposal,
-          requestTrace: fixtures.newIncomingTrace,
-          approved: executionReady
-        })
-      : undefined;
-  const learningRecommendation =
-    simulation && executionRun ? recommendLearningUpdate({ simulation, execution: executionRun }) : undefined;
+  const executionRun = useMemo(
+    () =>
+      proposal && demoState.runRequested
+        ? runApprovedWorkflow({
+            proposal,
+            requestTrace: fixtures.newIncomingTrace,
+            approved: executionReady
+          })
+        : undefined,
+    [demoState.runRequested, executionReady, fixtures.newIncomingTrace, proposal]
+  );
+  const learningRecommendation = useMemo(
+    () => (simulation && executionRun ? recommendLearningUpdate({ simulation, execution: executionRun }) : undefined),
+    [executionRun, simulation]
+  );
+  const selectedGraphNode = useMemo(() => {
+    if (!graph) {
+      return undefined;
+    }
+
+    return graph.nodes.find((node) => node.id === selectedGraphNodeId) ?? graph.nodes[0];
+  }, [graph, selectedGraphNodeId]);
+  const selectedPattern = useMemo(() => {
+    if (!patternDetection) {
+      return undefined;
+    }
+
+    return patternDetection.patterns.find((pattern) => pattern.id === selectedPatternId) ?? patternDetection.patterns[0];
+  }, [patternDetection, selectedPatternId]);
+  const selectedBottleneck = selectedPattern
+    ? patternDetection?.bottlenecks.find((bottleneck) => bottleneck.patternId === selectedPattern.id)
+    : undefined;
+  const selectedOpportunity = selectedPattern
+    ? patternDetection?.opportunities.find((opportunity) => opportunity.patternId === selectedPattern.id)
+    : undefined;
+  const selectedGraphEdges = selectedGraphNode && graph ? graph.edges.filter((edge) => edge.source === selectedGraphNode.id || edge.target === selectedGraphNode.id) : [];
+  const workflowStages = useMemo(
+    () =>
+      buildWorkflowStages({
+        sampleLoaded: demoState.sampleLoaded,
+        analysisRequested: demoState.analysisRequested,
+        graphReady: Boolean(graph),
+        proposalRequested: demoState.proposalRequested,
+        governanceDecision: demoState.governanceDecision,
+        executionReady,
+        executionRun: Boolean(executionRun),
+        learningRecommendation: Boolean(learningRecommendation)
+      }),
+    [demoState.analysisRequested, demoState.governanceDecision, demoState.proposalRequested, demoState.sampleLoaded, executionReady, executionRun, graph, learningRecommendation]
+  );
+  const currentStage =
+    workflowStages.find((stage) => stage.state === "current") ??
+    workflowStages.find((stage) => stage.state === "locked") ??
+    workflowStages.find((stage) => stage.state === "available");
   const auditEvents = useMemo(
     () =>
       buildAuditEvents({
@@ -137,6 +336,26 @@ export function App() {
   const foundationPanels = buildFoundationPanels(demoState, scenario, ingestion, proposal?.auditRationale);
 
   useEffect(() => {
+    if (graph?.nodes.length) {
+      setSelectedGraphNodeId((current) => (current && graph.nodes.some((node) => node.id === current) ? current : graph.nodes[0].id));
+    } else {
+      setSelectedGraphNodeId(undefined);
+    }
+  }, [graph]);
+
+  useEffect(() => {
+    if (patternDetection?.patterns.length) {
+      setSelectedPatternId((current) =>
+        current && patternDetection.patterns.some((pattern) => pattern.id === current)
+          ? current
+          : patternDetection.patterns[0].id
+      );
+    } else {
+      setSelectedPatternId(undefined);
+    }
+  }, [patternDetection]);
+
+  useEffect(() => {
     saveDemoState(snapshot);
   }, [snapshot]);
 
@@ -145,6 +364,8 @@ export function App() {
   };
 
   const selectScenario = (scenarioId: ScenarioId) => {
+    setSelectedGraphNodeId(undefined);
+    setSelectedPatternId(undefined);
     setDemoState(createSeedDemoState(scenarioId, new Date().toISOString()));
     setExportText("");
     setImportText("");
@@ -152,6 +373,8 @@ export function App() {
   };
 
   const resetDemo = () => {
+    setSelectedGraphNodeId(undefined);
+    setSelectedPatternId(undefined);
     setDemoState(resetPersistedDemoState(demoState.selectedScenarioId));
     setExportText("");
     setImportText("");
@@ -161,6 +384,8 @@ export function App() {
   const importSummary = () => {
     try {
       const imported = importRunSummary(importText);
+      setSelectedGraphNodeId(undefined);
+      setSelectedPatternId(undefined);
       setDemoState(imported);
       saveDemoState(imported);
       setImportError("");
@@ -175,6 +400,7 @@ export function App() {
         <div>
           <p className="eyebrow">Work Graph Foundry</p>
           <h1>Enterprise Work Intelligence Console</h1>
+          <p className="topbar-summary">Operator console for synthetic workflow discovery, governed automation, and mock-only execution.</p>
         </div>
         <div className="toolbar">
           <label className="scenario-picker">
@@ -239,8 +465,8 @@ export function App() {
           <button
             type="button"
             aria-label="Run safe mock execution"
-            title="Run safe mock execution"
-            disabled={!demoState.proposalRequested}
+            title={executionReady ? "Run safe mock execution" : "Approve the proposal to unlock mock execution"}
+            disabled={!executionReady}
             onClick={() =>
               updateState((state) => ({
                 ...state,
@@ -258,6 +484,39 @@ export function App() {
         </div>
       </section>
 
+      <section className="status-grid" aria-label="Operational summary">
+        <div className="metric">
+          <Database size={18} />
+          <span>Selected scenario</span>
+          <strong>{scenario.label}</strong>
+        </div>
+        <div className="metric">
+          <ListChecks size={18} />
+          <span>Demo path</span>
+          <strong>{scenario.workflowName}</strong>
+        </div>
+        <div className="metric">
+          <GitBranch size={18} />
+          <span>Current stage</span>
+          <strong>{currentStage?.label ?? "Load Scenario"}</strong>
+        </div>
+        <div className="metric">
+          <Sparkles size={18} />
+          <span>AI mode</span>
+          <strong>{aiProvider.status.label}</strong>
+        </div>
+        <div className="metric">
+          <ShieldCheck size={18} />
+          <span>Governance</span>
+          <strong>{governanceDecisionLabel}</strong>
+        </div>
+        <div className="metric">
+          <ShieldAlert size={18} />
+          <span>Mock safety boundary</span>
+          <strong>Mock-only, no external writes</strong>
+        </div>
+      </section>
+
       <section className="operator-console" aria-label="Scenario operator console">
         <div>
           <p className="eyebrow">Selected workflow</p>
@@ -271,13 +530,15 @@ export function App() {
             <h2>Operator path</h2>
           </div>
           <ol>
-            <li data-complete={demoState.sampleLoaded}>Load scenario</li>
-            <li data-complete={demoState.analysisRequested}>Analyze workflow</li>
-            <li data-complete={Boolean(graph)}>Inspect graph and patterns</li>
-            <li data-complete={demoState.proposalRequested}>Generate proposal</li>
-            <li data-complete={demoState.governanceDecision === "approved"}>Approve or reject</li>
-            <li data-complete={Boolean(executionRun)}>Run safe mock execution</li>
-            <li data-complete={Boolean(learningRecommendation)}>View audit and recommendation</li>
+            {workflowStages.map((stage) => (
+              <li key={stage.id} data-complete={stage.state === "complete"} data-current={stage.state === "current"} data-locked={stage.state === "locked"}>
+                <span>{stage.index}</span>
+                <div>
+                  <strong>{stage.label}</strong>
+                  <p>{stage.detail}</p>
+                </div>
+              </li>
+            ))}
           </ol>
         </div>
         <div className="operator-card">
@@ -295,18 +556,20 @@ export function App() {
               <dt>Never needs</dt>
               <dd>{scenario.excludedOrgData.slice(0, 4).join(", ")}</dd>
             </div>
+            <div>
+              <dt>Safety</dt>
+              <dd>Mock tools only, approval gated, no external writes.</dd>
+            </div>
           </dl>
         </div>
       </section>
 
       <section className="demo-strip" aria-label="Scripted demo path">
-        <span data-active={demoState.sampleLoaded}>1 Load scenario</span>
-        <span data-active={demoState.analysisRequested}>2 Analyze workflow</span>
-        <span data-active={Boolean(graph)}>3 Inspect graph</span>
-        <span data-active={demoState.proposalRequested}>4 Generate proposal</span>
-        <span data-active={demoState.governanceDecision === "approved"}>5 Govern</span>
-        <span data-active={Boolean(executionRun)}>6 Run mock</span>
-        <span data-active={Boolean(learningRecommendation)}>7 Improve</span>
+        {workflowStages.map((stage) => (
+          <span key={stage.id} data-active={stage.state === "complete"} data-current={stage.state === "current"} data-locked={stage.state === "locked"} title={stage.detail}>
+            {stage.index} {stage.label}
+          </span>
+        ))}
       </section>
 
       <section className="status-grid" aria-label="System status">
@@ -449,55 +712,128 @@ export function App() {
               <span>{graph.metrics.averageCycleTimeHours}h cycle time</span>
             </div>
           </div>
-          <ol className="graph-steps">
-            {graph.nodes.map((node) => (
-              <li key={node.id} data-risk={node.riskLevel}>
-                <strong>{node.label}</strong>
-                <span>
-                  {node.count} cases · {node.kind}
-                </span>
-              </li>
-            ))}
-          </ol>
+          <div className="inspection-grid">
+            <div className="graph-list" role="list" aria-label="Work graph nodes">
+              {graph.nodes.map((node) => (
+                <button
+                  key={node.id}
+                  type="button"
+                  className={node.id === selectedGraphNode?.id ? "selected" : undefined}
+                  aria-pressed={node.id === selectedGraphNode?.id}
+                  onClick={() => setSelectedGraphNodeId(node.id)}
+                >
+                  <strong>{node.label}</strong>
+                  <span>
+                    {node.count} cases · {node.kind} · {node.riskLevel} risk
+                  </span>
+                </button>
+              ))}
+            </div>
+            {selectedGraphNode ? (
+              <article className="detail-card">
+                <h3>{selectedGraphNode.label}</h3>
+                <p>{graphNodeAuditRelevance(selectedGraphNode.kind, scenario.label, topBottleneck?.evidence)}</p>
+                <dl>
+                  <div>
+                    <dt>Risk</dt>
+                    <dd>{selectedGraphNode.riskLevel}</dd>
+                  </div>
+                  <div>
+                    <dt>Cases</dt>
+                    <dd>{selectedGraphNode.count}</dd>
+                  </div>
+                  <div>
+                    <dt>Delay</dt>
+                    <dd>
+                      {selectedGraphNode.kind === "approval"
+                        ? `${graph.metrics.approvalDelayHours}h approval delay`
+                        : `${graph.metrics.averageCycleTimeHours}h cycle time`}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Exception rate</dt>
+                    <dd>{Math.round(graph.metrics.exceptionRate * 100)}%</dd>
+                  </div>
+                </dl>
+                <h4>Related evidence</h4>
+                <ul>
+                  {selectedGraphEdges.length ? (
+                    selectedGraphEdges.map((edge) => (
+                      <li key={edge.id}>
+                        <strong>{edge.label}</strong> · {edge.count} links · {edge.averageDurationHours}h avg · {Math.round(edge.exceptionRate * 100)}% exceptions
+                      </li>
+                    ))
+                  ) : (
+                    <li>No direct edges recorded for this node.</li>
+                  )}
+                </ul>
+                <p className="detail-footnote">Audit relevance: {selectedGraphNode.kind === "approval" ? "Approval timing and approvals are included in audit events." : selectedGraphNode.kind === "exception" ? "Exceptions carry into the audit trail and recommendation loop." : "Node is part of the deterministic graph used for audit-ready replay."}</p>
+              </article>
+            ) : null}
+          </div>
         </section>
       ) : null}
 
       {patternDetection ? (
         <section className="pattern-panel" aria-label="Detected work patterns">
-          <div className="graph-header">
-            <div>
-              <p className="eyebrow">Pattern detection</p>
-              <h2>Repeated workflows and automation opportunities</h2>
+            <div className="graph-header">
+              <div>
+                <p className="eyebrow">Pattern detection</p>
+                <h2>Repeated workflows and automation opportunities</h2>
+              </div>
+              {selectedOpportunity ? (
+                <strong className="opportunity-score">{Math.round(selectedOpportunity.score * 100)} opportunity</strong>
+              ) : null}
             </div>
-            {topOpportunity ? (
-              <strong className="opportunity-score">{Math.round(topOpportunity.score * 100)} opportunity</strong>
-            ) : null}
-          </div>
-          <div className="pattern-grid">
-            <div className="pattern-list">
+          <div className="inspection-grid">
+            <div className="pattern-list" role="list" aria-label="Detected workflow patterns">
               {patternDetection.patterns.map((pattern) => (
-                <article key={pattern.id} className={pattern.id === topPattern?.id ? "selected" : undefined}>
+                <button
+                  key={pattern.id}
+                  type="button"
+                  className={pattern.id === selectedPattern?.id ? "selected" : undefined}
+                  aria-pressed={pattern.id === selectedPattern?.id}
+                  onClick={() => setSelectedPatternId(pattern.id)}
+                >
                   <strong>{pattern.label}</strong>
                   <span>
                     {pattern.volume} cases · {Math.round(pattern.repeatabilityScore * 100)} repeatability · {pattern.riskLevel} risk
                   </span>
-                </article>
+                </button>
               ))}
             </div>
-            <div className="insight-card">
-              <h3>{topBottleneck?.label}</h3>
-              <p>{topBottleneck?.evidence}</p>
-              <dl>
-                <div>
-                  <dt>Average delay</dt>
-                  <dd>{topBottleneck?.averageDelayHours}h</dd>
-                </div>
-                <div>
-                  <dt>Value</dt>
-                  <dd>{topOpportunity?.valueSummary}</dd>
-                </div>
-              </dl>
-            </div>
+            {selectedPattern ? (
+              <article className="detail-card">
+                <h3>{selectedPattern.label}</h3>
+                <p>{selectedBottleneck?.evidence}</p>
+                <dl>
+                  <div>
+                    <dt>Volume</dt>
+                    <dd>{selectedPattern.volume}</dd>
+                  </div>
+                  <div>
+                    <dt>Repeatability</dt>
+                    <dd>{Math.round(selectedPattern.repeatabilityScore * 100)}%</dd>
+                  </div>
+                  <div>
+                    <dt>Opportunity</dt>
+                    <dd>{Math.round((selectedOpportunity?.score ?? 0) * 100)}%</dd>
+                  </div>
+                  <div>
+                    <dt>Risk</dt>
+                    <dd>{selectedPattern.riskLevel}</dd>
+                  </div>
+                </dl>
+                <h4>Score drivers</h4>
+                <ul>
+                  <li>Delay: {Math.round((selectedOpportunity?.scoreComponents.delay ?? 0) * 100)}%</li>
+                  <li>Volume: {Math.round((selectedOpportunity?.scoreComponents.volume ?? 0) * 100)}%</li>
+                  <li>Repeatability: {Math.round((selectedOpportunity?.scoreComponents.repeatability ?? 0) * 100)}%</li>
+                  <li>Risk adjustment: {Math.round((selectedOpportunity?.scoreComponents.riskAdjustment ?? 0) * 100)}%</li>
+                </ul>
+                <p className="detail-footnote">Representative cases: {selectedPattern.representativeCaseIds.join(", ")}</p>
+              </article>
+            ) : null}
           </div>
         </section>
       ) : null}
@@ -511,16 +847,46 @@ export function App() {
             </div>
             <strong className="opportunity-score">{Math.round(proposal.confidence * 100)} confidence</strong>
           </div>
+          <div className="proposal-summary">
+            <div>
+              <span>Trigger</span>
+              <strong>{proposal.trigger}</strong>
+            </div>
+            <div>
+              <span>Risk</span>
+              <strong>{proposal.riskLevel}</strong>
+            </div>
+            <div>
+              <span>Version</span>
+              <strong>v{proposal.version}</strong>
+            </div>
+            <div>
+              <span>Expected value</span>
+              <strong>{proposal.expectedValue}</strong>
+            </div>
+          </div>
           <div className="proposal-grid">
-            <article>
-              <h3>Trigger</h3>
-              <p>{proposal.trigger}</p>
-            </article>
             <article>
               <h3>Required data</h3>
               <ul>
-                {proposal.requiredData.slice(0, 5).map((item) => (
+                {proposal.requiredData.map((item) => (
                   <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </article>
+            <article>
+              <h3>Forbidden data</h3>
+              <ul>
+                {scenario.excludedOrgData.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </article>
+            <article>
+              <h3>Eligibility rules</h3>
+              <ul>
+                {proposal.eligibilityRules.map((rule) => (
+                  <li key={rule}>{rule}</li>
                 ))}
               </ul>
             </article>
@@ -549,7 +915,7 @@ export function App() {
               </ul>
             </article>
             <article>
-              <h3>AI assumptions</h3>
+              <h3>Assumptions</h3>
               <ul>
                 <li>{aiProvider.status.label} is the active provider.</li>
                 <li>Inputs are synthetic workflow metadata and approvals.</li>
@@ -572,6 +938,7 @@ export function App() {
               <button
                 className="approve-button"
                 type="button"
+                disabled={!proposal}
                 onClick={() =>
                   updateState((state) => ({
                     ...state,
@@ -585,6 +952,7 @@ export function App() {
               <button
                 className="reject-button"
                 type="button"
+                disabled={!proposal}
                 onClick={() =>
                   updateState((state) => ({
                     ...state,
@@ -595,6 +963,24 @@ export function App() {
                 <XCircle size={16} />
                 <span>{demoState.governanceDecision === "rejected" ? "Rejected" : "Reject"}</span>
               </button>
+            </div>
+          </div>
+          <div className="governance-summary" data-decision={demoState.governanceDecision}>
+            <div>
+              <span>Governance state</span>
+              <strong>{governanceDecisionLabel}</strong>
+            </div>
+            <div>
+              <span>Approval gate</span>
+              <strong>{executionReady ? "Open" : "Blocked"}</strong>
+            </div>
+            <div>
+              <span>Policy context</span>
+              <strong>{proposal.riskLevel} risk</strong>
+            </div>
+            <div>
+              <span>Review version</span>
+              <strong>v{proposal.version}</strong>
             </div>
           </div>
           <div className="simulation-grid">
@@ -633,6 +1019,10 @@ export function App() {
               <strong>Approval rule</strong> · Execution opens only when an approved record exists for proposal version{" "}
               {proposal.version}.
             </p>
+            <p>
+              <strong>Safety boundary</strong> · Mock execution is deterministic, read-only to external systems, and limited to
+              synthetic demo records.
+            </p>
           </div>
         </section>
       ) : null}
@@ -646,6 +1036,7 @@ export function App() {
             </div>
             <strong className="opportunity-score">{executionRun?.status ?? "ready"}</strong>
           </div>
+          <p className="execution-boundary">Mock-only execution path. No production system is mutated and no external write call is made.</p>
           <div className="execution-grid">
             <article>
               <h3>Incoming request</h3>
@@ -662,7 +1053,7 @@ export function App() {
                   ))}
                 </ul>
               ) : (
-                <p>{executionRun ? executionRun.auditTrail[0] : "Run the new case after approval."}</p>
+                <p>{executionRun ? executionRun.auditTrail[0] : executionReady ? "Run the approved mock workflow to generate tool calls." : "Approve the proposal first to unlock mock execution."}</p>
               )}
             </article>
             <article>
@@ -674,6 +1065,16 @@ export function App() {
               </p>
             </article>
           </div>
+          {executionRun ? (
+            <div className="execution-audit">
+              <h3>Execution audit trail</h3>
+              <ol>
+                {executionRun.auditTrail.map((entry) => (
+                  <li key={entry}>{entry}</li>
+                ))}
+              </ol>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
@@ -893,6 +1294,22 @@ function buildFoundationPanels(
       detail: "Scenario, generated artifacts, decisions, execution results, recommendations, and audits persist in this browser."
     }
   ];
+}
+
+function graphNodeAuditRelevance(kind: string, scenarioLabel: string, bottleneckEvidence?: string) {
+  if (kind === "approval") {
+    return bottleneckEvidence ?? `${scenarioLabel} makes approval timing part of the audit trail.`;
+  }
+
+  if (kind === "exception") {
+    return `${scenarioLabel} routes exceptions into review and learning signals.`;
+  }
+
+  if (kind === "system") {
+    return "System actions are logged to preserve mock execution traceability.";
+  }
+
+  return `${scenarioLabel} uses this node in the deterministic replay model.`;
 }
 
 function topEntry(counts: Record<string, number>): [string, number] | undefined {

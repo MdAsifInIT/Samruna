@@ -48,14 +48,16 @@ Current UI coverage lives in `src/App.test.tsx`.
 It checks:
 
 - dashboard first screen renders
+- operational summary shows scenario, demo path, current stage, AI mode, governance state, and mock safety boundary
 - scenario selector renders
 - `Load Scenario` reveals source counts
 - `Analyze` reveals normalized evidence
-- graph and proposal panels appear
-- simulation and governance appear
-- approval opens the execution gate
+- graph and pattern selection details render
+- proposal and governance panels appear
+- approval opens the execution gate and enables `Run Mock`
 - rejection keeps execution blocked
 - `Run Mock` shows mock tool output
+- audit trail and learning recommendation appear
 - learning recommendation appears
 - `Export Summary` produces run JSON
 - `Reset` restores seeded state
@@ -103,7 +105,7 @@ Expected current baseline:
 
 - typecheck passes
 - 10 test files pass
-- 28 tests pass
+- 29 tests pass
 - build passes
 - audit reports 0 vulnerabilities
 

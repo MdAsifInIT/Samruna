@@ -33,14 +33,14 @@ All scenario data is synthetic and stored in `src/fixtures/demoData.ts`.
 3. Click `Analyze`.
 4. Inspect evidence, graph, patterns, and bottleneck.
 5. Click `Generate Proposal`.
-6. Review required data, AI assumptions, policy checks, actions, escalations, simulation, and governance notes.
-7. Click `Approve`.
-8. Confirm execution gate is `Open`.
-9. Click `Run Mock`.
-10. Confirm mock tool calls and learning recommendation.
+6. Review required data, forbidden data, assumptions, policy checks, escalations, simulation, and governance notes.
+7. Click `Approve` or `Reject`.
+8. Confirm the approval gate state changes.
+9. Click `Run Mock` after approval.
+10. Confirm mock tool calls, audit trail, and learning recommendation.
 11. Click `Export Summary`.
 12. Click `Reset`.
-13. Switch to `Procurement intake` and repeat load, analyze, and proposal generation.
+13. Switch to `Procurement intake` and repeat load, analyze, inspect graph, and proposal generation.
 
 ## 10.4 Reset And Seed
 
@@ -87,7 +87,7 @@ Do not commit exported run summaries unless they are intentionally added as synt
 - The default AI provider is deterministic mock behavior.
 - The browser demo does not need `OPENAI_API_KEY`.
 - Live OpenAI calls, if added later, must be server-side only.
-- Mock execution never mutates external systems.
+- Mock execution never mutates external systems and remains locked until governance approval.
 - The demo does not need passwords, raw secrets, private message bodies, production write access, or unrestricted admin access.
 
 ## 10.7 Recovery
