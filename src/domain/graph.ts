@@ -1,6 +1,6 @@
 import type { GraphEdge, GraphNode, NormalizedWorkItem, RiskLevel, WorkGraph } from "./types";
 
-export function buildWorkGraph(items: NormalizedWorkItem[], patternId = "pattern-it-access"): WorkGraph {
+export function buildWorkGraph(items: NormalizedWorkItem[], patternId: string): WorkGraph {
   const total = items.length || 1;
   const exceptionCount = items.filter((item) => item.exceptions.length > 0).length;
   const provisionedCount = items.filter((item) => item.status === "provisioned").length;

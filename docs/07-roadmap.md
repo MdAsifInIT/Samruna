@@ -13,19 +13,23 @@ The MVP is intentionally scoped. Current limitations:
 - no server-side OpenAI call path
 - no durable server-side audit history
 - no richer visual graph canvas beyond the current selectable graph/pattern inspection
-- no browser automation test suite
+- limited browser automation coverage beyond the current Chromium golden path
 
 These limitations are acceptable for a local-first demo but should be addressed before production use.
 
-## 7.2 Hackathon Local POC Needs
+## 7.2 Near-Term Local POC Needs
 
 Recommended local POC improvements:
 
-1. Add a richer visual graph canvas.
-2. Add browser smoke tests when browser access is available.
-3. Add more workflow templates.
-4. Add dataset import beyond the current run-summary import/export.
-5. Add richer proposal versioning and comparison.
+1. Stabilize graph node and edge identifiers so graph views, exported summaries, and future visual layouts can compare runs reliably.
+2. Expand Playwright e2e beyond the current Chromium golden path.
+3. Add mobile viewport e2e coverage for the full demo path.
+4. Add accessibility checks for keyboard navigation, labels, focus order, and contrast.
+5. Add CI coverage for typecheck, unit tests, build, audit, and Playwright.
+6. Add richer proposal versioning and comparison.
+7. Add a richer visual graph canvas.
+8. Add more workflow templates.
+9. Add dataset import beyond the current run-summary import/export.
 
 ## 7.3 Production-Only Roadmap
 
@@ -132,16 +136,18 @@ Why it fits:
 
 Suggested order:
 
-1. Add server-side API.
-2. Add database.
-3. Add authentication.
-4. Add RBAC.
-5. Add OpenAI server route.
-6. Add connector ingestion.
-7. Add persisted audit events.
-8. Add proposal versions.
-9. Add tool execution allowlists.
-10. Add deployment configuration.
+1. Harden the local demo with expanded e2e, mobile, accessibility, and CI checks.
+2. Stabilize graph identifiers and add proposal versions.
+3. Add a richer graph visualization that preserves provenance and bottleneck inspection.
+4. Add server-side API.
+5. Add database.
+6. Add authentication.
+7. Add RBAC.
+8. Add OpenAI server route.
+9. Add connector ingestion.
+10. Add persisted audit events.
+11. Add tool execution allowlists.
+12. Add deployment configuration.
 
 ## 7.8 Security Roadmap
 
@@ -160,13 +166,31 @@ Security work should include:
 
 Add:
 
-- Playwright or equivalent browser tests when browser access is available
-- accessibility checks
+- more Playwright flows for scenario switching, import/export, reset recovery, governance rejection, and execution gating
+- mobile viewport Playwright coverage
+- accessibility checks in local and CI verification
+- CI jobs for `npm run typecheck`, `npm test`, `npm run build`, `npm audit --audit-level=low`, and `npm run test:e2e`
 - imported fixture schema tests
 - provider fallback tests
 - connector contract tests
 - server route tests
 - visual regression checks for the dashboard
+
+Current browser command:
+
+```powershell
+npm run test:e2e
+```
+
+Install Chromium first if needed:
+
+```powershell
+npm run test:e2e:install
+```
+
+Use `npm run test:e2e:preview` for the preview-backed Playwright path and `npm run typecheck:e2e` when validating the e2e TypeScript project.
+
+Sandboxed environments may require explicit permission to install browsers or launch Chromium.
 
 ## 7.10 Definition Of Production Readiness
 

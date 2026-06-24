@@ -147,6 +147,8 @@ export interface AutomationProposal {
   expectedValue: string;
   auditRationale: string;
   version: number;
+  changeSummary?: string;
+  generatedAt?: string;
 }
 
 export type SimulationCaseStatus = "pass" | "fail" | "needs_human" | "policy_risk";

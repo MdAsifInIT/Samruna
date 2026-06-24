@@ -37,7 +37,10 @@ import { generateAutomationProposal } from "./domain/planner";
 import { simulateAutomation } from "./domain/simulation";
 import type {
   AuditEvent,
+  AutomationProposal,
   DemoScenario,
+  GraphEdge,
+  GraphNode,
   GovernanceRecord,
   IngestionResult,
   LearningRecommendation,
@@ -82,6 +85,22 @@ interface SimulationCasePreviewItem {
   status: SimulationCaseStatus;
   statusLabel: string;
 }
+
+interface VisualGraphNode {
+  node: GraphNode;
+  x: number;
+  y: number;
+}
+
+interface VisualGraphEdge {
+  id: string;
+  label: string;
+  source: VisualGraphNode;
+  target: VisualGraphNode;
+  exceptionRate: number;
+}
+
+const PROPOSAL_GENERATED_AT_BASE = Date.UTC(2026, 4, 16, 9, 40, 0);
 
 function buildWorkflowStages(input: {
   sampleLoaded: boolean;
@@ -242,26 +261,25 @@ export function App() {
     () => (demoState.analysisRequested ? ingestWorkTraces(fixtures.rawTraces, fixtures.approvalHistory) : undefined),
     [demoState.analysisRequested, fixtures]
   );
-  const graph = useMemo(() => (ingestion ? buildWorkGraph(ingestion.items) : undefined), [ingestion]);
   const patternDetection = useMemo(() => (ingestion ? detectWorkPatterns(ingestion.items) : undefined), [ingestion]);
   const sampleItem = ingestion?.items[0];
   const topPattern = patternDetection?.patterns[0];
+  const graph = useMemo(
+    () => (ingestion ? buildWorkGraph(ingestion.items, topPattern?.id ?? `scenario-${scenario.id}`) : undefined),
+    [ingestion, scenario.id, topPattern?.id]
+  );
   const topBottleneck = topPattern
     ? patternDetection?.bottlenecks.find((bottleneck) => bottleneck.patternId === topPattern.id)
     : undefined;
   const topOpportunity = topPattern
     ? patternDetection?.opportunities.find((opportunity) => opportunity.patternId === topPattern.id)
     : undefined;
-  const proposal =
-    demoState.proposalRequested && topPattern && graph && topBottleneck && topOpportunity
-      ? generateAutomationProposal({
-          pattern: topPattern,
-          graph,
-          policyRules: fixtures.policyRules,
-          bottleneck: topBottleneck,
-          opportunity: topOpportunity
-        })
-      : undefined;
+  const proposal = useMemo(() => selectProposalVersion(demoState.proposals, demoState.selectedProposalId), [
+    demoState.proposals,
+    demoState.selectedProposalId
+  ]);
+  const proposalVersions = useMemo(() => sortProposalVersions(demoState.proposals), [demoState.proposals]);
+  const proposalGenerationReady = Boolean(topPattern && graph && topBottleneck && topOpportunity);
   const simulation = proposal && ingestion ? simulateAutomation(proposal, ingestion.items) : undefined;
   const governanceDecisionLabel =
     demoState.governanceDecision === "approved"
@@ -340,6 +358,7 @@ export function App() {
     ? patternDetection?.opportunities.find((opportunity) => opportunity.patternId === selectedPattern.id)
     : undefined;
   const selectedGraphEdges = selectedGraphNode && graph ? graph.edges.filter((edge) => edge.source === selectedGraphNode.id || edge.target === selectedGraphNode.id) : [];
+  const visualGraph = useMemo(() => (graph ? buildVisualGraph(graph.nodes, graph.edges) : undefined), [graph]);
   const workflowStages = useMemo(
     () =>
       buildWorkflowStages({
@@ -363,18 +382,19 @@ export function App() {
       buildAuditEvents({
         state: demoState,
         scenario,
+        proposal,
         ingestion,
         governanceRecords,
         executionStatus: executionRun?.status,
         recommendation: learningRecommendation
       }),
-    [demoState, executionRun?.status, governanceRecords, ingestion, learningRecommendation, scenario]
+    [demoState, executionRun?.status, governanceRecords, ingestion, learningRecommendation, proposal, scenario]
   );
   const snapshot = useMemo<PersistedDemoState>(
     () => ({
       ...demoState,
       graph,
-      proposals: proposal ? [proposal] : [],
+      selectedProposalId: proposal?.id,
       governanceRecords,
       simulation,
       executionRuns: executionRun ? [executionRun] : [],
@@ -382,7 +402,7 @@ export function App() {
       auditEvents,
       updatedAt: new Date().toISOString()
     }),
-    [auditEvents, demoState, executionRun, governanceRecords, graph, learningRecommendation, proposal, simulation]
+    [auditEvents, demoState, executionRun, governanceRecords, graph, learningRecommendation, proposal?.id, simulation]
   );
   const topSystem = ingestion ? topEntry(ingestion.summary.systemCounts) : undefined;
   const foundationPanels = buildFoundationPanels(demoState, scenario, ingestion, proposal?.auditRationale);
@@ -452,6 +472,39 @@ export function App() {
     }
   };
 
+  const createProposalRevision = (changeSummary: string) => {
+    if (!topPattern || !graph || !topBottleneck || !topOpportunity) {
+      return;
+    }
+
+    updateState((state) => {
+      const version = nextProposalVersion(state.proposals, topPattern.id);
+      const nextProposal = generateAutomationProposal({
+        pattern: topPattern,
+        graph,
+        policyRules: fixtures.policyRules,
+        bottleneck: topBottleneck,
+        opportunity: topOpportunity,
+        version,
+        changeSummary,
+        generatedAt: generatedAtForProposalVersion(version)
+      });
+
+      return {
+        ...state,
+        proposalRequested: true,
+        selectedProposalId: nextProposal.id,
+        proposals: [...state.proposals.filter((proposal) => proposal.id !== nextProposal.id), nextProposal],
+        governanceDecision: "pending",
+        runRequested: false,
+        governanceRecords: [],
+        executionRuns: [],
+        recommendations: [],
+        simulation: undefined
+      };
+    });
+  };
+
   return (
     <main className="app-shell">
       <section className="topbar" aria-label="Demo controls">
@@ -508,13 +561,13 @@ export function App() {
             type="button"
             aria-label="Generate automation proposal"
             title="Generate automation proposal"
-            disabled={!demoState.analysisRequested}
+            disabled={!demoState.analysisRequested || !proposalGenerationReady}
             onClick={() =>
-              updateState((state) => ({
-                ...state,
-                proposalRequested: true,
-                governanceDecision: "pending"
-              }))
+              createProposalRevision(
+                demoState.proposals.length
+                  ? "Revision refreshed from the latest deterministic graph, policy, and bottleneck inputs."
+                  : "Initial proposal generated from the deterministic graph, policy, and bottleneck inputs."
+              )
             }
           >
             <Brain size={18} />
@@ -770,6 +823,58 @@ export function App() {
               <span>{graph.metrics.averageCycleTimeHours}h cycle time</span>
             </div>
           </div>
+          {visualGraph ? (
+            <div className="graph-workspace" aria-label="Interactive work graph visualization">
+              <div className="graph-map">
+                <svg className="graph-edge-layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                  {visualGraph.edges.map((edge) => (
+                    <line
+                      key={edge.id}
+                      x1={edge.source.x}
+                      y1={edge.source.y}
+                      x2={edge.target.x}
+                      y2={edge.target.y}
+                      className={edge.exceptionRate > 0 ? "graph-edge exception" : "graph-edge"}
+                    />
+                  ))}
+                </svg>
+                {visualGraph.edges.map((edge) => (
+                  <span
+                    key={`${edge.id}-label`}
+                    className="graph-edge-label"
+                    style={{
+                      left: `${(edge.source.x + edge.target.x) / 2}%`,
+                      top: `${(edge.source.y + edge.target.y) / 2}%`
+                    }}
+                  >
+                    {edge.label}
+                  </span>
+                ))}
+                {visualGraph.nodes.map(({ node, x, y }) => (
+                  <button
+                    key={node.id}
+                    type="button"
+                    className="graph-visual-node"
+                    data-kind={node.kind}
+                    data-risk={node.riskLevel}
+                    aria-label={`Select graph node ${node.label}, ${node.kind}, ${node.riskLevel} risk, ${node.count} cases`}
+                    aria-pressed={node.id === selectedGraphNode?.id}
+                    style={{ left: `${x}%`, top: `${y}%` }}
+                    onClick={() => setSelectedGraphNodeId(node.id)}
+                  >
+                    <span>{node.kind}</span>
+                    <strong>{node.label}</strong>
+                    <small>{node.count} cases</small>
+                  </button>
+                ))}
+              </div>
+              <div className="graph-legend" aria-label="Graph risk legend">
+                <span data-risk="low">Low risk</span>
+                <span data-risk="medium">Medium risk</span>
+                <span data-risk="high">High risk</span>
+              </div>
+            </div>
+          ) : null}
           <div className="inspection-grid">
             <div className="graph-list" role="list" aria-label="Work graph nodes">
               {graph.nodes.map((node) => (
@@ -903,7 +1008,43 @@ export function App() {
               <p className="eyebrow">Agentic workflow planner</p>
               <h2>Governed automation proposal</h2>
             </div>
-            <strong className="opportunity-score">{Math.round(proposal.confidence * 100)} confidence</strong>
+            <div className="proposal-version-controls">
+              <label>
+                <span>Version</span>
+                <select
+                  aria-label="Select proposal version"
+                  value={proposal.id}
+                  onChange={(event) =>
+                    updateState((state) => ({
+                      ...state,
+                      selectedProposalId: event.target.value,
+                      governanceDecision: "pending",
+                      runRequested: false
+                    }))
+                  }
+                >
+                  {proposalVersions.map((versionedProposal) => (
+                    <option key={versionedProposal.id} value={versionedProposal.id}>
+                      v{versionedProposal.version} - {versionedProposal.changeSummary ?? "Generated proposal"}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <strong className="opportunity-score">{Math.round(proposal.confidence * 100)} confidence</strong>
+              <button
+                className="revision-button"
+                type="button"
+                disabled={!proposalGenerationReady}
+                onClick={() =>
+                  createProposalRevision(
+                    `Revision v${nextProposalVersion(demoState.proposals, proposal.patternId)} refreshes governance review from the latest deterministic analysis.`
+                  )
+                }
+              >
+                <GitBranch size={16} />
+                <span>Create Revision</span>
+              </button>
+            </div>
           </div>
           <div className="proposal-summary">
             <div>
@@ -919,8 +1060,16 @@ export function App() {
               <strong>v{proposal.version}</strong>
             </div>
             <div>
+              <span>Generated</span>
+              <strong>{formatProposalTimestamp(proposal.generatedAt)}</strong>
+            </div>
+            <div>
               <span>Expected value</span>
               <strong>{proposal.expectedValue}</strong>
+            </div>
+            <div>
+              <span>Change summary</span>
+              <strong>{proposal.changeSummary ?? "Generated proposal baseline."}</strong>
             </div>
           </div>
           <div className="proposal-grid">
@@ -1208,6 +1357,82 @@ export function App() {
   );
 }
 
+function selectProposalVersion(proposals: AutomationProposal[], selectedProposalId?: string): AutomationProposal | undefined {
+  if (!proposals.length) {
+    return undefined;
+  }
+
+  return proposals.find((proposal) => proposal.id === selectedProposalId) ?? sortProposalVersions(proposals).at(-1);
+}
+
+function sortProposalVersions(proposals: AutomationProposal[]): AutomationProposal[] {
+  return [...proposals].sort((a, b) => a.version - b.version || a.id.localeCompare(b.id));
+}
+
+function nextProposalVersion(proposals: AutomationProposal[], patternId: string): number {
+  const versions = proposals
+    .filter((proposal) => proposal.patternId === patternId)
+    .map((proposal) => proposal.version);
+
+  return versions.length ? Math.max(...versions) + 1 : 1;
+}
+
+function generatedAtForProposalVersion(version: number): string {
+  return new Date(PROPOSAL_GENERATED_AT_BASE + (version - 1) * 20 * 60 * 1000).toISOString();
+}
+
+function formatProposalTimestamp(timestamp?: string): string {
+  return timestamp ? timestamp.replace(".000Z", "Z").replace("T", " ") : "Not recorded";
+}
+
+function buildVisualGraph(nodes: GraphNode[], edges: GraphEdge[]): { nodes: VisualGraphNode[]; edges: VisualGraphEdge[] } {
+  const kindOrder: GraphNode["kind"][] = ["actor", "approval", "policy", "system", "action", "exception", "outcome"];
+  const orderedNodes = [...nodes].sort((a, b) => {
+    const kindDelta = kindOrder.indexOf(a.kind) - kindOrder.indexOf(b.kind);
+
+    return kindDelta || a.label.localeCompare(b.label);
+  });
+  const nodesByKind = new Map<GraphNode["kind"], GraphNode[]>();
+
+  for (const node of orderedNodes) {
+    nodesByKind.set(node.kind, [...(nodesByKind.get(node.kind) ?? []), node]);
+  }
+
+  const activeKinds = kindOrder.filter((kind) => nodesByKind.has(kind));
+  const visualNodes = activeKinds.flatMap((kind, columnIndex) => {
+    const group = nodesByKind.get(kind) ?? [];
+    const x = activeKinds.length === 1 ? 50 : 18 + (columnIndex / (activeKinds.length - 1)) * 64;
+
+    return group.map((node, rowIndex) => ({
+      node,
+      x,
+      y: group.length === 1 ? 50 : 18 + (rowIndex / (group.length - 1)) * 64
+    }));
+  });
+  const nodeLookup = new Map(visualNodes.map((visualNode) => [visualNode.node.id, visualNode]));
+  const visualEdges = edges.reduce<VisualGraphEdge[]>((items, edge) => {
+    const source = nodeLookup.get(edge.source);
+    const target = nodeLookup.get(edge.target);
+
+    if (source && target) {
+      items.push({
+        id: edge.id,
+        label: edge.label,
+        source,
+        target,
+        exceptionRate: edge.exceptionRate
+      });
+    }
+
+    return items;
+  }, []);
+
+  return {
+    nodes: visualNodes,
+    edges: visualEdges
+  };
+}
+
 function buildGovernanceRecords(proposal: NonNullable<ReturnType<typeof generateAutomationProposal>>, decision: string) {
   const pending = createGovernanceRecord({
     proposal,
@@ -1249,6 +1474,7 @@ function buildGovernanceRecords(proposal: NonNullable<ReturnType<typeof generate
 function buildAuditEvents(input: {
   state: PersistedDemoState;
   scenario: DemoScenario;
+  proposal?: AutomationProposal;
   ingestion?: IngestionResult;
   governanceRecords: GovernanceRecord[];
   executionStatus?: string;
@@ -1283,11 +1509,13 @@ function buildAuditEvents(input: {
   if (input.state.proposalRequested) {
     events.push(
       createAuditEvent({
-        id: `audit-${input.scenario.id}-proposal`,
+        id: `audit-${input.scenario.id}-proposal-${input.proposal?.version ?? "requested"}`,
         timestamp: "2026-05-16T09:40:00Z",
         actor: "planner_agent",
         action: "Proposal generated",
-        detail: "Proposal inputs, assumptions, policy checks, actions, and escalations were made reviewable."
+        detail: input.proposal
+          ? `Proposal v${input.proposal.version} inputs, assumptions, policy checks, actions, and escalations were made reviewable.`
+          : "Proposal inputs, assumptions, policy checks, actions, and escalations were made reviewable."
       })
     );
   }

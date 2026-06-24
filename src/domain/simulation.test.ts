@@ -10,9 +10,14 @@ import { simulateAutomation } from "./simulation";
 function makeProposal() {
   const fixtures = loadDemoFixtures();
   const ingestion = ingestWorkTraces(fixtures.rawTraces, fixtures.approvalHistory);
-  const graph = buildWorkGraph(ingestion.items);
   const detection = detectWorkPatterns(ingestion.items);
   const pattern = detection.patterns[0];
+
+  if (!pattern) {
+    throw new Error("Expected a top pattern");
+  }
+
+  const graph = buildWorkGraph(ingestion.items, pattern.id);
   const bottleneck = detection.bottlenecks.find((item) => item.patternId === pattern.id);
   const opportunity = detection.opportunities.find((item) => item.patternId === pattern.id);
 

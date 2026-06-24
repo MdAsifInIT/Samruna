@@ -25,6 +25,7 @@ export interface PersistedDemoState {
   sampleLoaded: boolean;
   analysisRequested: boolean;
   proposalRequested: boolean;
+  selectedProposalId?: string;
   governanceDecision: GovernanceDecision;
   runRequested: boolean;
   graph?: WorkGraph;
@@ -78,7 +79,7 @@ export function loadPersistedDemoState(storage = resolveDemoStorage()): Persiste
 
     const parsed = JSON.parse(raw) as unknown;
 
-    return isPersistedDemoState(parsed) ? parsed : undefined;
+    return normalizePersistedDemoState(parsed);
   } catch {
     return undefined;
   }
@@ -120,11 +121,13 @@ export function importRunSummary(raw: string): PersistedDemoState {
   const parsed = JSON.parse(raw) as unknown;
 
   if (isRunSummaryExport(parsed)) {
-    return parsed.state;
+    return normalizePersistedDemoState(parsed.state) ?? parsed.state;
   }
 
-  if (isPersistedDemoState(parsed)) {
-    return parsed;
+  const state = normalizePersistedDemoState(parsed);
+
+  if (state) {
+    return state;
   }
 
   throw new Error("Imported run summary did not match the demo state contract");
@@ -148,18 +151,18 @@ function isRunSummaryExport(value: unknown): value is RunSummaryExport {
   return (
     typeof candidate.exportedAt === "string" &&
     (candidate.scenarioId === "it-access" || candidate.scenarioId === "procurement-intake") &&
-    isPersistedDemoState(candidate.state)
+    Boolean(normalizePersistedDemoState(candidate.state))
   );
 }
 
-function isPersistedDemoState(value: unknown): value is PersistedDemoState {
+function normalizePersistedDemoState(value: unknown): PersistedDemoState | undefined {
   if (!value || typeof value !== "object") {
-    return false;
+    return undefined;
   }
 
   const state = value as Partial<PersistedDemoState>;
 
-  return (
+  const valid =
     state.version === DEMO_STATE_VERSION &&
     (state.selectedScenarioId === "it-access" || state.selectedScenarioId === "procurement-intake") &&
     typeof state.sampleLoaded === "boolean" &&
@@ -172,8 +175,22 @@ function isPersistedDemoState(value: unknown): value is PersistedDemoState {
     Array.isArray(state.executionRuns) &&
     Array.isArray(state.recommendations) &&
     Array.isArray(state.auditEvents) &&
-    typeof state.updatedAt === "string"
-  );
+    typeof state.updatedAt === "string";
+
+  if (!valid) {
+    return undefined;
+  }
+
+  const proposals = state.proposals ?? [];
+  const selectedProposalId =
+    typeof state.selectedProposalId === "string" && proposals.some((proposal) => proposal.id === state.selectedProposalId)
+      ? state.selectedProposalId
+      : proposals.at(-1)?.id;
+
+  return {
+    ...state,
+    selectedProposalId
+  } as PersistedDemoState;
 }
 
 function isGovernanceDecision(value: unknown): value is GovernanceDecision {

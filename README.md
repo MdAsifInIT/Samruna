@@ -74,6 +74,7 @@ npm run demo:seed  # Print deterministic seed state JSON
 npm run demo:reset # Print browser localStorage reset snippet
 npm run build      # Typecheck and build production artifact
 npm run verify:demo # Run typecheck, tests, build, and audit
+npm run test:e2e   # Run Playwright Chromium e2e tests
 npm run preview    # Preview production build
 npm run typecheck  # Run TypeScript checks
 npm test           # Run Vitest suite
@@ -138,14 +139,26 @@ Before handoff or push, run:
 npm run verify:demo
 ```
 
-Current verified baseline:
+For browser coverage, install Chromium if needed and then run the Playwright suite:
 
-- 10 test files
-- 34 tests
+```powershell
+npm run test:e2e:install
+npm run test:e2e:preview
+npm run test:e2e
+npm run typecheck:e2e
+```
+
+Current non-browser baseline:
+
+- Vitest suite passes
 - production build passes
 - audit reports 0 vulnerabilities
 
-Browser e2e, Playwright, and other browser automation are deferred in this environment because browser access is unavailable.
+Current browser baseline:
+
+- Playwright e2e exists under `tests/e2e`
+- `npm run test:e2e` runs the golden demo path in Chromium
+- sandboxed environments may require permission to install Chromium or launch the browser
 
 ## Troubleshooting
 

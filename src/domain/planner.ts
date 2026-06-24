@@ -13,15 +13,19 @@ export function generateAutomationProposal(input: {
   policyRules: PolicyRule[];
   bottleneck: BottleneckInsight;
   opportunity: AutomationOpportunity;
+  version?: number;
+  changeSummary?: string;
+  generatedAt?: string;
 }): AutomationProposal {
   const applicablePolicies = input.policyRules.filter((policy) =>
     policy.appliesTo.some((requestType) => input.pattern.requestTypes.includes(requestType))
   );
   const requiresHumanReview = applicablePolicies.some((policy) => policy.requiresHumanReview) || input.pattern.riskLevel !== "low";
   const escalationRoles = Array.from(new Set(applicablePolicies.map((policy) => policy.escalationRole)));
+  const version = input.version ?? 1;
 
   return {
-    id: `proposal-${input.pattern.id}-v1`,
+    id: `proposal-${input.pattern.id}-v${version}`,
     patternId: input.pattern.id,
     trigger: `New ${input.pattern.label.toLowerCase()} request with complete requester, manager, system, and urgency fields`,
     requiredData: ["requester", "department", "manager", "target system", "urgency", "employment status", "policy catalog match"],
@@ -41,7 +45,9 @@ export function generateAutomationProposal(input: {
     auditRationale: `${input.pattern.label} appears ${input.pattern.volume} times with ${Math.round(
       input.pattern.repeatabilityScore * 100
     )}% repeatability. The planner keeps ${requiresHumanReview ? "policy-sensitive" : "exception"} cases under human governance.`,
-    version: 1
+    version,
+    changeSummary: input.changeSummary,
+    generatedAt: input.generatedAt
   };
 }
 

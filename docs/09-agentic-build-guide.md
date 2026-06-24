@@ -33,15 +33,18 @@ Use this checklist before and after meaningful changes:
 1. Observe current repo state with `git status --short`.
 2. Map workflows and data model from `src/domain/types.ts` and `src/fixtures/demoData.ts`.
 3. Run `npm run typecheck`.
-4. Run `npm run verify:demo`.
-5. Start local demo with `npm run demo:dev`.
-6. Walk the UI flow: scenario, load, analyze, generate proposal, approve, run mock, export, reset.
-7. Switch to procurement and verify load, analyze, proposal generation.
-8. Verify reset/recovery restores seeded local state.
-9. Verify mock AI fallback by leaving `OPENAI_API_KEY` unset.
-10. Verify no secrets, exported local state files, or customer data are committed.
+4. Run `npm run typecheck:e2e` when changing the Playwright config or the e2e TypeScript project.
+5. Run `npm run verify:demo`.
+6. Install Playwright Chromium with `npm run test:e2e:install` if the browser is not already installed.
+7. Run `npm run test:e2e:preview` or `npm run test:e2e` when browser launch is allowed.
+8. Start local demo with `npm run demo:dev`.
+9. Walk the UI flow: scenario, load, analyze, generate proposal, approve, run mock, export, reset.
+10. Switch to procurement and verify load, analyze, proposal generation.
+11. Verify reset/recovery restores seeded local state.
+12. Verify mock AI fallback by leaving `OPENAI_API_KEY` unset.
+13. Verify no secrets, exported local state files, or customer data are committed.
 
-Browser automation is deferred in this environment because browser access is unavailable.
+Sandboxed environments may require explicit permission to install Chromium or launch the browser. If permission is denied, record the exact blocker in the handoff.
 
 Expected outcomes:
 
@@ -50,6 +53,7 @@ Expected outcomes:
 - test suite passes
 - build passes
 - audit reports no low-or-higher vulnerabilities
+- Playwright e2e passes when browser launch is allowed
 - mock execution never mutates external systems
 
 ## 9.4 Extension Rules
@@ -61,7 +65,7 @@ Expected outcomes:
 - Persist new demo state only through `src/domain/persistence.ts`.
 - Keep live OpenAI calls server-side only if they are added.
 - Keep execution mock-only unless a future production architecture adds authenticated, allowlisted tool execution with approvals.
-- Keep browser automation out of the local POC verification path unless browser access is available.
+- Keep Playwright e2e in the verification path when browser access is available.
 
 ## 9.5 Common Failure Modes
 

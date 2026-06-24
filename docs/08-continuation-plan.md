@@ -10,58 +10,77 @@ Work Graph Foundry already has a credible local-first foundation:
 - domain modules for ingestion, graphing, pattern detection, planning, simulation, governance, execution, and learning
 - deterministic mock AI provider with an OpenAI Responses API boundary
 - numbered documentation guides and archived implementation history
-- unit and component tests
+- unit, component, and Playwright e2e tests
 
-The next build should preserve that foundation while making the demo feel more operational and repeatable.
+The next build should preserve that foundation while making the demo more stable across graph inspection, QA, proposal iteration, and visual explanation.
 
-## 8.2 Implementation Goals
+## 8.2 Current Next Actions
 
-Status: implemented in this continuation pass. Keep this file as the short record of what was planned and completed.
+Use this file as the active handoff for the next implementation pass. Keep changes scoped, deterministic, and compatible with concurrent edits.
 
-1. Add lightweight browser-local persistence for demo run state without introducing a backend.
-2. Add deterministic seed/reset utilities so operators and agents can return to a known state.
-3. Expand scenario management beyond IT access requests with typed synthetic enterprise data.
-4. Make the dashboard guide operators through the full demo path without turning it into a marketing page.
-5. Preserve governed, mock-only execution by default.
-6. Make AI assumptions, proposal rationale, governance decisions, execution results, and audit events reviewable.
-7. Extend docs and tests so the repository remains easy for future agents to continue.
+1. Fix graph identifiers so nodes, edges, bottlenecks, exports, and future graph views use stable ids across reloads, resets, and scenario switches.
+2. Expand QA around the existing Playwright e2e path, including mobile viewports, accessibility checks, rejection gates, import/export, and reset recovery.
+3. Add proposal versioning so regenerated proposals can be compared, approved, rejected, exported, and audited without overwriting prior review context.
+4. Add a richer graph visualization that makes process stages, bottlenecks, exceptions, provenance, and selected scenario context easier to inspect.
+5. Keep all execution mock-only and governance-gated while these improvements land.
 
-## 8.3 Implemented Work
+## 8.3 Work Notes
 
-### Phase 1: Demo Persistence And Reset
+### 8.3.1 Graph Id Fix
 
-- Added a dependency-light local storage module under `src/domain/`.
-- Persisted selected scenario id, staged run state, generated graph, proposals, approval decisions, execution run, learning recommendation, and audit events.
-- Added deterministic seed/reset helpers.
-- Added npm scripts for local seed/reset guidance using dependency-free Node scripts.
+Target outcome:
 
-### Phase 2: Scenario And Dataset Management
+- each graph node and edge has a deterministic, scenario-scoped id
+- persisted state and exported summaries can reference graph elements safely
+- UI selections do not drift after reload, reset, import, or scenario switch
+- tests cover id stability for both IT access and procurement scenarios
 
-- Generalized fixture loading around scenario definitions.
-- Kept IT access as the default scenario.
-- Added a synthetic procurement intake scenario with request traces, approvals, policy rules, and a new incoming request.
-- Added validation coverage for scenario ids and fixture integrity.
-- Added import/export support for run summaries in the UI.
+### 8.3.2 QA Expansion
 
-### Phase 3: Demo Operator Experience
+Current browser command:
 
-- Added a scenario selector and a compact operator checklist.
-- Made the flow explicit: load scenario, analyze workflow, inspect graph, generate proposal, review governance notes, approve or reject, run mock execution, view audit trail and recommendation.
-- Kept the dashboard dense, readable, and operational.
-- Used existing styling conventions and lucide-react icons.
+```powershell
+npm run test:e2e
+```
 
-### Phase 4: AI Provider And Governance Boundary
+Install Chromium first if needed:
 
-- Kept deterministic mock behavior as the browser default.
-- Added reviewable agent context: inputs, assumptions, proposal rationale, risk notes, and simulated execution results.
-- Documented server-side-only live OpenAI usage, environment variables, fallback behavior, and failure modes.
+```powershell
+npm run test:e2e:install
+```
 
-### Phase 5: Security, Testing, And Documentation
+Use `npm run test:e2e:preview` for the preview-backed Playwright path and `npm run typecheck:e2e` when validating the e2e TypeScript project.
 
-- Extended FAQ-style security docs with required data, explicitly unnecessary data, retention, auditability, and human approval.
-- Added tests for scenario loading, persistence/reset, proposal generation, approval/rejection, and audit logging.
-- Added `docs/09-agentic-build-guide.md` and `docs/10-demo-operations.md`.
-- Updated README and numbered docs so they remain the canonical walkthrough.
+Add or extend checks for:
+
+- mobile viewport layout without horizontal overflow
+- accessible labels, focus order, keyboard navigation, and contrast
+- approve and reject governance paths
+- import/export recovery
+- reset after generated state
+- CI execution of unit, build, audit, and e2e checks
+
+Sandboxed environments may require explicit permission to install Chromium or launch the browser.
+
+### 8.3.3 Proposal Versioning
+
+Target outcome:
+
+- regenerated proposals create new versions instead of replacing the prior proposal silently
+- approval and rejection records identify the exact proposal version
+- exports include proposal version history
+- the UI makes the current approved version clear before mock execution
+- tests cover proposal regeneration, comparison, approval, rejection, and export
+
+### 8.3.4 Graph Visualization
+
+Target outcome:
+
+- the dashboard shows a clearer visual graph without hiding the existing textual evidence
+- selected graph elements reveal source traces, policy context, bottleneck metrics, and exceptions
+- the visualization works for both implemented scenarios
+- mobile layout remains usable
+- the implementation keeps typed graph contracts in `src/domain/` as the source of truth
 
 ## 8.4 Verification Plan
 
@@ -69,6 +88,7 @@ Run before handoff:
 
 ```powershell
 npm run verify:demo
+npm run test:e2e
 git status --short
 ```
 
@@ -78,8 +98,10 @@ Expected outcome:
 - tests pass
 - production build passes
 - audit has no low-or-higher vulnerabilities
+- Playwright Chromium e2e passes when browser launch is allowed
 - only intentional source, docs, script, and test files are changed
-- browser e2e and Playwright checks remain deferred when browser access is unavailable
+
+If Playwright is blocked by sandbox permissions, request permission or document the blocker with the exact command that failed.
 
 ## 8.5 Guardrails
 
@@ -89,3 +111,4 @@ Expected outcome:
 - Do not mutate external systems.
 - Do not remove the existing IT access request story.
 - Do not replace typed domain behavior with UI-only mockups.
+- Do not treat browser permission failures as product failures.

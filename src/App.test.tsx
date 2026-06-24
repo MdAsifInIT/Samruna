@@ -52,11 +52,11 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: "Maya Chen" })).toBeInTheDocument();
     expect(screen.getByText(/standard access/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /IT access request flow/i })).toBeInTheDocument();
-    expect(screen.getByText("Manager approval")).toBeInTheDocument();
+    expect(screen.getAllByText("Manager approval").length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /Repeated workflows and automation opportunities/i })).toBeInTheDocument();
     expect(screen.getAllByText(/Manager approval delay/i).length).toBeGreaterThan(0);
 
-    fireEvent.click(screen.getByRole("button", { name: /Exception review/i }));
+    fireEvent.click(screen.getAllByRole("button", { name: /Exception review/i })[0]);
     expect(screen.getByRole("heading", { name: /Exception review/i })).toBeInTheDocument();
     expect(screen.getByText(/Audit relevance/i)).toBeInTheDocument();
 
@@ -137,7 +137,7 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: workflowHeading })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: graphTitle })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /Manager approval/i }));
+    fireEvent.click(screen.getAllByRole("button", { name: /Manager approval/i })[0]);
     expect(screen.getByRole("heading", { name: /Manager approval/i })).toBeInTheDocument();
     expect(screen.getByText(/Audit relevance:/i)).toBeInTheDocument();
 
@@ -149,6 +149,43 @@ describe("App", () => {
 
     expect(screen.getByRole("heading", { name: /Governed automation proposal/i })).toBeInTheDocument();
     expect(screen.getByText(/Write immutable audit event/i)).toBeInTheDocument();
+  });
+
+  it("persists proposal history and lets the selected version drive export", async () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Load scenario/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Analyze workflow/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Generate automation proposal/i }));
+
+    const versionSelector = screen.getByRole("combobox", { name: /Select proposal version/i }) as HTMLSelectElement;
+
+    expect(versionSelector.value).toContain("-v1");
+
+    fireEvent.click(screen.getByRole("button", { name: /Create Revision/i }));
+
+    expect(versionSelector.value).toContain("-v2");
+    expect(screen.getAllByText(/Revision v2 refreshes governance review/i).length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole("button", { name: /Export Summary/i }));
+
+    const exported = JSON.parse((screen.getByRole("textbox", { name: "Run summary JSON" }) as HTMLTextAreaElement).value) as {
+      state: {
+        selectedProposalId: string;
+        proposals: Array<{ id: string; version: number; changeSummary?: string; generatedAt?: string }>;
+      };
+    };
+
+    expect(exported.state.proposals).toHaveLength(2);
+    expect(exported.state.selectedProposalId).toBe(exported.state.proposals[1].id);
+    expect(exported.state.proposals[1]).toMatchObject({
+      version: 2,
+      generatedAt: "2026-05-16T10:00:00.000Z"
+    });
+
+    await waitFor(() => {
+      expect(window.localStorage.getItem(DEMO_STORAGE_KEY)).toContain('"selectedProposalId":"proposal-pattern-standard_access-v2"');
+    });
   });
 
   it("shows a safe error for malformed import summaries", () => {

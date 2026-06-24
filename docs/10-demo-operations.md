@@ -133,7 +133,10 @@ Fix deterministic domain failures before changing the UI.
 If browser e2e fails, run:
 
 ```powershell
+npm run test:e2e:install
+npm run typecheck:e2e
 npm run test:e2e
+npm run test:e2e:preview
 ```
 
 Review the failure screenshot, video, and trace before changing application behavior.
@@ -147,4 +150,4 @@ When browser automation is not available, verify the local POC with:
 3. `npm run verify:demo` to confirm typecheck, tests, build, and audit
 4. `npm run demo:seed` and `npm run demo:reset` to confirm the operator helpers still emit deterministic output
 
-When browser automation is available, `npm run test:e2e` is the browser verification gate. The command requires Playwright browser binaries; if Chromium is missing, install it after dependencies with `npx playwright install chromium`.
+When browser automation is available, `npm run test:e2e` and `npm run test:e2e:preview` are the browser verification gates. The commands require Playwright browser binaries; if Chromium is missing, install it after dependencies with `npm run test:e2e:install`.

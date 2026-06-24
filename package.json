@@ -12,8 +12,11 @@
     "verify:demo": "npm run typecheck && npm test && npm run build && npm audit --audit-level=low",
     "preview": "vite preview --host 127.0.0.1 --configLoader runner",
     "typecheck": "tsc -b",
+    "typecheck:e2e": "tsc -p tsconfig.e2e.json",
     "test": "vitest run --configLoader runner --pool vmThreads",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:preview": "playwright test --config=playwright.preview.config.ts",
+    "test:e2e:install": "playwright install chromium"
   },
   "dependencies": {
     "@vitejs/plugin-react": "5.2.0",

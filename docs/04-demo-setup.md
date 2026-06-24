@@ -40,6 +40,14 @@ npm run preview
 
 Use this fallback if Vite dev optimization is blocked by the environment.
 
+Install Playwright Chromium if the local machine has not already done so:
+
+```powershell
+npm run test:e2e:install
+```
+
+Use `npm run test:e2e:preview` for the preview-backed Playwright path and `npm run typecheck:e2e` for the e2e TypeScript project.
+
 ## 4.3 Demo Walkthrough
 
 ### 4.3.1 Open The Dashboard
@@ -195,6 +203,7 @@ Short version:
 Before presenting:
 
 - `npm run verify:demo` passes for non-browser verification.
+- `npm run test:e2e` passes when browser launch is allowed.
 - `npm run build` passes.
 - `npm test` passes.
 - `Load Scenario` renders source counts.
@@ -209,4 +218,4 @@ Before presenting:
 - No API key is required.
 - Mobile layout has no horizontal overflow.
 
-Browser e2e and Playwright checks are deferred in this environment because browser access is unavailable.
+If `npm run test:e2e` cannot launch Chromium in a sandboxed environment, request browser-launch permission or record the permission blocker in the handoff. Do not treat missing permission as a product failure.

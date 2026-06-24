@@ -123,4 +123,33 @@ describe("demo persistence", () => {
     expect(imported.sampleLoaded).toBe(true);
     expect(imported.auditEvents[0].action).toBe("Scenario loaded");
   });
+
+  it("imports older proposal states without a selected proposal id", () => {
+    const state = {
+      ...createSeedDemoState("it-access"),
+      proposalRequested: true,
+      proposals: [
+        {
+          id: "proposal-pattern-standard_access-v1",
+          patternId: "pattern-standard_access",
+          trigger: "trigger",
+          requiredData: [],
+          eligibilityRules: [],
+          policyChecks: [],
+          actions: [],
+          escalations: [],
+          confidence: 1,
+          riskLevel: "low" as const,
+          expectedValue: "value",
+          auditRationale: "rationale",
+          version: 1
+        }
+      ]
+    };
+    const imported = importRunSummary(JSON.stringify(state));
+
+    expect(imported.selectedProposalId).toBe("proposal-pattern-standard_access-v1");
+    expect(imported.proposals[0].changeSummary).toBeUndefined();
+    expect(imported.proposals[0].generatedAt).toBeUndefined();
+  });
 });

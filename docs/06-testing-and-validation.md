@@ -97,7 +97,10 @@ The Playwright e2e suite is the preferred browser verification path. It serves V
 Run:
 
 ```powershell
+npm run test:e2e:install
+npm run typecheck:e2e
 npm run test:e2e
+npm run test:e2e:preview
 ```
 
 Expected behavior:
@@ -105,28 +108,31 @@ Expected behavior:
 - Playwright starts the Vite app with a local web server.
 - Tests run in local Chromium against deterministic demo data.
 - Both golden scenarios complete load, analyze, proposal generation, governance approval, mock execution, export, and reset checks.
-- localStorage recovery is validated by reloading persisted state and confirming reset clears generated state.
+- Rejection, export/import round trip, malformed localStorage recovery, and mobile horizontal overflow are covered in Chromium.
+- Preview-backed e2e validates the production build path.
 - Successful runs leave no browser artifacts that need to be committed.
 - Failed runs capture screenshots, videos, and traces for debugging.
 
 Browser dependency notes:
 
 - The command requires the Playwright Chromium browser binary to be installed on the machine.
-- If the runner reports a missing browser executable, install the browser binaries after dependency installation with `npx playwright install chromium`.
+- If the runner reports a missing browser executable, install the browser binaries after dependency installation with `npm run test:e2e:install`.
 - CI and local agents should use the installed Playwright browser binaries rather than a system browser so results stay deterministic.
 
 ## 6.6 Full Verification Command Set
 
 ```powershell
 npm run verify:demo
+npm run typecheck:e2e
 npm run test:e2e
+npm run test:e2e:preview
 ```
 
 Expected current baseline for `npm run verify:demo`:
 
 - typecheck passes
 - 10 test files pass
-- 34 tests pass
+- 37 tests pass
 - build passes
 - audit reports 0 vulnerabilities
 
@@ -135,7 +141,7 @@ Expected current baseline for `npm run test:e2e`:
 - local Vite server starts
 - deterministic Chromium browser tests pass
 - golden paths pass for `IT access requests` and `Procurement intake`
-- localStorage reload and reset recovery checks pass
+- rejection, export/import, localStorage recovery, mobile overflow, and preview-backed checks pass
 
 ## 6.7 Test Map
 
