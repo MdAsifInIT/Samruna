@@ -30,6 +30,22 @@
   --shadow-md: 0 10px 30px rgb(15 23 42 / 8%);
   --radius: 8px;
   --shell-radius: 10px;
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.875rem;
+  --text-md: 0.9375rem;
+  --text-lg: 1rem;
+  --text-xl: 1.125rem;
+  --text-2xl: 1.5rem;
+  --text-display: 1.625rem;
+  --leading-tight: 1.2;
+  --leading-snug: 1.35;
+  --leading-normal: 1.5;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-extrabold: 800;
 }
 
 * {
@@ -45,6 +61,8 @@ html {
 
 body {
   background: transparent;
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
@@ -84,10 +102,10 @@ p {
 
 h1 {
   color: var(--text);
-  font-size: clamp(1.35rem, 1.8vw, 1.8rem);
-  font-weight: 800;
+  font-size: var(--text-display);
+  font-weight: var(--weight-extrabold);
   letter-spacing: 0;
-  line-height: 1.16;
+  line-height: var(--leading-tight);
   margin-bottom: 0;
 }
 
@@ -131,8 +149,8 @@ h2 {
 .brand-block strong {
   color: var(--text);
   display: block;
-  font-size: 1rem;
-  font-weight: 850;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-extrabold);
 }
 
 .menu-list {
@@ -148,8 +166,8 @@ h2 {
   color: var(--muted);
   cursor: pointer;
   display: flex;
-  font-size: 0.9rem;
-  font-weight: 760;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
   gap: 10px;
   min-height: 40px;
   min-width: 0;
@@ -224,15 +242,15 @@ h2 {
 
 .topbar-summary {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   margin: 6px 0 0;
   max-width: 72ch;
 }
 
 .eyebrow {
   color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 800;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
   letter-spacing: 0;
   margin: 0 0 5px;
   text-transform: uppercase;
@@ -276,8 +294,8 @@ h2 {
 .mobile-view-picker span,
 .proposal-version-controls label span {
   color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 800;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
 }
 
 .scenario-picker select,
@@ -287,8 +305,8 @@ h2 {
   border: 0;
   color: var(--text);
   font: inherit;
-  font-size: 0.86rem;
-  font-weight: 760;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
   min-width: 150px;
   outline: 0;
 }
@@ -303,8 +321,8 @@ h2 {
   border-radius: var(--radius);
   cursor: pointer;
   display: inline-flex;
-  font-size: 0.86rem;
-  font-weight: 800;
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
   gap: 8px;
   justify-content: center;
   min-height: 40px;
@@ -434,8 +452,8 @@ h2 {
 
 .shell-context > span {
   color: var(--text);
-  font-size: 0.84rem;
-  font-weight: 820;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
   margin-right: 2px;
 }
 
@@ -446,10 +464,10 @@ h2 {
   border-radius: 999px;
   color: var(--muted);
   display: inline-flex;
-  font-size: 0.75rem;
-  font-weight: 820;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
   gap: 5px;
-  line-height: 1.2;
+  line-height: var(--leading-tight);
   min-height: 26px;
   padding: 5px 9px;
   white-space: nowrap;
@@ -514,7 +532,8 @@ h2 {
 
 .view-heading h2,
 .quick-action-panel h2 {
-  font-size: 1rem;
+  font-size: var(--text-lg);
+  line-height: var(--leading-tight);
   margin: 0;
 }
 
@@ -535,7 +554,7 @@ h2 {
 .quick-action-panel p,
 .empty-state p {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   margin: 6px 0 0;
 }
 
@@ -548,7 +567,7 @@ h2 {
 .empty-state strong {
   color: var(--text);
   display: block;
-  font-size: 0.98rem;
+  font-size: var(--text-md);
 }
 
 .command-center {
@@ -574,7 +593,8 @@ h2 {
 
 .scenario-summary h2,
 .next-action-card h2 {
-  font-size: 1.1rem;
+  font-size: var(--text-xl);
+  line-height: var(--leading-tight);
   letter-spacing: 0;
   margin: 0 0 8px;
 }
@@ -582,14 +602,14 @@ h2 {
 .scenario-summary p,
 .next-action-card p {
   color: var(--muted);
-  font-size: 0.92rem;
+  font-size: var(--text-base);
   margin-bottom: 10px;
 }
 
 .scenario-summary strong {
   color: var(--text);
   display: block;
-  font-size: 0.94rem;
+  font-size: var(--text-md);
   margin-bottom: 12px;
 }
 
@@ -607,8 +627,8 @@ h2 {
   border: 1px solid var(--border);
   border-radius: 999px;
   color: var(--text);
-  font-size: 0.78rem;
-  font-weight: 800;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
   padding: 5px 9px;
 }
 
@@ -635,7 +655,7 @@ h2 {
 .readiness-panel h3,
 .evidence-panel h2,
 .graph-header h2 {
-  font-size: 1rem;
+  font-size: var(--text-lg);
   margin: 0 0 8px;
 }
 
@@ -643,7 +663,7 @@ h2 {
 .operator-console strong,
 .operator-card li,
 .operator-card dl {
-  font-size: 0.9rem;
+  font-size: var(--text-base);
 }
 
 .operator-console p,
@@ -696,8 +716,8 @@ h2 {
   border-radius: 999px;
   color: var(--muted);
   display: inline-flex;
-  font-size: 0.76rem;
-  font-weight: 850;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
   height: 28px;
   justify-content: center;
   width: 28px;
@@ -714,8 +734,8 @@ h2 {
 
 .operator-card li p {
   color: var(--muted);
-  font-size: 0.86rem;
-  line-height: 1.45;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
   margin: 3px 0 0;
 }
 
@@ -762,7 +782,7 @@ h2 {
 .detail-card dt,
 .insight-card dt {
   color: var(--text);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
 }
 
 .operator-card dd,
@@ -787,7 +807,7 @@ h2 {
 .readiness-panel p,
 .readiness-panel li {
   color: var(--muted);
-  font-size: 0.86rem;
+  font-size: var(--text-sm);
   margin: 0;
   overflow-wrap: anywhere;
 }
@@ -858,14 +878,15 @@ h2 {
 .ingestion-summary span {
   color: #cbd5e1;
   display: block;
-  font-size: 0.8rem;
-  font-weight: 760;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
   margin-bottom: 4px;
 }
 
 .ingestion-summary strong {
-  font-size: 1.32rem;
-  font-weight: 850;
+  font-size: var(--text-kpi);
+  font-weight: var(--weight-extrabold);
+  line-height: var(--leading-tight);
 }
 
 .channel-strip {
@@ -902,12 +923,12 @@ h2 {
 
 .metric span {
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
 }
 
 .metric strong {
   color: var(--text);
-  font-size: 0.98rem;
+  font-size: var(--text-md);
 }
 
 .panel {
@@ -916,21 +937,22 @@ h2 {
 }
 
 .panel h2 {
-  font-size: 0.95rem;
+  font-size: var(--text-md);
+  line-height: var(--leading-tight);
   margin-bottom: 0;
 }
 
 .panel-value {
   color: var(--text);
-  font-size: 1.12rem;
-  font-weight: 850;
-  line-height: 1.26;
+  font-size: var(--text-kpi);
+  font-weight: var(--weight-extrabold);
+  line-height: var(--leading-snug);
   margin-bottom: 10px;
 }
 
 .panel-detail {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   margin-bottom: 0;
 }
 
@@ -1007,7 +1029,7 @@ h2 {
 .detail-card h4,
 .insight-card h3 {
   color: var(--text);
-  font-size: 0.95rem;
+  font-size: var(--text-md);
   margin: 0 0 8px;
   overflow-wrap: anywhere;
 }
@@ -1031,13 +1053,13 @@ h2 {
 .execution-grid ul,
 .audit-grid p {
   color: var(--muted);
-  font-size: 0.88rem;
+  font-size: var(--text-base);
   margin: 0;
 }
 
 .evidence-grid dt {
   color: var(--muted);
-  font-weight: 700;
+  font-weight: var(--weight-semibold);
 }
 
 .evidence-grid dd {
@@ -1092,7 +1114,7 @@ h2 {
 .pattern-list button strong {
   color: var(--text);
   display: block;
-  font-size: 0.94rem;
+  font-size: var(--text-md);
   margin-bottom: 4px;
 }
 
@@ -1100,7 +1122,7 @@ h2 {
 .pattern-list button span {
   color: var(--muted);
   display: block;
-  font-size: 0.84rem;
+  font-size: var(--text-sm);
   overflow-wrap: anywhere;
 }
 
@@ -1182,8 +1204,8 @@ h2 {
   border: 1px solid var(--border);
   border-radius: 999px;
   color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 820;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
   max-width: 140px;
   overflow: hidden;
   padding: 3px 7px;
@@ -1224,9 +1246,9 @@ h2 {
 .graph-visual-node span,
 .graph-visual-node small {
   color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 820;
-  line-height: 1.2;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
   overflow: hidden;
   text-overflow: ellipsis;
   text-transform: uppercase;
@@ -1234,8 +1256,8 @@ h2 {
 }
 
 .graph-visual-node strong {
-  font-size: 0.86rem;
-  line-height: 1.15;
+  font-size: var(--text-sm);
+  line-height: var(--leading-tight);
   overflow-wrap: anywhere;
 }
 
@@ -1303,8 +1325,8 @@ h2 {
 .simulation-case-preview span {
   color: var(--muted);
   display: block;
-  font-size: 0.76rem;
-  font-weight: 800;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
   margin-bottom: 4px;
   text-transform: uppercase;
 }
@@ -1313,7 +1335,7 @@ h2 {
 .governance-summary strong {
   color: var(--text);
   display: block;
-  font-size: 0.92rem;
+  font-size: var(--text-md);
   overflow-wrap: anywhere;
 }
 
@@ -1323,8 +1345,8 @@ h2 {
   border: 1px solid rgb(37 99 235 / 28%);
   border-radius: 999px;
   color: var(--blue);
-  font-size: 0.82rem;
-  font-weight: 850;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
   padding: 6px 10px;
 }
 
@@ -1375,8 +1397,9 @@ h2 {
 .simulation-grid strong {
   color: var(--text);
   display: block;
-  font-size: 1.26rem;
-  font-weight: 850;
+  font-size: var(--text-kpi);
+  font-weight: var(--weight-extrabold);
+  line-height: var(--leading-tight);
 }
 
 .simulation-case-preview {
@@ -1389,7 +1412,7 @@ h2 {
 .simulation-case-preview strong {
   color: var(--text);
   display: block;
-  font-size: 0.95rem;
+  font-size: var(--text-md);
   margin-bottom: 6px;
 }
 
@@ -1427,8 +1450,8 @@ h2 {
   border: 1px solid rgb(180 83 9 / 28%);
   border-radius: var(--radius);
   color: var(--amber);
-  font-size: 0.9rem;
-  font-weight: 800;
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
   margin: 0 0 12px;
   padding: 12px;
 }
@@ -1464,7 +1487,7 @@ h2 {
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   color: var(--text);
-  font: 0.78rem ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font: var(--text-xs) ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
   min-height: 180px;
   padding: 10px;
   resize: vertical;
@@ -1477,7 +1500,7 @@ h2 {
 
 .import-error {
   color: var(--red);
-  font-weight: 850;
+  font-weight: var(--weight-bold);
   margin-top: 8px;
 }
 
@@ -1626,14 +1649,22 @@ h2 {
     justify-content: center;
   }
 
+  .export-button {
+    flex-basis: 100%;
+  }
+
+  .toolbar button[aria-label="Export Summary"] {
+    flex-basis: 100%;
+  }
+
   .toolbar button span,
   .approve-button span,
   .reject-button span,
   .export-button span,
   .revision-button span {
-    overflow: visible;
-    text-overflow: clip;
-    white-space: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .operator-card ol {
