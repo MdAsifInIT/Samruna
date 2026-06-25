@@ -22,15 +22,15 @@ export function GovernView({ controller }: GovernViewProps) {
     <>
       <section className="view-heading">
         <p className="eyebrow">Govern</p>
-        <h2>Simulation, compliance, and approval</h2>
+        <h2>Compliance and approval</h2>
       </section>
 
       {simulation && proposal ? (
         <section className="simulation-panel" aria-label="Simulation and governance">
           <div className="graph-header">
             <div>
-              <p className="eyebrow">Simulation and governance</p>
-              <h2>Governance review before execution</h2>
+              <p className="eyebrow">Governance</p>
+              <h2>Review before execution</h2>
             </div>
             <div className="governance-actions">
               <button className="approve-button" type="button" disabled={!proposal} onClick={actions.approveProposal}>
@@ -93,22 +93,14 @@ export function GovernView({ controller }: GovernViewProps) {
             ))}
           </div>
           <div className="audit-log">
-            <h3>Governance and security notes</h3>
+            <h3>Review notes</h3>
             <p>
-              <strong>Data access</strong> · Needs workflow metadata, timestamps, status changes, owners, approvals, comments if
-              available, and system identifiers.
+              <strong>Inputs</strong> · Workflow metadata, timestamps, status changes, owners, approvals, comments, and system
+              identifiers.
             </p>
             <p>
-              <strong>Forbidden data</strong> · Does not need passwords, raw secrets, private message bodies, production write
-              access, or unrestricted admin access.
-            </p>
-            <p>
-              <strong>Approval rule</strong> · Execution becomes available only when an approved record exists for proposal version{" "}
-              {proposal.version}.
-            </p>
-            <p>
-              <strong>Safety boundary</strong> · Simulated execution is deterministic, read-only to external systems, and limited to
-              synthetic evaluation records.
+              <strong>Safety</strong> · No passwords, raw secrets, private messages, production writes, or unrestricted admin
+              access; execution stays synthetic and read-only.
             </p>
           </div>
         </section>

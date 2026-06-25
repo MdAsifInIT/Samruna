@@ -217,7 +217,6 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
             {demoState.sampleLoaded ? "Workflow loaded" : "Baseline state"}
           </StatusPill>
           <StatusPill tone="neutral">{aiProvider.status.label}</StatusPill>
-          <StatusPill tone="neutral">Controlled local environment</StatusPill>
           <StatusPill tone={demoState.governanceDecision === "rejected" ? "blocked" : "neutral"}>
             {`Governance ${governanceDecisionLabel}`}
           </StatusPill>

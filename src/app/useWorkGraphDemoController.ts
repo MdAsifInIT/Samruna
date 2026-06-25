@@ -162,10 +162,10 @@ export function useWorkGraphDemoController() {
       ? "Blocked by rejection"
       : "Blocked until approval";
   const executionGateCopy = executionReady
-    ? "Governance has opened the simulated execution gate for this proposal version."
+    ? "Governance has opened the gate for this proposal version."
     : demoState.governanceDecision === "rejected"
-      ? "This proposal was rejected, so simulated execution stays blocked until a new review approves it."
-      : "This proposal is still awaiting approval, so simulated execution stays blocked by governance.";
+      ? "This proposal was rejected, so execution stays blocked until a new review approves it."
+      : "This proposal is still awaiting approval, so execution stays blocked.";
   const learningRecommendation = useMemo(
     () => (simulation && executionRun ? recommendLearningUpdate({ simulation, execution: executionRun }) : undefined),
     [executionRun, simulation]
@@ -373,8 +373,8 @@ export function useWorkGraphDemoController() {
   const generateProposalFromCurrentState = () => {
     createProposalRevision(
       demoState.proposals.length
-        ? "Revision refreshed from the latest deterministic graph, policy, and bottleneck inputs."
-        : "Initial proposal generated from the deterministic graph, policy, and bottleneck inputs."
+        ? "Revision refreshed from the latest graph, policy, and bottleneck inputs."
+        : "Initial proposal generated from the graph, policy, and bottleneck inputs."
     );
   };
 
@@ -495,49 +495,49 @@ function buildWorkflowStages(input: {
       id: "load-scenario",
       index: 1,
       label: "Load Workflow",
-      detail: "Load the selected synthetic trace set and validate fixture counts."
+      detail: "Load the selected trace set."
     },
     {
       id: "analyze-workflow",
       index: 2,
       label: "Analyze Workflow",
-      detail: "Normalize traces into canonical work items and surface issues."
+      detail: "Normalize traces and surface issues."
     },
     {
       id: "inspect-graph",
       index: 3,
       label: "Inspect Graph",
-      detail: "Review the work graph, node risk, delays, and exception paths."
+      detail: "Review graph risk, delays, and exceptions."
     },
     {
       id: "generate-proposal",
       index: 4,
       label: "Generate Proposal",
-      detail: "Produce a governed automation proposal from the top pattern."
+      detail: "Produce a governed proposal from the top pattern."
     },
     {
       id: "review-governance",
       index: 5,
       label: "Review Governance",
-      detail: "Scan assumptions, policy checks, escalations, and simulation results."
+      detail: "Scan policy checks, escalations, and results."
     },
     {
       id: "approve-reject",
       index: 6,
       label: "Approve/Reject",
-      detail: "Human review opens or blocks the execution gate for this version."
+      detail: "Human review opens or blocks execution."
     },
     {
       id: "run-mock",
       index: 7,
       label: "Run Simulation",
-      detail: "Execute simulated tools only after governance approval."
+      detail: "Run simulated tools after approval."
     },
     {
       id: "review-audit",
       index: 8,
       label: "Review Audit/Recommendation",
-      detail: "Inspect the persisted audit trail and learning-loop output."
+      detail: "Inspect the audit trail and learning output."
     }
   ];
 
@@ -727,7 +727,7 @@ function buildGovernanceRecords(proposal: AutomationProposal, decision: Governan
         proposal,
         decision: "rejected",
         reviewerRole: "compliance",
-        comments: "Rejected pending additional control evidence before simulated execution.",
+        comments: "Rejected pending additional control evidence before execution.",
         timestamp: "2026-05-16T11:00:00Z"
       })
     ];
@@ -827,27 +827,27 @@ function buildFoundationPanels(
       value: state.sampleLoaded ? scenario.label : "Baseline state",
       detail: state.sampleLoaded
         ? scenario.syntheticDataNotice
-        : "Load the selected workflow to inspect typed synthetic traces."
+        : "Load the selected workflow to inspect synthetic traces."
     },
     {
       title: "Work Pattern Clusters",
       icon: Network,
       value: ingestion ? `${ingestion.summary.normalizedItemCount} normalized items` : "Awaiting analysis",
       detail: ingestion
-        ? "Repeated work patterns, exceptions, and bottlenecks are ready for inspection."
-        : "Analyze the workflow after loading a workflow."
+        ? "Repeated patterns, exceptions, and bottlenecks are ready."
+        : "Analyze after loading a workflow."
     },
     {
       title: "Work Graph",
       icon: GitBranch,
       value: state.analysisRequested ? "Graph generated" : "Graph canvas ready",
-      detail: "Actors, approvals, policy checks, system actions, exceptions, and outcomes."
+      detail: "Actors, approvals, policy checks, actions, exceptions, and outcomes."
     },
     {
       title: "Agentic Planner",
       icon: Brain,
       value: state.proposalRequested ? "Proposal generated" : "Deterministic provider default",
-      detail: proposalRationale ?? "Structured automation proposals are generated from graph insights."
+      detail: proposalRationale ?? "Automation proposals are generated from graph insights."
     },
     {
       title: "Governance",
@@ -858,20 +858,20 @@ function buildFoundationPanels(
           : state.governanceDecision === "rejected"
             ? "Rejected"
             : "Pending",
-      detail: "Execution remains blocked until an approved proposal exists."
+      detail: "Execution stays blocked until approval."
     },
     {
       title: "Persistence",
       icon: ClipboardCheck,
       value: "Local state saved",
-      detail: "Workflow, generated artifacts, decisions, execution results, recommendations, and audits persist in this browser."
+      detail: "Workflow, artifacts, decisions, results, recommendations, and audits persist locally."
     }
   ];
 }
 
 export function graphNodeAuditRelevance(kind: string, scenarioLabel: string, bottleneckEvidence?: string) {
   if (kind === "approval") {
-    return bottleneckEvidence ?? `${scenarioLabel} makes approval timing part of the audit trail.`;
+    return bottleneckEvidence ?? `${scenarioLabel} keeps approval timing in the audit trail.`;
   }
 
   if (kind === "exception") {
@@ -879,7 +879,7 @@ export function graphNodeAuditRelevance(kind: string, scenarioLabel: string, bot
   }
 
   if (kind === "system") {
-    return "System actions are logged to preserve simulated execution traceability.";
+    return "System actions are logged for traceability.";
   }
 
   return `${scenarioLabel} uses this node in the deterministic replay model.`;

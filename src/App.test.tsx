@@ -29,34 +29,12 @@ describe("App", () => {
     expect(within(summary).getByRole("heading", { name: /Access request operations/i })).toBeInTheDocument();
     expect(within(summary).getByText(/Next best action/i)).toBeInTheDocument();
     expect(screen.getByRole("region", { name: /Workflow operations console/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Workflow sequence/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Workflow steps/i })).toBeInTheDocument();
     expect(screen.getByText(/Work Pattern Clusters/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Deterministic simulation/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Local state saved/i)).toBeInTheDocument();
-    expect(screen.getByText(/Controlled local environment/i)).toBeInTheDocument();
     expect(screen.getAllByText(/No external writes/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: /Run simulation/i })).toBeDisabled();
-  });
-
-  it("renders visible production readiness and trust safety boundaries", () => {
-    render(<App />);
-
-    const readiness = screen.getByRole("region", { name: /Production readiness and trust safety/i });
-
-    expect(within(readiness).getByRole("heading", { name: /Trust & Safety boundary/i })).toBeInTheDocument();
-    expect(within(readiness).getByText(/not presented as full enterprise production/i)).toBeInTheDocument();
-    expect(within(readiness).getByText(/Deterministic simulation mode active/i)).toBeInTheDocument();
-    expect(within(readiness).getByText(/Synthetic data only/i)).toBeInTheDocument();
-    expect(within(readiness).getByText(/No external writes/i)).toBeInTheDocument();
-    expect(within(readiness).getByText(/No browser-side secrets/i)).toBeInTheDocument();
-    expect(within(readiness).getByText(/Simulation before execution/i)).toBeInTheDocument();
-    expect(within(readiness).getByText(/Approval gate required/i)).toBeInTheDocument();
-    expect(within(readiness).getByText(/Audit trail enabled/i)).toBeInTheDocument();
-    expect(
-      within(readiness).getByText(
-        /Backend, DB, Auth\/RBAC, Connectors, Server-side OpenAI, Immutable audit, Tool allowlists\./i
-      )
-    ).toBeInTheDocument();
   });
 
   it("recovers from malformed persisted localStorage state", async () => {
@@ -95,7 +73,7 @@ describe("App", () => {
     openView("Analyze");
     fireEvent.click(screen.getAllByRole("button", { name: /Exception review/i })[0]);
     expect(screen.getByRole("heading", { name: /Exception review/i })).toBeInTheDocument();
-    expect(screen.getByText(/Audit relevance/i)).toBeInTheDocument();
+    expect(screen.getByText(/routes exceptions into review and learning signals/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Finance system access/i }));
     expect(screen.getByRole("heading", { name: /Finance system access/i })).toBeInTheDocument();
@@ -106,7 +84,7 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: /Governed automation proposal/i })).toBeInTheDocument();
     expect(screen.getByText(/Write immutable audit event/i)).toBeInTheDocument();
     openView("Govern");
-    expect(screen.getByRole("heading", { name: /Governance review before execution/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Review before execution/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Run simulation/i })).toBeDisabled();
     expect(screen.getAllByText("Blocked").length).toBeGreaterThan(0);
 
@@ -117,7 +95,7 @@ describe("App", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Run simulation/i }));
 
-    expect(screen.getByRole("heading", { name: /Governance-gated workflow runner/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Workflow runner/i })).toBeInTheDocument();
     expect(screen.getByText(/simulated task IT-2001 created/i)).toBeInTheDocument();
     expect(screen.getAllByText(/human-review lane/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /Execution audit trail/i })).toBeInTheDocument();
@@ -133,7 +111,7 @@ describe("App", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Reset workflow state/i }));
 
-    expect(screen.queryByRole("heading", { name: /Governance-gated workflow runner/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /Workflow runner/i })).not.toBeInTheDocument();
     openView("Analyze");
     expect(screen.queryByRole("heading", { name: /IT access request flow/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /Repeated workflows and automation opportunities/i })).not.toBeInTheDocument();
@@ -182,7 +160,7 @@ describe("App", () => {
     openView("Analyze");
     fireEvent.click(screen.getAllByRole("button", { name: /Manager approval/i })[0]);
     expect(screen.getByRole("heading", { name: /Manager approval/i })).toBeInTheDocument();
-    expect(screen.getByText(/Audit relevance:/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/cases waited at least 24 hours for manager approval/i).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole("button", { name: patternLabel }));
     expect(screen.getByRole("heading", { name: patternLabel })).toBeInTheDocument();

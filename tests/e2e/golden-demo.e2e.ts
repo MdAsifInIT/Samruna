@@ -107,7 +107,7 @@ test("keeps simulated execution blocked after governance rejects a proposal", as
   await expect(page.getByText("Rejected").first()).toBeVisible();
   await expect(page.getByText("Blocked by rejection").first()).toBeVisible();
   await openView(page, "Execute");
-  await expect(page.getByText("Simulated execution is blocked by rejection until the proposal is revised and approved.")).toBeVisible();
+  await expect(page.getByText("Execution is blocked by rejection until the proposal is revised and approved.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Run simulation" })).toBeDisabled();
   await expect(page.getByText(scenario.mockOutput)).toHaveCount(0);
 
@@ -137,7 +137,7 @@ test("recovers a generated run after reload and restores seeded localStorage aft
   await expect(page.getByRole("heading", { name: scenario.graphTitle })).toBeVisible();
   await expect(page.getByRole("heading", { name: scenario.patternLabel })).toBeVisible();
   await openView(page, "Execute");
-  await expect(page.getByRole("heading", { name: "Governance-gated workflow runner" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Workflow runner" })).toBeVisible();
   await expect(page.getByText(scenario.mockOutput)).toBeVisible();
   await expect(page.getByRole("button", { name: "Run simulation" })).toBeEnabled();
 
@@ -162,7 +162,7 @@ test("recovers a generated run after reload and restores seeded localStorage aft
   await openView(page, "Analyze");
   await expect(page.getByRole("heading", { name: scenario.graphTitle })).toHaveCount(0);
   await openView(page, "Execute");
-  await expect(page.getByRole("heading", { name: "Governance-gated workflow runner" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Workflow runner" })).toHaveCount(0);
   await expect(page.getByText(scenario.mockOutput)).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Run simulation" })).toBeDisabled();
 });
@@ -269,7 +269,7 @@ async function runGoldenPath(page: Page, scenario: ScenarioExpectation) {
   await expect(page.getByRole("button", { name: "Run simulation" })).toBeEnabled();
 
   await page.getByRole("button", { name: "Run simulation" }).click();
-  await expect(page.getByRole("heading", { name: "Governance-gated workflow runner" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Workflow runner" })).toBeVisible();
   await expect(page.getByText(scenario.mockOutput)).toBeVisible();
 }
 
@@ -288,7 +288,7 @@ async function generateProposal(page: Page, scenario: ScenarioExpectation) {
   await page.getByRole("button", { name: "Generate automation proposal" }).click();
   await expect(page.getByRole("heading", { name: "Governed automation proposal" })).toBeVisible();
   await openView(page, "Govern");
-  await expect(page.getByRole("heading", { name: "Governance review before execution" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Review before execution" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Run simulation" })).toBeDisabled();
   await expect(page.getByText("Blocked").first()).toBeVisible();
 }
@@ -322,7 +322,7 @@ async function resetDemo(page: Page, scenario: ScenarioExpectation) {
   await openView(page, "Plan");
   await expect(page.getByRole("heading", { name: "Governed automation proposal" })).toHaveCount(0);
   await openView(page, "Execute");
-  await expect(page.getByRole("heading", { name: "Governance-gated workflow runner" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Workflow runner" })).toHaveCount(0);
   await expect(page.getByText(scenario.mockOutput)).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Run simulation" })).toBeDisabled();
 }

@@ -22,43 +22,43 @@ export const navigationItems: NavigationItem[] = [
   {
     id: "overview",
     label: "Command Center",
-    purpose: "Executive and operations overview",
+    purpose: "Executive overview",
     icon: LayoutDashboard
   },
   {
     id: "observe",
     label: "Observe",
-    purpose: "Intake and evidence visibility",
+    purpose: "Intake and evidence",
     icon: Eye
   },
   {
     id: "analyze",
     label: "Analyze",
-    purpose: "Work graph and pattern discovery",
+    purpose: "Graph and patterns",
     icon: GitBranch
   },
   {
     id: "plan",
     label: "Plan",
-    purpose: "Proposal generation and change planning",
+    purpose: "Proposal planning",
     icon: ListChecks
   },
   {
     id: "govern",
     label: "Govern",
-    purpose: "Simulation, compliance, and approval",
+    purpose: "Approval gate",
     icon: ShieldCheck
   },
   {
     id: "execute",
     label: "Execute",
-    purpose: "Simulated execution and workflow operations",
+    purpose: "Simulation run",
     icon: Play
   },
   {
     id: "review",
     label: "Review",
-    purpose: "Audit, export, import, and recovery",
+    purpose: "Audit and recovery",
     icon: ClipboardCheck
   }
 ];

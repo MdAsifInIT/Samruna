@@ -6,26 +6,6 @@ interface OverviewViewProps {
   controller: WorkGraphDemoController;
 }
 
-const activeSafetyBoundaries = [
-  "Deterministic simulation mode active",
-  "Synthetic data only",
-  "No external writes",
-  "No browser-side secrets",
-  "Simulation before execution",
-  "Approval gate required",
-  "Audit trail enabled"
-];
-
-const productionPathRequirements = [
-  "Backend",
-  "DB",
-  "Auth/RBAC",
-  "Connectors",
-  "Server-side OpenAI",
-  "Immutable audit",
-  "Tool allowlists"
-];
-
 export function OverviewView({ controller }: OverviewViewProps) {
   const {
     aiProvider,
@@ -74,7 +54,7 @@ export function OverviewView({ controller }: OverviewViewProps) {
         <div className="operator-card">
           <div className="panel-heading">
             <ListChecks size={18} />
-            <h2>Workflow sequence</h2>
+            <h2>Workflow steps</h2>
           </div>
           <ol>
             {workflowStages.map((stage) => (
@@ -116,29 +96,6 @@ export function OverviewView({ controller }: OverviewViewProps) {
         </div>
       </section>
 
-      <section className="readiness-panel" aria-label="Production readiness and trust safety">
-        <div>
-          <p className="eyebrow">Production readiness</p>
-          <h2>Trust &amp; Safety boundary</h2>
-          <p>
-            Evaluation guardrails are visible and enforced in the Command Center; this is not presented as
-            full enterprise production.
-          </p>
-        </div>
-        <div>
-          <h3>Active in this environment</h3>
-          <ul>
-            {activeSafetyBoundaries.map((boundary) => (
-              <li key={boundary}>{boundary}</li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <h3>Production path still requires</h3>
-          <p>{productionPathRequirements.join(", ")}.</p>
-        </div>
-      </section>
-
       <section className="dashboard-grid" aria-label="Operating dashboard">
         {operatingCards.map((panel) => {
           const Icon = panel.icon;
@@ -157,11 +114,11 @@ export function OverviewView({ controller }: OverviewViewProps) {
       </section>
 
       {!validation.valid && (
-        <section className="quick-action-panel" aria-label="Fixture validation">
+        <section className="quick-action-panel" aria-label="Data validation">
           <div>
-            <p className="eyebrow">Fixture validation</p>
+            <p className="eyebrow">Validation</p>
             <h2>Needs review</h2>
-            <p>Fixture validation reported issues. Review baseline data before relying on the workflow sequence.</p>
+            <p>Fixture checks found issues. Review baseline data before using the workflow.</p>
           </div>
           <StatusPill tone="blocked">Needs review</StatusPill>
         </section>

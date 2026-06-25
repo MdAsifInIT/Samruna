@@ -13,14 +13,14 @@ export function ReviewView({ controller }: ReviewViewProps) {
     <>
       <section className="view-heading">
         <p className="eyebrow">Review</p>
-        <h2>Audit, export, import, and recovery</h2>
+        <h2>Audit, export, import, recovery</h2>
       </section>
 
       <SectionPanel
         ariaLabel="Audit trail and execution summary"
         className="audit-panel"
         eyebrow="Audit trail"
-        title="Persisted workflow state and reviewable agent behavior"
+        title="Persisted workflow state"
         actions={
           <div className="governance-actions">
             <button className="export-button" type="button" onClick={actions.exportSummary}>
@@ -44,7 +44,7 @@ export function ReviewView({ controller }: ReviewViewProps) {
                 </p>
               ))
             ) : (
-              <p>No execution events recorded. Load the workflow to begin the audit trail.</p>
+              <p>No events yet. Load a workflow to start the audit trail.</p>
             )}
           </article>
           <article>
@@ -53,7 +53,7 @@ export function ReviewView({ controller }: ReviewViewProps) {
               aria-label="Execution summary JSON"
               value={exportText}
               onChange={(event) => actions.setExportText(event.target.value)}
-              placeholder="Exported execution summary JSON appears here."
+              placeholder="Export summary JSON appears here."
             />
           </article>
           <article>
@@ -62,7 +62,7 @@ export function ReviewView({ controller }: ReviewViewProps) {
               aria-label="Import execution summary JSON"
               value={importText}
               onChange={(event) => actions.setImportText(event.target.value)}
-              placeholder="Provide a Work Graph Foundry execution summary JSON to restore workflow state."
+              placeholder="Paste summary JSON to restore state."
             />
             {importError ? (
               <p className="import-error" role="alert">

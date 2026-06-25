@@ -21,7 +21,7 @@ export function ExecuteView({ controller }: ExecuteViewProps) {
     <>
       <section className="view-heading">
         <p className="eyebrow">Execute</p>
-        <h2>Simulated execution and workflow operations</h2>
+        <h2>Execution and workflow operations</h2>
       </section>
 
       {proposal ? (
@@ -29,7 +29,7 @@ export function ExecuteView({ controller }: ExecuteViewProps) {
           <div className="graph-header">
             <div>
               <p className="eyebrow">Execution layer</p>
-              <h2>Governance-gated workflow runner</h2>
+              <h2>Workflow runner</h2>
             </div>
             <strong className="opportunity-score">{executionGateLabel}</strong>
           </div>
@@ -54,10 +54,10 @@ export function ExecuteView({ controller }: ExecuteViewProps) {
                   {executionRun
                     ? executionRun.auditTrail[0]
                     : executionReady
-                      ? "Run the approved simulation to generate tool calls."
+                      ? "Run the simulation to generate tool calls."
                       : demoState.governanceDecision === "rejected"
-                        ? "Simulated execution is blocked by rejection until the proposal is revised and approved."
-                        : "Simulated execution is blocked until governance approval opens the gate."}
+                        ? "Execution is blocked by rejection until the proposal is revised and approved."
+                        : "Execution is blocked until approval opens the gate."}
                 </p>
               )}
             </article>
@@ -66,7 +66,7 @@ export function ExecuteView({ controller }: ExecuteViewProps) {
               <p>
                 {learningRecommendation
                   ? `${learningRecommendation.recommendation} ${learningRecommendation.expectedImpact}`
-                  : "Learning recommendation appears after a simulated execution run."}
+                  : "Learning recommendation appears after a run."}
               </p>
             </article>
           </div>

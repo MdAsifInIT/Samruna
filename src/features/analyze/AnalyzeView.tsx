@@ -148,14 +148,6 @@ export function AnalyzeView({ controller }: AnalyzeViewProps) {
                     <li>No direct edges recorded for this node.</li>
                   )}
                 </ul>
-                <p className="detail-footnote">
-                  Audit relevance:{" "}
-                  {selectedGraphNode.kind === "approval"
-                    ? "Approval timing and approvals are included in audit events."
-                    : selectedGraphNode.kind === "exception"
-                      ? "Exceptions carry into the audit trail and recommendation loop."
-                      : "Node is part of the deterministic graph used for audit-ready replay."}
-                </p>
               </article>
             ) : null}
           </div>
