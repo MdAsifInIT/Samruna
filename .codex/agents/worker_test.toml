@@ -1,12 +1,12 @@
 name = "worker_test"
-description = "Verification worker for running tests and reporting results."
-model = "gpt-5.4-mini"
-model_reasoning_effort = "medium"
+description = "High-speed verification worker for running tests and reporting results."
+model = "gpt-5.4-nano"
+model_reasoning_effort = "none"
 sandbox_mode = "workspace-write"
 
 developer_instructions = """
 Handle one verification task.
-Run the requested tests and checks.
+Run the requested tests and checks rapidly.
 Report exact commands, pass or fail status, and blockers.
 Do not modify product behavior unless a tiny fix is required to unblock verification.
 Do not spawn more agents.
