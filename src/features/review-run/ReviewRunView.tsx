@@ -37,7 +37,7 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
     <section className="review-run-panel" aria-label="Review and run workflow">
       <div className="review-run-header">
         <div>
-          <h2>Review and run</h2>
+          <h2>Is the automation safe to approve and run?</h2>
           <p>{proposal.auditRationale}</p>
         </div>
         <div className="review-run-actions" aria-label="Proposal governance actions">

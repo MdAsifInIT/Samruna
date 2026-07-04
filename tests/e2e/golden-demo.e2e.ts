@@ -88,14 +88,17 @@ test.beforeEach(async ({ page }) => {
 test("loads the landing-first screen without browser page or console errors", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Work Graph Foundry" })).toBeVisible();
   await expect(page.getByLabel("Work Graph Foundry product preview")).toBeVisible();
-  await page.getByRole("button", { name: "Launch demo" }).first().click();
+  await page.getByRole("button", { name: "Launch" }).first().click();
   await expect(page.getByRole("button", { name: "Overview", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByLabel("Shell context")).toContainText("Scenario: IT access requests");
+  await expect(page.getByLabel("Shell context")).toContainText("Current step: Overview");
+  await expect(page.getByLabel("Shell context")).toContainText("Execution gate: Approval needed");
   await expect(page.getByRole("button", { name: "Evidence", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Graph", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Review & Run", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Audit", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Load workflow" })).toBeVisible();
-  await expect(page.getByLabel("Shell context").getByText(scenarios[0].label, { exact: true })).toBeVisible();
+  await expectScenarioContext(page, scenarios[0].label);
 });
 
 for (const scenario of scenarios) {
@@ -172,7 +175,7 @@ test("recovers a generated run after reload and restores seeded localStorage aft
 
   await page.reload();
 
-  await expect(page.getByLabel("Shell context").getByText(scenario.label, { exact: true })).toBeVisible();
+  await expectScenarioContext(page, scenario.label);
   await openView(page, "Graph");
   await expect(page.getByRole("heading", { name: scenario.graphTitle })).toHaveCount(0);
   await openView(page, "Review & Run");
@@ -188,7 +191,7 @@ test("restores a generated run from an exported summary import round trip", asyn
   const exportedSummaryText = await exportSummaryText(page);
 
   await page.getByLabel("Select workflow").selectOption(scenarios[0].id);
-  await expect(page.getByLabel("Shell context").getByText(scenarios[0].label, { exact: true })).toBeVisible();
+  await expectScenarioContext(page, scenarios[0].label);
   await expect(page.getByText(exportedScenario.mockOutput)).toHaveCount(0);
 
   await openView(page, "Audit");
@@ -196,7 +199,7 @@ test("restores a generated run from an exported summary import round trip", asyn
   await page.getByRole("button", { name: "Import Summary" }).click();
 
   await openView(page, "Overview");
-  await expect(page.getByLabel("Shell context").getByText(exportedScenario.label, { exact: true })).toBeVisible();
+  await expectScenarioContext(page, exportedScenario.label);
   await openView(page, "Graph");
   await expect(page.getByRole("heading", { name: exportedScenario.graphTitle })).toBeVisible();
   await expect(page.getByRole("heading", { name: exportedScenario.patternLabel })).toBeVisible();
@@ -216,7 +219,7 @@ test("recovers to seeded state when persisted localStorage is malformed", async 
   await enterWorkspace(page);
 
   await expect(page.getByRole("heading", { name: "Work Graph Foundry" })).toBeVisible();
-  await expect(page.getByLabel("Shell context").getByText(scenarios[0].label, { exact: true })).toBeVisible();
+  await expectScenarioContext(page, scenarios[0].label);
   await openView(page, "Graph");
   await expect(page.getByRole("heading", { name: scenarios[0].graphTitle })).toHaveCount(0);
   await openView(page, "Review & Run");
@@ -260,7 +263,7 @@ test("performance smoke keeps core interactions within the long-task budget", as
 
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Work Graph Foundry" })).toBeVisible();
-  await page.getByRole("button", { name: "Launch demo" }).first().click();
+  await page.getByRole("button", { name: "Launch" }).first().click();
   await openView(page, "Evidence");
   await openView(page, "Graph");
   await openView(page, "Overview");
@@ -317,10 +320,14 @@ async function runGoldenPath(page: Page, scenario: ScenarioExpectation) {
   await expect(page.getByText(scenario.mockOutput)).toBeVisible();
 }
 
+async function expectScenarioContext(page: Page, label: string) {
+  await expect(page.getByLabel("Shell context")).toContainText(`Scenario: ${label}`);
+}
+
 async function generateProposal(page: Page, scenario: ScenarioExpectation) {
   await enterWorkspace(page);
   await page.getByLabel("Select workflow").selectOption(scenario.id);
-  await expect(page.getByLabel("Shell context").getByText(scenario.label, { exact: true })).toBeVisible();
+  await expectScenarioContext(page, scenario.label);
 
   await page.getByRole("button", { name: "Load workflow" }).click();
   await expect(page.getByText("Raw traces")).toBeVisible();
@@ -361,7 +368,7 @@ async function exportSummaryText(page: Page) {
 async function resetDemo(page: Page, scenario: ScenarioExpectation) {
   await page.getByLabel("Workflow controls").getByRole("button", { name: "Reset workflow state" }).click();
 
-  await expect(page.getByLabel("Shell context").getByText(scenario.label, { exact: true })).toBeVisible();
+  await expectScenarioContext(page, scenario.label);
   await openView(page, "Graph");
   await expect(page.getByRole("heading", { name: scenario.graphTitle })).toHaveCount(0);
   await openView(page, "Review & Run");
@@ -419,7 +426,7 @@ async function assertNoHorizontalOverflow(page: Page, label: string) {
 }
 
 async function enterWorkspace(page: Page) {
-  const launchButton = page.getByRole("button", { name: "Launch demo" }).first();
+  const launchButton = page.getByRole("button", { name: "Launch" }).first();
 
   if (await launchButton.isVisible()) {
     await launchButton.click();

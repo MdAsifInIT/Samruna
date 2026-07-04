@@ -29,7 +29,7 @@ Start the local demo server:
 npm run demo:dev
 ```
 
-Open the printed local URL, then click `Launch demo` to enter the hash-backed demo workspace.
+Open the printed local URL, then click `Launch` to enter the hash-backed demo workspace.
 
 Fallback production path:
 
@@ -52,7 +52,7 @@ Use `npm run test:e2e:preview` for the preview-backed Playwright path and `npm r
 
 ### 4.3.1 Open The Product Page
 
-Start with the landing page. Explain that Work Graph Foundry begins from traces, not a manually designed workflow, then click `Launch demo` to enter the local workspace.
+Start with the landing page. Explain that Work Graph Foundry begins from traces, not a manually designed workflow, then click `Launch` to enter the local workspace.
 
 Point out:
 
@@ -209,7 +209,7 @@ Before presenting:
 - `npm run test:e2e` passes when browser launch is allowed.
 - `npm run build` passes.
 - `npm test` passes.
-- Landing page renders first and `Launch demo` opens `#demo`.
+- Landing page renders first and `Launch` opens `#demo`.
 - `Load workflow` renders source counts.
 - `Analyze workflow` renders normalized evidence, graph, and patterns.
 - `Generate automation proposal` renders proposal, simulation, and governance notes.

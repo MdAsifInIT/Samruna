@@ -24,7 +24,7 @@ export function AnalyzeView({ controller }: AnalyzeViewProps) {
     <>
       <section className="view-heading">
         <p className="eyebrow">Analyze</p>
-        <h2>Work graph and pattern discovery</h2>
+        <h2>Where is the repeated workflow and bottleneck?</h2>
       </section>
 
       {graph ? (
@@ -161,7 +161,7 @@ export function AnalyzeView({ controller }: AnalyzeViewProps) {
           <div className="graph-header">
             <div>
               <p className="eyebrow">Pattern detection</p>
-              <h2>Repeated workflows and automation opportunities</h2>
+              <h2>Repeated workflow and bottleneck</h2>
             </div>
             {selectedOpportunity ? (
               <strong className="opportunity-score">{Math.round(selectedOpportunity.score * 100)} opportunity</strong>

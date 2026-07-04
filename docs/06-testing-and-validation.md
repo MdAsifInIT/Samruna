@@ -51,7 +51,7 @@ It checks:
 - sidebar navigation exposes Overview, Evidence, Graph, Review & Run, and Audit with active state
 - operational summary shows scenario, demo path, current stage, AI mode, governance state, and mock safety boundary
 - scenario selector renders
-- `Launch demo` opens the workspace and `Load Workflow` opens Evidence with source counts
+- `Launch` opens the workspace and `Load Workflow` opens Evidence with source counts
 - `Analyze` opens Graph and reveals graph and pattern discovery
 - Evidence still shows normalized evidence after analysis
 - graph and pattern selection details render from the Graph menu view
@@ -75,7 +75,7 @@ When an agent validates this repo, it should perform these steps:
 5. Run `npm run test:e2e` when Playwright browser binaries are installed.
 6. If manual browser access is needed, start preview with `npm run preview`.
 7. Open the app.
-8. Click `Launch demo`.
+8. Click `Launch`.
 9. Click `Load Workflow` and confirm Evidence shows source counts and channel data.
 10. Click `Analyze`.
 11. Confirm Graph shows selectable graph inspection and pattern details.
@@ -175,7 +175,7 @@ Manual smoke path:
 1. `npm run build`
 2. `npm run preview`
 3. Open preview URL.
-4. Click `Launch demo`.
+4. Click `Launch`.
 5. Click `Load Workflow` and confirm Evidence shows loaded counts and source channels.
 6. Click `Analyze`.
 7. Confirm Graph shows the work graph and detected patterns.

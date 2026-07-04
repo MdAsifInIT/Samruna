@@ -2,7 +2,9 @@
 
 Work Graph Foundry is a local-first enterprise work intelligence and governed automation demo. It observes messy work traces, builds a live work graph, identifies repeated work patterns, proposes governed automations, simulates them against historical cases, executes approved workflows through safe mock tools, and recommends improvements.
 
-The demo opens on a customer-facing product page with a `Launch demo` call to action. The interactive workspace is available at `#demo` and surfaces five primary views: Overview, Evidence, Graph, Review & Run, and Audit. It still shows an AI-native enterprise work loop: observe, understand, map, reason, plan, simulate, govern, execute, and improve.
+The demo opens on a customer-facing product page with a `Launch` call to action. The interactive workspace is available at `#demo` and surfaces five primary views: Overview, Evidence, Graph, Review & Run, and Audit. It still shows an AI-native enterprise work loop: observe, understand, map, reason, plan, simulate, govern, execute, and improve.
+
+The landing page is reviewer-first and hackathon-friendly: it shows a clear product claim, a compact preview of the workflow, and a direct path into the workspace without requiring a chatbot or setup ceremony.
 
 ## What The Demo Shows
 
@@ -54,7 +56,7 @@ npm run preview
 
 ## Demo Path
 
-1. Click `Launch demo` from the product page.
+1. Click `Launch` from the product page.
 2. Choose `IT access requests` or `Procurement intake`.
 3. Click `Load Workflow`.
 4. Click `Analyze` and inspect `Graph`.

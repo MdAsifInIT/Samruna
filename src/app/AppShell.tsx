@@ -25,10 +25,8 @@ interface AppShellProps {
 export function AppShell({ activeView, children, controller, onViewChange }: AppShellProps) {
   const {
     actions,
-    aiProvider,
     demoState,
     executionReady,
-    governanceDecisionLabel,
     proposal,
     proposalGenerationReady,
     scenario,
@@ -148,7 +146,7 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
                 icon={ShieldCheck}
                 aria-label="Approve"
                 title="Approve proposal"
-                className="toolbar-button-approve"
+                className="toolbar-button-secondary"
                 disabled={!proposal}
                 onClick={() => {
                   actions.approveProposal();
@@ -212,16 +210,14 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
         </section>
 
         <section className="shell-context" aria-label="Shell context">
-          <span>{scenario.label}</span>
-          <StatusPill tone={demoState.sampleLoaded ? "good" : "neutral"}>
-            {demoState.sampleLoaded ? "Workflow loaded" : "Baseline state"}
+          <StatusPill tone="neutral">
+            {`Scenario: ${scenario.label}`}
           </StatusPill>
-          <StatusPill tone="neutral">{aiProvider.status.label}</StatusPill>
-          <StatusPill tone={demoState.governanceDecision === "rejected" ? "blocked" : "neutral"}>
-            {`Governance ${governanceDecisionLabel}`}
+          <StatusPill tone="neutral">
+            {`Current step: ${activeNavigationItem.label}`}
           </StatusPill>
           <StatusPill tone={executionReady ? "good" : "warn"}>
-            {executionReady ? "Execution available" : "Governed gate"}
+            {`Execution gate: ${executionReady ? "Ready to run" : "Approval needed"}`}
           </StatusPill>
         </section>
 

@@ -12,7 +12,7 @@ Work Graph Foundry already has a credible local-first foundation:
 - numbered documentation guides and archived implementation history
 - unit, component, and Playwright e2e tests
 
-The next build should preserve that foundation while keeping the landing-first entry, five-view workspace, graph inspection, QA, proposal iteration, and visual explanation stable.
+The next build should preserve that foundation while keeping the landing-first entry, five-view workspace, graph inspection, QA, proposal iteration, reviewer-first execution gating, and visual explanation stable.
 
 ## 8.2 Current Next Actions
 

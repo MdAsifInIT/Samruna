@@ -239,7 +239,7 @@ This approach keeps behavior deterministic for demos and tests while preserving 
 The menu-based console includes:
 
 - global demo controls and scenario selector in the shell command bar
-- landing page with a code-native product preview and `Launch demo` CTA
+  - landing page with a code-native product preview and `Launch` CTA
 - Overview view for workspace orientation, next action, state summary, and data boundary
 - Evidence view for scenario evidence, channel counts, fixture validation, ingestion summary, and normalized work item details
 - Graph view for the work graph, node inspection, patterns, bottlenecks, and opportunity/risk signals

@@ -13,31 +13,31 @@ export const navigationItems: NavigationItem[] = [
   {
     id: "overview",
     label: "Overview",
-    purpose: "Executive overview",
+    purpose: "What pattern was found and what should I do next?",
     icon: LayoutDashboard
   },
   {
     id: "evidence",
     label: "Evidence",
-    purpose: "Intake and evidence",
+    purpose: "What source proof supports it?",
     icon: Eye
   },
   {
     id: "graph",
     label: "Graph",
-    purpose: "Graph and patterns",
+    purpose: "Where is the repeated workflow and bottleneck?",
     icon: GitBranch
   },
   {
     id: "review-run",
     label: "Review & Run",
-    purpose: "Proposal, governance, and simulation",
+    purpose: "Is the automation safe to approve and run?",
     icon: Play
   },
   {
     id: "audit",
     label: "Audit",
-    purpose: "Audit and recovery",
+    purpose: "What happened, and can I export or recover it?",
     icon: ClipboardCheck
   }
 ];

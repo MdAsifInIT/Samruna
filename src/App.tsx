@@ -47,7 +47,7 @@ function LandingPage({
       <header className="landing-nav" aria-label="Landing navigation">
         <strong>Work Graph Foundry</strong>
         <button type="button" className="landing-nav-button" onClick={onLaunch}>
-          Launch demo
+          Launch
         </button>
       </header>
 
@@ -55,21 +55,17 @@ function LandingPage({
         <div className="landing-hero-copy">
           <h1>Work Graph Foundry</h1>
           <p className="landing-copy">
-            A governed automation workspace that turns messy work traces into a live graph, a reviewable proposal, and
-            a safe simulated run.
+            Work Graph Foundry finds repeated patterns in an organization and turns them into governed automation.
           </p>
           <div className="landing-actions">
             <button type="button" className="landing-primary-action" onClick={onLaunch}>
-              Launch demo
+              Launch
             </button>
-            <a className="landing-link" href="#demo">
-              Open workspace
-            </a>
           </div>
         </div>
 
         <ProductPreview
-          aiProviderLabel={aiProvider.status.label}
+          aiProviderLabel={aiProvider.status.available ? "Safe local simulation" : "Safe local preview"}
           currentStageLabel={currentStage?.label ?? "Load Workflow"}
           scenarioLabel={scenario.label}
           workflowName={scenario.workflowName}
@@ -79,8 +75,8 @@ function LandingPage({
       <section className="landing-section landing-value" aria-label="Product value">
         <h2>From trace evidence to governed execution.</h2>
         <p>
-          Work Graph Foundry starts from emails, tickets, approvals, and system logs, then exposes the real workflow
-          before any automation runs.
+          The product keeps the page minimal: a code-native preview of how evidence turns into a reviewable proposal
+          and a safe run.
         </p>
       </section>
 
@@ -98,12 +94,12 @@ function LandingPage({
         <div>
           <h2>Designed for reviewers, not blind automation.</h2>
           <p>
-            Proposals show required data, forbidden data, simulation outcomes, approval state, mock execution output,
-            and an audit trail before the run is considered complete.
+            Proposals show the required data, forbidden data, simulation outcome, approval state, mock execution
+            output, and audit trail before a run is considered complete.
           </p>
         </div>
         <button type="button" className="landing-primary-action" onClick={onLaunch}>
-          Launch demo
+          Launch
         </button>
       </section>
     </main>
@@ -129,15 +125,15 @@ function ProductPreview({
       </div>
       <div className="preview-flow" aria-label="Workflow preview flow">
         <div>
-          <span>Evidence</span>
+          <span>Pattern found</span>
           <strong>{scenarioLabel}</strong>
         </div>
         <div>
-          <span>Graph</span>
-          <strong>Approval bottleneck</strong>
+          <span>Automation proposal</span>
+          <strong>Governed and reviewable</strong>
         </div>
         <div>
-          <span>Gate</span>
+          <span>Safe run</span>
           <strong>{currentStageLabel}</strong>
         </div>
       </div>

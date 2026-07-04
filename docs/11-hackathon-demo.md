@@ -41,7 +41,7 @@ Before real production use, the product still needs:
 Use this sequence for a live demo:
 
 1. Start with `npm run demo:dev`.
-2. Open the printed local URL and click `Launch demo`.
+2. Open the printed local URL and click `Launch`.
 3. Select `IT access requests` for the default story.
 4. Click `Load workflow`.
 5. Click `Analyze workflow` and point out the `Evidence` and `Graph` views.
@@ -54,7 +54,7 @@ Use this sequence for a live demo:
 
 Short talk track:
 
-"This demo observes messy work traces, builds a live graph, finds repeated patterns, proposes governed automation, simulates it against history, requires human approval, executes safely through mock tools, and persists the result locally."
+"This demo observes messy work traces, finds repeated patterns in an organization, turns them into governed automation, simulates them against history, requires human approval, executes safely through mock tools, and persists the result locally."
 
 ## 11.5 Verification Commands
 

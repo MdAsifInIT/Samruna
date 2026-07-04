@@ -13,7 +13,7 @@ export function ReviewView({ controller }: ReviewViewProps) {
     <>
       <section className="view-heading">
         <p className="eyebrow">Review</p>
-        <h2>Audit, export, import, recovery</h2>
+        <h2>What happened, and can I export or recover it?</h2>
       </section>
 
       <SectionPanel

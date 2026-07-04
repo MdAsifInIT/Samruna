@@ -28,8 +28,8 @@ export function OverviewView({ controller }: OverviewViewProps) {
       <section className="overview-hero" aria-label="Operational summary">
         <div className="overview-summary">
           <h2>{scenario.workflowName}</h2>
-          <p>{scenario.description}</p>
-          <strong>{scenario.operatorGoal}</strong>
+          <p>{scenario.operatorGoal}</p>
+          <strong>{currentStage?.label ?? "Load Workflow"}</strong>
           <div className="overview-facts" aria-label="Workflow context">
             {stateItems.map(([label, value]) => (
               <span key={label}>
@@ -42,7 +42,7 @@ export function OverviewView({ controller }: OverviewViewProps) {
 
         <div className="overview-next" aria-label="Next best action">
           <div>
-            <h2>{currentStage?.label ?? "Load Workflow"}</h2>
+            <h2>Next best action</h2>
             <p>{currentStage?.detail ?? "Load the selected workflow to begin."}</p>
           </div>
           <StatusPill tone={executionReady ? "good" : demoState.governanceDecision === "rejected" ? "blocked" : "warn"}>

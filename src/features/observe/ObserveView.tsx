@@ -13,7 +13,7 @@ export function ObserveView({ controller }: ObserveViewProps) {
     <>
       <section className="view-heading">
         <p className="eyebrow">Observe</p>
-        <h2>Intake and evidence visibility</h2>
+        <h2>What source proof supports it?</h2>
       </section>
 
       {demoState.sampleLoaded ? (

@@ -13,7 +13,7 @@ describe("App", () => {
     render(<App />);
 
     expect(screen.getByRole("heading", { name: "Work Graph Foundry" })).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Launch demo" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "Launch" }).length).toBeGreaterThan(0);
     expect(screen.getByLabelText("Work Graph Foundry product preview")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Overview" })).not.toBeInTheDocument();
   });
@@ -24,13 +24,14 @@ describe("App", () => {
 
     expect(window.location.hash).toBe("#demo");
     expect(screen.getByRole("button", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByLabelText("Shell context")).toHaveTextContent("Scenario: IT access requests");
+    expect(screen.getByLabelText("Shell context")).toHaveTextContent("Current step: Overview");
+    expect(screen.getByLabelText("Shell context")).toHaveTextContent("Execution gate: Approval needed");
+    expect(screen.getByRole("heading", { name: "Access request operations" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Evidence" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Graph" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Review & Run" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Audit" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Plan" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Govern" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Execute" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Load workflow/i })).toBeInTheDocument();
 
     const summary = screen.getByRole("region", { name: /Operational summary/i });
@@ -64,7 +65,7 @@ describe("App", () => {
 
     expect(screen.getByRole("heading", { name: /IT access request flow/i })).toBeInTheDocument();
     expect(screen.getAllByText("Manager approval").length).toBeGreaterThan(0);
-    expect(screen.getByRole("heading", { name: /Repeated workflows and automation opportunities/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Repeated workflow and bottleneck" })).toBeInTheDocument();
     expect(screen.getByText(/Score drivers/i)).toBeInTheDocument();
 
     openView("Evidence");
@@ -84,7 +85,7 @@ describe("App", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Generate automation proposal/i }));
 
-    expect(screen.getByRole("heading", { name: /Review and run/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Is the automation safe to approve and run\?/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Governed automation proposal/i })).toBeInTheDocument();
     expect(screen.getByText(/Write immutable audit event/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Review before execution/i })).toBeInTheDocument();
@@ -230,7 +231,7 @@ describe("App", () => {
 });
 
 async function launchDemo() {
-  fireEvent.click(screen.getAllByRole("button", { name: "Launch demo" })[0]);
+  fireEvent.click(screen.getAllByRole("button", { name: "Launch" })[0]);
   await screen.findByRole("button", { name: "Overview" });
 }
 

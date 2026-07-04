@@ -46,7 +46,7 @@ All scenario data is synthetic and stored in `src/fixtures/demoData.ts`.
 
 ## 10.3 Golden Path
 
-1. Click `Launch demo` from the product page.
+1. Click `Launch` from the product page.
 2. Select `IT access requests`.
 3. Click `Load Workflow`.
 4. Confirm Evidence shows loaded source counts and channel evidence.

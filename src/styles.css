@@ -204,15 +204,6 @@ h2 {
   margin-top: 28px;
 }
 
-.landing-link {
-  color: var(--text);
-  font-size: var(--text-base);
-  font-weight: var(--weight-bold);
-  min-height: 44px;
-  padding: 12px 2px;
-  text-decoration: none;
-}
-
 .product-preview {
   background: #ffffff;
   border: 1px solid var(--border);
@@ -697,24 +688,17 @@ h2 {
 }
 
 .shell-context {
-  align-items: center;
-  background: rgb(255 255 255 / 62%);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgb(219 227 238 / 78%);
-  border-radius: var(--shell-radius);
-  box-shadow: var(--shadow-sm);
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-top: 12px;
-  padding: 10px 12px;
 }
 
-.shell-context > span {
-  color: var(--text);
-  font-size: var(--text-base);
-  font-weight: var(--weight-semibold);
-  margin-right: 2px;
+.shell-context .status-pill {
+  justify-content: space-between;
+  min-height: 42px;
+  padding-inline: 12px;
+  width: 100%;
 }
 
 .status-pill {
@@ -2131,6 +2115,7 @@ h2 {
   .command-center,
   .overview-hero,
   .overview-boundary,
+  .shell-context,
   .review-run-grid,
   .operator-console,
   .readiness-panel,
@@ -2306,6 +2291,7 @@ h2 {
   .overview-hero,
   .overview-boundary,
   .overview-facts,
+  .shell-context,
   .review-run-grid,
   .review-run-status,
   .operator-console,
