@@ -139,7 +139,7 @@ Expected current baseline for `npm run verify:demo`:
 
 - typecheck passes
 - 10 test files pass
-- 37 tests pass
+- 41 tests pass
 - build passes
 - audit reports 0 vulnerabilities
 

@@ -84,7 +84,9 @@
 - `npm run test:e2e:preview` initially hit the same sandbox launch blocker and stale selector issue; after the selector fix and elevated browser launch it passed: 12 Chromium tests.
 - `npm run test:e2e:install` was not run because Chromium was already installed.
 - `rg "framer-motion|gsap|animejs" package.json package-lock.json src` returned no matches, confirming no animation library was added.
-- Browser/IAB path was attempted after reading the Browser skill, but the temporary local server setup was blocked by local process/log permissions; Playwright dev and preview suites are the completed browser validation path for this pass.
+- Browser/IAB path was tested after reading the Browser skill. Shell-launched background dev/static servers exited in this environment, so the built `dist` app was served through a temporary in-session static server and opened in the in-app Browser.
+- Browser/IAB checks passed for page identity, nonblank landing page, `Launch` transition to `#demo`, reviewer status strip, load/analyze/proposal/approve/run workflow state, Audit export, no warn/error console logs, and mobile overflow at 390px/375px effective viewport width.
+- Browser/IAB screenshot evidence captured the mobile landing page with the `Launch` CTA, product claim, and `Pattern found -> Automation proposal -> Safe run` preview.
 - `npm run typecheck` passed.
 - `npm test` initially failed after the route change because tests still assumed workspace-first state; updated tests to launch the demo and load workflow explicitly.
 - `npm test` passed after fixes: 10 test files, 41 tests.
@@ -99,8 +101,17 @@
 - Performance smoke passed in dev and preview runs. The test monitors browser Long Task entries during `Launch`, view switching, graph review, proposal generation, approval, and run interactions, and found no tasks at or above the 200ms budget.
 - Console/page error monitoring passed across the Playwright e2e suite.
 - Production build output succeeded with no added animation library.
+- `worker_nano` owned the GitHub Pages deployment cleanup. The workflow now uses the repository name for `VITE_BASE_PATH` and current Pages action majors: `configure-pages@v6`, `upload-pages-artifact@v5`, and `deploy-pages@v5`.
+- The failed GitHub Pages run was checked through public GitHub Actions metadata and the user-provided log. Build, artifact upload, and deployment creation succeeded; the failure occurred while polling the Pages deployment status from `actions/deploy-pages@v4`.
+- A Pages-path build simulation passed with `VITE_BASE_PATH=/Work-Graph-Foundry/`; `dist/index.html` referenced CSS and JS under `/Work-Graph-Foundry/assets/...`.
+- `worker_test` verified `npm run typecheck`, `npm test`, `npm run build`, the Pages-path build simulation, `git diff --check`, and `git status --short`.
+- Ignored generated artifacts were cleaned after verification: `dist/`, `test-results/`, `tmp/`, and local server `*.log` files. `git ls-files` confirmed none were tracked before deletion.
 
 ## Remaining Risks
 
 - Unsandboxed Playwright and audit commands print a non-project PowerShell profile warning from `Microsoft.PowerShell_profile.ps1`; the tested commands still exit successfully.
-- Browser-plugin visual inspection could not be completed after the policy block, so the final responsive and performance checks are covered by Playwright automation rather than manual Browser screenshots.
+- Browser/IAB testing completed through the built app served by a temporary in-session static server. Full responsive matrix and long-task smoke remain covered by Playwright automation.
+- GitHub Pages deployment now derives the Vite base path from the repository name, which avoids hardcoded-path drift if the repo is renamed.
+- `docs/06-testing-and-validation.md` now reflects the current `npm test` baseline of 41 tests.
+- The Pages deploy failure was isolated to `actions/deploy-pages` after artifact upload; workflow actions were bumped to the current Node-24-compatible majors (`configure-pages@v6`, `upload-pages-artifact@v5`, `deploy-pages@v5`).
+- The real GitHub Pages deployment still needs a fresh CI run after commit/push or manual workflow dispatch; local checks cannot complete GitHub's hosted Pages deployment step.
