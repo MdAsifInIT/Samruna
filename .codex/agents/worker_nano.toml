@@ -1,13 +1,13 @@
 name = "worker_nano"
-description = "Blazing fast precision implementation worker for standard bounded coding tasks."
-model = "gpt-5.4-nano"
-model_reasoning_effort = "none"
+description = "Fast precision implementation worker for standard bounded coding tasks."
+model = "gpt-5.4-mini"
+model_reasoning_effort = "low"
 sandbox_mode = "workspace-write"
 
 developer_instructions = """
 Handle one bounded task.
-Make minimal changes rapidly.
-Focus purely on execution without overthinking.
+Make minimal changes efficiently.
+Focus on execution with only the reasoning needed for the task.
 Return summary, files changed, tests run, and blockers.
 Do not spawn more agents.
 """

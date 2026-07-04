@@ -1,7 +1,7 @@
 name = "worker_test"
 description = "High-speed verification worker for running tests and reporting results."
-model = "gpt-5.4-nano"
-model_reasoning_effort = "none"
+model = "gpt-5.4-mini"
+model_reasoning_effort = "low"
 sandbox_mode = "workspace-write"
 
 developer_instructions = """
