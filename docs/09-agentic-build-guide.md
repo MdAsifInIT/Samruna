@@ -38,7 +38,7 @@ Use this checklist before and after meaningful changes:
 6. Install Playwright Chromium with `npm run test:e2e:install` if the browser is not already installed.
 7. Run `npm run test:e2e:preview` or `npm run test:e2e` when browser launch is allowed.
 8. Start local demo with `npm run demo:dev`.
-9. Walk the UI flow: scenario, load, analyze, generate proposal, approve, run mock, export, reset.
+9. Walk the UI flow: landing page, `Launch demo`, scenario, load workflow, analyze workflow, generate automation proposal, approve, run simulation, export, reset.
 10. Switch to procurement and verify load, analyze, proposal generation.
 11. Verify reset/recovery restores seeded local state.
 12. Verify mock AI fallback by leaving `OPENAI_API_KEY` unset.
@@ -65,7 +65,7 @@ Expected outcomes:
 - Persist new demo state only through `src/domain/persistence.ts`.
 - Keep live OpenAI calls server-side only if they are added.
 - Keep execution mock-only unless a future production architecture adds authenticated, allowlisted tool execution with approvals.
-- Keep Playwright e2e in the verification path when browser access is available.
+- Keep Playwright e2e in the verification path when browser access is available, including the landing-first entry, five workspace views, responsive viewports, and performance smoke.
 
 ## 9.5 Common Failure Modes
 

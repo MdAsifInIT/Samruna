@@ -1,15 +1,6 @@
-import {
-  ClipboardCheck,
-  Eye,
-  GitBranch,
-  LayoutDashboard,
-  ListChecks,
-  Play,
-  ShieldCheck,
-  type LucideIcon
-} from "lucide-react";
+import { ClipboardCheck, Eye, GitBranch, LayoutDashboard, Play, type LucideIcon } from "lucide-react";
 
-export type ViewId = "overview" | "observe" | "analyze" | "plan" | "govern" | "execute" | "review";
+export type ViewId = "overview" | "evidence" | "graph" | "review-run" | "audit";
 
 export interface NavigationItem {
   id: ViewId;
@@ -21,43 +12,31 @@ export interface NavigationItem {
 export const navigationItems: NavigationItem[] = [
   {
     id: "overview",
-    label: "Command Center",
+    label: "Overview",
     purpose: "Executive overview",
     icon: LayoutDashboard
   },
   {
-    id: "observe",
-    label: "Observe",
+    id: "evidence",
+    label: "Evidence",
     purpose: "Intake and evidence",
     icon: Eye
   },
   {
-    id: "analyze",
-    label: "Analyze",
+    id: "graph",
+    label: "Graph",
     purpose: "Graph and patterns",
     icon: GitBranch
   },
   {
-    id: "plan",
-    label: "Plan",
-    purpose: "Proposal planning",
-    icon: ListChecks
-  },
-  {
-    id: "govern",
-    label: "Govern",
-    purpose: "Approval gate",
-    icon: ShieldCheck
-  },
-  {
-    id: "execute",
-    label: "Execute",
-    purpose: "Simulation run",
+    id: "review-run",
+    label: "Review & Run",
+    purpose: "Proposal, governance, and simulation",
     icon: Play
   },
   {
-    id: "review",
-    label: "Review",
+    id: "audit",
+    label: "Audit",
     purpose: "Audit and recovery",
     icon: ClipboardCheck
   }

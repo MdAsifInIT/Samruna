@@ -2,7 +2,7 @@
 
 Work Graph Foundry is a local-first enterprise work intelligence and governed automation demo. It observes messy work traces, builds a live work graph, identifies repeated work patterns, proposes governed automations, simulates them against historical cases, executes approved workflows through safe mock tools, and recommends improvements.
 
-The demo is intentionally not a chatbot or landing page. It is an operating dashboard that shows an AI-native enterprise work loop: observe, understand, map, reason, plan, simulate, govern, execute, and improve.
+The demo opens on a customer-facing product page with a `Launch demo` call to action. The interactive workspace is available at `#demo` and surfaces five primary views: Overview, Evidence, Graph, Review & Run, and Audit. It still shows an AI-native enterprise work loop: observe, understand, map, reason, plan, simulate, govern, execute, and improve.
 
 ## What The Demo Shows
 
@@ -54,16 +54,17 @@ npm run preview
 
 ## Demo Path
 
-1. Choose `IT access requests` or `Procurement intake`.
-2. Click `Load Scenario`.
-3. Click `Analyze`.
-4. Inspect normalized evidence, graph, patterns, and bottlenecks.
-5. Click `Generate Proposal`.
-6. Review required data, forbidden data, assumptions, policy checks, escalations, simulation results, and governance notes.
-7. Click `Approve` or `Reject`.
-8. Click `Run Mock` after approval.
-9. Review mock tool calls, audit trail, and learning-loop recommendation.
-10. Use `Export Summary` for a portable run summary or `Reset` to restore seeded state.
+1. Click `Launch demo` from the product page.
+2. Choose `IT access requests` or `Procurement intake`.
+3. Click `Load Workflow`.
+4. Click `Analyze` and inspect `Graph`.
+5. Open `Evidence` when source traces or normalized evidence need review.
+6. Click `Generate Proposal`.
+7. Review required data, forbidden data, assumptions, policy checks, escalations, simulation results, and governance notes in `Review & Run`.
+8. Click `Approve` or `Reject`.
+9. Click `Run Simulation` after approval.
+10. Open `Audit` to review export/import controls and persisted audit state.
+11. Use `Export Summary` for a portable run summary or `Reset` to restore seeded state.
 
 ## Scripts
 
@@ -171,4 +172,4 @@ Current browser baseline:
 
 ## Contributing
 
-Keep the product dashboard-first. Avoid turning the app into a generic chatbot or marketing page. New features should preserve typed contracts, deterministic demo behavior, governance visibility, and safe mock execution by default.
+Keep the product landing-first and reviewer-focused. Avoid turning the app into a generic chatbot or generic marketing page. New features should preserve typed contracts, deterministic demo behavior, governance visibility, and safe mock execution by default.

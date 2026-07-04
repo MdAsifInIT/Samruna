@@ -4,7 +4,7 @@
 
 Work Graph Foundry already has a credible local-first foundation:
 
-- React/Vite/TypeScript dashboard
+- React/Vite/TypeScript landing page and hash-backed demo workspace
 - deterministic IT access request scenario
 - typed fixtures and validation
 - domain modules for ingestion, graphing, pattern detection, planning, simulation, governance, execution, and learning
@@ -12,13 +12,13 @@ Work Graph Foundry already has a credible local-first foundation:
 - numbered documentation guides and archived implementation history
 - unit, component, and Playwright e2e tests
 
-The next build should preserve that foundation while making the demo more stable across graph inspection, QA, proposal iteration, and visual explanation.
+The next build should preserve that foundation while keeping the landing-first entry, five-view workspace, graph inspection, QA, proposal iteration, and visual explanation stable.
 
 ## 8.2 Current Next Actions
 
 Use this file as the active handoff for the next implementation pass. Keep changes scoped, deterministic, and compatible with concurrent edits.
 
-1. Expand QA around the existing Playwright e2e path, including mobile viewports, accessibility checks, rejection gates, import/export, and reset recovery.
+1. Expand QA around the existing Playwright e2e path, including landing entry, the five-view workspace, mobile viewports, accessibility checks, rejection gates, import/export, and reset recovery.
 2. Add proposal versioning so regenerated proposals can be compared, approved, rejected, exported, and audited without overwriting prior review context.
 3. Add a richer graph visualization that makes process stages, bottlenecks, exceptions, provenance, and selected scenario context easier to inspect.
 4. Keep all execution mock-only and governance-gated while these improvements land.
@@ -75,7 +75,7 @@ Target outcome:
 
 Target outcome:
 
-- the dashboard shows a clearer visual graph without hiding the existing textual evidence
+- the `Graph` view shows a clearer visual graph without hiding the existing textual evidence
 - selected graph elements reveal source traces, policy context, bottleneck metrics, and exceptions
 - the visualization works for both implemented scenarios
 - mobile layout remains usable
@@ -87,7 +87,9 @@ Run before handoff:
 
 ```powershell
 npm run verify:demo
+npm run typecheck:e2e
 npm run test:e2e
+npm run test:e2e:preview
 git status --short
 ```
 
@@ -97,7 +99,7 @@ Expected outcome:
 - tests pass
 - production build passes
 - audit has no low-or-higher vulnerabilities
-- Playwright Chromium e2e passes when browser launch is allowed
+- Playwright Chromium e2e passes when browser launch is allowed, including desktop, tablet, mobile, small-mobile, and performance-smoke coverage
 - only intentional source, docs, script, and test files are changed
 
 If Playwright is blocked by sandbox permissions, request permission or document the blocker with the exact command that failed.

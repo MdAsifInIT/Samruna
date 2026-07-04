@@ -1,4 +1,3 @@
-import { ListChecks, ShieldAlert } from "lucide-react";
 import { StatusPill } from "../../components/shared/StatusPill";
 import type { WorkGraphDemoController } from "../../app/useWorkGraphDemoController";
 
@@ -12,35 +11,37 @@ export function OverviewView({ controller }: OverviewViewProps) {
     currentStage,
     demoState,
     executionReady,
-    foundationPanels,
     governanceDecisionLabel,
     scenario,
-    validation,
-    workflowStages
+    validation
   } = controller;
-  const operatingCards = foundationPanels.filter((panel) =>
-    ["Work Pattern Clusters", "Work Graph", "Governance", "Persistence"].includes(panel.title)
-  );
+  const stateItems = [
+    ["Workflow", demoState.sampleLoaded ? "Loaded" : "Baseline"],
+    ["Analysis", demoState.analysisRequested ? "Graph ready" : "Not started"],
+    ["Proposal", demoState.proposalRequested ? "Generated" : "Not generated"],
+    ["Governance", governanceDecisionLabel],
+    ["Execution", executionReady ? "Available" : "Blocked"]
+  ];
 
   return (
     <>
-      <section className="command-center" aria-label="Operational summary">
-        <div className="scenario-summary">
-          <p className="eyebrow">Current workflow</p>
+      <section className="overview-hero" aria-label="Operational summary">
+        <div className="overview-summary">
           <h2>{scenario.workflowName}</h2>
           <p>{scenario.description}</p>
           <strong>{scenario.operatorGoal}</strong>
-          <div className="scenario-facts" aria-label="Workflow context">
-            <span>{scenario.label}</span>
-            <span>{demoState.sampleLoaded ? "Loaded" : "Baseline"}</span>
-            <span>{aiProvider.status.label}</span>
-            <span>{governanceDecisionLabel}</span>
+          <div className="overview-facts" aria-label="Workflow context">
+            {stateItems.map(([label, value]) => (
+              <span key={label}>
+                <strong>{label}</strong>
+                {value}
+              </span>
+            ))}
           </div>
         </div>
 
-        <div className="next-action-card" aria-label="Next best action">
+        <div className="overview-next" aria-label="Next best action">
           <div>
-            <p className="eyebrow">Next best action</p>
             <h2>{currentStage?.label ?? "Load Workflow"}</h2>
             <p>{currentStage?.detail ?? "Load the selected workflow to begin."}</p>
           </div>
@@ -50,34 +51,9 @@ export function OverviewView({ controller }: OverviewViewProps) {
         </div>
       </section>
 
-      <section className="operator-console" aria-label="Workflow operations console">
-        <div className="operator-card">
-          <div className="panel-heading">
-            <ListChecks size={18} />
-            <h2>Workflow steps</h2>
-          </div>
-          <ol>
-            {workflowStages.map((stage) => (
-              <li
-                key={stage.id}
-                data-complete={stage.state === "complete"}
-                data-current={stage.state === "current"}
-                data-locked={stage.state === "locked"}
-              >
-                <span>{stage.index}</span>
-                <div>
-                  <strong>{stage.label}</strong>
-                  <p>{stage.detail}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
-        <div className="operator-card">
-          <div className="panel-heading">
-            <ShieldAlert size={18} />
-            <h2>Data boundary</h2>
-          </div>
+      <section className="overview-boundary" aria-label="Data boundary">
+        <article>
+          <h2>Review boundary</h2>
           <p>{scenario.syntheticDataNotice}</p>
           <dl>
             <div>
@@ -93,24 +69,24 @@ export function OverviewView({ controller }: OverviewViewProps) {
               <dd>Simulated tools only, approval gated, no external writes.</dd>
             </div>
           </dl>
-        </div>
-      </section>
-
-      <section className="dashboard-grid" aria-label="Operating dashboard">
-        {operatingCards.map((panel) => {
-          const Icon = panel.icon;
-
-          return (
-            <article className="panel" key={panel.title}>
-              <div className="panel-heading">
-                <Icon size={18} />
-                <h2>{panel.title}</h2>
-              </div>
-              <p className="panel-value">{panel.value}</p>
-              <p className="panel-detail">{panel.detail}</p>
-            </article>
-          );
-        })}
+        </article>
+        <article>
+          <h2>Demo mode</h2>
+          <dl>
+            <div>
+              <dt>Provider</dt>
+              <dd>{aiProvider.status.label}</dd>
+            </div>
+            <div>
+              <dt>Validation</dt>
+              <dd>{validation.valid ? "Fixture checks passed" : "Needs review"}</dd>
+            </div>
+            <div>
+              <dt>Persistence</dt>
+              <dd>Local browser state with export and import.</dd>
+            </div>
+          </dl>
+        </article>
       </section>
 
       {!validation.valid && (

@@ -41,7 +41,7 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
       <aside className="sidebar" aria-label="Primary navigation">
         <div className="brand-block">
           <p className="eyebrow">Work Graph Foundry</p>
-          <strong>Operations Console</strong>
+          <strong>Workspace</strong>
         </div>
         <nav className="menu-list">
           {navigationItems.map((item) => {
@@ -66,7 +66,7 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
         <section className="topbar" aria-label="Workflow controls">
           <div className="topbar-title">
             <p className="eyebrow">{activeNavigationItem.label}</p>
-            <h1>Enterprise Work Intelligence Console</h1>
+            <h1>Work Graph Foundry</h1>
             <p className="topbar-summary">{activeNavigationItem.purpose}</p>
           </div>
           <div className="mobile-view-picker">
@@ -111,7 +111,7 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
                 className="toolbar-button-primary"
                 onClick={() => {
                   actions.loadSelectedScenario();
-                  onViewChange("observe");
+                  onViewChange("evidence");
                 }}
               >
                 Load Workflow
@@ -124,7 +124,7 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
                 disabled={!demoState.sampleLoaded}
                 onClick={() => {
                   actions.analyzeWorkflow();
-                  onViewChange("analyze");
+                  onViewChange("graph");
                 }}
               >
                 Analyze
@@ -137,7 +137,7 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
                 disabled={!demoState.analysisRequested || !proposalGenerationReady}
                 onClick={() => {
                   actions.generateProposalFromCurrentState();
-                  onViewChange("plan");
+                  onViewChange("review-run");
                 }}
               >
                 Generate Proposal
@@ -152,7 +152,7 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
                 disabled={!proposal}
                 onClick={() => {
                   actions.approveProposal();
-                  onViewChange("govern");
+                  onViewChange("review-run");
                 }}
               >
                 Approve
@@ -165,7 +165,7 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
                 disabled={!proposal}
                 onClick={() => {
                   actions.rejectProposal();
-                  onViewChange("govern");
+                  onViewChange("review-run");
                 }}
               >
                 Reject
@@ -178,7 +178,7 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
                 disabled={!executionReady}
                 onClick={() => {
                   actions.runMockExecution();
-                  onViewChange("execute");
+                  onViewChange("review-run");
                 }}
               >
                 Run Simulation
@@ -190,7 +190,7 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
                 className="toolbar-button-secondary"
                 onClick={() => {
                   actions.exportSummary();
-                  onViewChange("review");
+                  onViewChange("audit");
                 }}
               >
                 Export Summary

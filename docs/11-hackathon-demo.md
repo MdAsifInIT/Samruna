@@ -41,15 +41,16 @@ Before real production use, the product still needs:
 Use this sequence for a live demo:
 
 1. Start with `npm run demo:dev`.
-2. Select `IT access requests` for the default story.
-3. Click `Load Scenario`.
-4. Click `Analyze` and point out the graph, patterns, and bottleneck.
-5. Click `Generate Proposal` and review the governed plan.
-6. Click `Approve`.
-7. Click `Run Mock` and emphasize that no external system changes.
-8. Click `Export Summary` to show portable demo state.
-9. Click `Reset` to prove the demo can be replayed.
-10. Switch to `Procurement intake` if you want a second scenario.
+2. Open the printed local URL and click `Launch demo`.
+3. Select `IT access requests` for the default story.
+4. Click `Load workflow`.
+5. Click `Analyze workflow` and point out the `Evidence` and `Graph` views.
+6. Click `Generate automation proposal` and review `Review & Run`.
+7. Click `Approve`.
+8. Click `Run simulation` and emphasize that no external system changes.
+9. Open `Audit`, then click `Export Summary` to show portable demo state.
+10. Click `Reset workflow state` to prove the demo can be replayed.
+11. Switch to `Procurement intake` if you want a second scenario.
 
 Short talk track:
 

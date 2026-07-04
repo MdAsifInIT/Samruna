@@ -47,19 +47,19 @@ Current UI coverage lives in `src/App.test.tsx`.
 
 It checks:
 
-- menu-based Command Center first screen renders
-- sidebar navigation exposes Command Center, Observe, Analyze, Plan, Govern, Execute, and Review with active state
+- customer-facing landing page renders first
+- sidebar navigation exposes Overview, Evidence, Graph, Review & Run, and Audit with active state
 - operational summary shows scenario, demo path, current stage, AI mode, governance state, and mock safety boundary
 - scenario selector renders
-- `Load Scenario` opens Observe and reveals source counts
-- `Analyze` opens Analyze and reveals graph and pattern discovery
-- Observe still shows normalized evidence after analysis
-- graph and pattern selection details render from the Analyze menu view
-- proposal, governance, execution, and review panels render from their dedicated menu views
-- approval opens the execution gate and enables `Run Mock`
+- `Launch demo` opens the workspace and `Load Workflow` opens Evidence with source counts
+- `Analyze` opens Graph and reveals graph and pattern discovery
+- Evidence still shows normalized evidence after analysis
+- graph and pattern selection details render from the Graph menu view
+- proposal, governance, execution, and audit panels render from their dedicated menu views
+- approval opens the execution gate and enables `Run Simulation`
 - rejection keeps execution blocked
-- `Run Mock` opens Execute and shows mock tool output
-- Review shows audit trail and export/import controls
+- `Run Simulation` keeps the user in Review & Run and shows mock tool output
+- Audit shows audit trail and export/import controls
 - learning recommendation appears
 - `Export Summary` produces run JSON
 - `Reset` restores seeded state
@@ -75,23 +75,23 @@ When an agent validates this repo, it should perform these steps:
 5. Run `npm run test:e2e` when Playwright browser binaries are installed.
 6. If manual browser access is needed, start preview with `npm run preview`.
 7. Open the app.
-8. Click `Load Scenario`.
-9. Confirm Observe shows source counts and channel data.
+8. Click `Launch demo`.
+9. Click `Load Workflow` and confirm Evidence shows source counts and channel data.
 10. Click `Analyze`.
-11. Confirm Analyze shows selectable graph inspection and pattern details.
-12. Open Observe and confirm normalized evidence renders.
+11. Confirm Graph shows selectable graph inspection and pattern details.
+12. Open Evidence and confirm normalized evidence renders.
 13. Click `Generate Proposal`.
-14. Confirm Plan shows proposal details and versions.
-15. Open Govern and confirm simulation, policy context, and approval controls render.
+14. Confirm Review & Run shows proposal details and versions.
+15. Open Review & Run and confirm simulation, policy context, and approval controls render.
 16. Click `Approve`.
 17. Confirm execution gate is open.
-18. Click `Run Mock`.
-19. Confirm Execute shows mock tool calls and learning recommendation.
-20. Open Review.
+18. Click `Run Simulation`.
+19. Confirm Review & Run shows mock tool calls and learning recommendation.
+20. Open Audit.
 21. Click `Export Summary`.
 22. Confirm JSON includes the selected scenario id.
 23. Click `Reset`.
-24. Confirm generated state clears from Analyze, Plan, Execute, and Review.
+24. Confirm generated state clears from Graph, Review & Run, and Audit.
 25. Switch to `Procurement intake`.
 26. Repeat load, analyze, generate proposal.
 27. Check mobile width for horizontal overflow and mobile view selection.
@@ -175,23 +175,23 @@ Manual smoke path:
 1. `npm run build`
 2. `npm run preview`
 3. Open preview URL.
-4. Click `Load Scenario`.
-5. Confirm Observe shows loaded counts and source channels.
+4. Click `Launch demo`.
+5. Click `Load Workflow` and confirm Evidence shows loaded counts and source channels.
 6. Click `Analyze`.
-7. Confirm Analyze shows the work graph and detected patterns.
+7. Confirm Graph shows the work graph and detected patterns.
 8. Click `Generate Proposal`.
-9. Confirm Plan shows the governed proposal.
-10. Open Govern and confirm simulation plus governance controls render.
+9. Confirm Review & Run shows the governed proposal.
+10. Open Review & Run and confirm simulation plus governance controls render.
 11. Click `Approve`.
 12. Confirm execution gate changes from `Blocked` to `Open`.
-13. Click `Run Mock`.
-14. Confirm Execute shows `mock task IT-2001 created`.
+13. Click `Run Simulation`.
+14. Confirm Review & Run shows `mock task IT-2001 created`.
 15. Confirm learning recommendation mentions human-review lane.
-16. Open Review and click `Export Summary`.
+16. Open Audit and click `Export Summary`.
 17. Confirm summary JSON appears.
-18. Refresh the browser and confirm the selected scenario and generated state recover from localStorage by opening Analyze and Execute.
+18. Refresh the browser and confirm the selected scenario and generated state recover from localStorage by opening Graph and Review & Run.
 19. Click `Reset`.
-20. Confirm generated output disappears from Analyze, Plan, and Execute.
+20. Confirm generated output disappears from Graph, Review & Run, and Audit.
 21. Refresh again and confirm reset state persists.
 
 If Playwright browser binaries are unavailable, treat `npm run verify:demo` plus this manual path as the local POC verification gate.
@@ -201,7 +201,7 @@ If Playwright browser binaries are unavailable, treat `npm run verify:demo` plus
 At a mobile-width viewport:
 
 - top controls should wrap cleanly
-- mobile view selector should switch between Command Center, Observe, Analyze, Plan, Govern, Execute, and Review
+- mobile view selector should switch between Overview, Evidence, Graph, Review & Run, and Audit
 - script path should stack
 - status cards should stack
 - panels should not overflow horizontally

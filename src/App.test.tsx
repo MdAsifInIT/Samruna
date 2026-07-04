@@ -6,34 +6,37 @@ import { DEMO_STORAGE_KEY } from "./domain/persistence";
 describe("App", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    window.history.pushState(null, "", "/");
   });
 
-  it("renders the menu-based command center shell", () => {
+  it("renders the customer-facing landing page first", () => {
     render(<App />);
 
-    expect(screen.getByRole("heading", { name: /Enterprise Work Intelligence Console/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Command Center" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("button", { name: "Observe" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Analyze" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Plan" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Govern" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Execute" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Review" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Work Graph Foundry" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Launch demo" }).length).toBeGreaterThan(0);
+    expect(screen.getByLabelText("Work Graph Foundry product preview")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Overview" })).not.toBeInTheDocument();
+  });
+
+  it("opens the hash-backed five-view workspace", async () => {
+    render(<App />);
+    await launchDemo();
+
+    expect(window.location.hash).toBe("#demo");
+    expect(screen.getByRole("button", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("button", { name: "Evidence" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Graph" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Review & Run" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Audit" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Plan" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Govern" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Execute" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Load workflow/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Reset workflow state/i })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: /Select workflow/i })).toBeInTheDocument();
 
     const summary = screen.getByRole("region", { name: /Operational summary/i });
 
-    expect(within(summary).getByText(/Current workflow/i)).toBeInTheDocument();
     expect(within(summary).getByRole("heading", { name: /Access request operations/i })).toBeInTheDocument();
-    expect(within(summary).getByText(/Next best action/i)).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: /Workflow operations console/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Workflow steps/i })).toBeInTheDocument();
-    expect(screen.getByText(/Work Pattern Clusters/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/Deterministic simulation/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Local state saved/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/No external writes/i).length).toBeGreaterThan(0);
+    expect(screen.getByLabelText("Data boundary")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Run simulation/i })).toBeDisabled();
   });
 
@@ -42,7 +45,7 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(screen.getByRole("heading", { name: /Enterprise Work Intelligence Console/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Work Graph Foundry" })).toBeInTheDocument();
 
     await waitFor(() => {
       expect(window.localStorage.getItem(DEMO_STORAGE_KEY)).toContain('"selectedScenarioId":"it-access"');
@@ -51,7 +54,7 @@ describe("App", () => {
 
   it("runs the staged IT access demo path", async () => {
     render(<App />);
-
+    await launchDemo();
     fireEvent.click(screen.getByRole("button", { name: /Load workflow/i }));
 
     expect(screen.getByText("Raw traces")).toBeInTheDocument();
@@ -64,13 +67,13 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: /Repeated workflows and automation opportunities/i })).toBeInTheDocument();
     expect(screen.getByText(/Score drivers/i)).toBeInTheDocument();
 
-    openView("Observe");
+    openView("Evidence");
     expect(screen.getAllByText("Normalized items")[0]).toBeInTheDocument();
     expect(screen.getByText(/Raw trace to normalized work item/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Maya Chen" })).toBeInTheDocument();
     expect(screen.getByText(/standard access/i)).toBeInTheDocument();
 
-    openView("Analyze");
+    openView("Graph");
     fireEvent.click(screen.getAllByRole("button", { name: /Exception review/i })[0]);
     expect(screen.getByRole("heading", { name: /Exception review/i })).toBeInTheDocument();
     expect(screen.getByText(/routes exceptions into review and learning signals/i)).toBeInTheDocument();
@@ -81,12 +84,11 @@ describe("App", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Generate automation proposal/i }));
 
+    expect(screen.getByRole("heading", { name: /Review and run/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Governed automation proposal/i })).toBeInTheDocument();
     expect(screen.getByText(/Write immutable audit event/i)).toBeInTheDocument();
-    openView("Govern");
     expect(screen.getByRole("heading", { name: /Review before execution/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Run simulation/i })).toBeDisabled();
-    expect(screen.getAllByText("Blocked").length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getAllByRole("button", { name: /Approve/i })[0]);
 
@@ -100,7 +102,7 @@ describe("App", () => {
     expect(screen.getAllByText(/human-review lane/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /Execution audit trail/i })).toBeInTheDocument();
 
-    openView("Review");
+    openView("Audit");
     expect(screen.getByText(/Simulated execution run/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole("button", { name: /Export Summary/i })[0]);
@@ -112,19 +114,19 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: /Reset workflow state/i }));
 
     expect(screen.queryByRole("heading", { name: /Workflow runner/i })).not.toBeInTheDocument();
-    openView("Analyze");
+    openView("Graph");
     expect(screen.queryByRole("heading", { name: /IT access request flow/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /Repeated workflows and automation opportunities/i })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Run simulation/i })).toBeDisabled();
   });
 
-  it("blocks simulated execution when governance rejects the proposal", () => {
+  it("blocks simulated execution when governance rejects the proposal", async () => {
     render(<App />);
-
+    await launchDemo();
     fireEvent.click(screen.getByRole("button", { name: /Load workflow/i }));
     fireEvent.click(screen.getByRole("button", { name: /Analyze workflow/i }));
     fireEvent.click(screen.getByRole("button", { name: /Generate automation proposal/i }));
-    fireEvent.click(screen.getByRole("button", { name: /Reject/i }));
+    fireEvent.click(screen.getAllByRole("button", { name: /Reject/i })[0]);
 
     expect(screen.getAllByText(/Rejected/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: /Run simulation/i })).toBeDisabled();
@@ -144,8 +146,9 @@ describe("App", () => {
       patternLabel: /Software procurement intake/i,
       workflowHeading: /Procurement operations/i
     }
-  ])("generates proposals and inspects details for $scenarioId", ({ scenarioId, graphTitle, patternLabel, workflowHeading }) => {
+  ])("generates proposals and inspects details for $scenarioId", async ({ scenarioId, graphTitle, patternLabel, workflowHeading }) => {
     render(<App />);
+    await launchDemo();
 
     fireEvent.change(screen.getByRole("combobox", { name: /Select workflow/i }), {
       target: { value: scenarioId }
@@ -155,9 +158,9 @@ describe("App", () => {
 
     expect(screen.getByRole("heading", { name: graphTitle })).toBeInTheDocument();
 
-    openView("Command Center");
+    openView("Overview");
     expect(screen.getByRole("heading", { name: workflowHeading })).toBeInTheDocument();
-    openView("Analyze");
+    openView("Graph");
     fireEvent.click(screen.getAllByRole("button", { name: /Manager approval/i })[0]);
     expect(screen.getByRole("heading", { name: /Manager approval/i })).toBeInTheDocument();
     expect(screen.getAllByText(/cases waited at least 24 hours for manager approval/i).length).toBeGreaterThan(0);
@@ -174,7 +177,7 @@ describe("App", () => {
 
   it("persists proposal history and lets the selected version drive export", async () => {
     render(<App />);
-
+    await launchDemo();
     fireEvent.click(screen.getByRole("button", { name: /Load workflow/i }));
     fireEvent.click(screen.getByRole("button", { name: /Analyze workflow/i }));
     fireEvent.click(screen.getByRole("button", { name: /Generate automation proposal/i }));
@@ -209,10 +212,11 @@ describe("App", () => {
     });
   });
 
-  it("shows a safe error for malformed import summaries", () => {
+  it("shows a safe error for malformed import summaries", async () => {
     render(<App />);
+    await launchDemo();
 
-    openView("Review");
+    openView("Audit");
     fireEvent.change(screen.getByRole("textbox", { name: /Import execution summary JSON/i }), {
       target: {
         value: '{"exportedAt":'
@@ -221,9 +225,14 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: /Import Summary/i }));
 
     expect(screen.getByRole("alert")).toHaveTextContent(/Import failed: the provided execution summary is not valid JSON\./i);
-    expect(screen.getByRole("heading", { name: /Enterprise Work Intelligence Console/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Work Graph Foundry/i })).toBeInTheDocument();
   });
 });
+
+async function launchDemo() {
+  fireEvent.click(screen.getAllByRole("button", { name: "Launch demo" })[0]);
+  await screen.findByRole("button", { name: "Overview" });
+}
 
 function openView(name: string) {
   fireEvent.click(screen.getByRole("button", { name }));

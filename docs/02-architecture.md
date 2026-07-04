@@ -2,7 +2,7 @@
 
 ## 2.1 Architecture Summary
 
-Work Graph Foundry is implemented as a local-first browser MVP. React renders a menu-based operations console, while TypeScript domain modules perform the product logic. There is no backend in the current MVP because the demo uses local fixtures, browser-local persistence, safe mock execution, and deterministic provider behavior.
+Work Graph Foundry is implemented as a local-first browser MVP. React renders a landing-first product page and a hash-backed demo workspace, while TypeScript domain modules perform the product logic. There is no backend in the current MVP because the demo uses local fixtures, browser-local persistence, safe mock execution, and deterministic provider behavior.
 
 This architecture keeps the solution easy to run, easy to test, and easy for a new developer or agent to inspect.
 
@@ -28,7 +28,7 @@ flowchart LR
   L --> M["Learning recommendation"]
   M --> P
   N["AI provider boundary"] --> H
-  O["React menu console"] --> B
+  O["React landing + workspace"] --> B
   O --> C
   O --> E
   O --> F
@@ -43,19 +43,18 @@ flowchart LR
 
 ### 2.3.1 Frontend Shell
 
-`src/App.tsx` is a thin composition root. It creates the demo controller, owns the local active view state, and renders `src/app/AppShell.tsx` plus the selected feature view.
+`src/App.tsx` is the composition root. It creates the demo controller, renders the customer-facing landing page at `/`, opens the interactive workspace at `#demo`, owns the local active view state, and renders `src/app/AppShell.tsx` plus the selected feature view.
 
 The frontend is split into:
 
 - `src/app/useWorkGraphDemoController.ts`: demo state, derived workflow data, persistence snapshot, and workflow actions.
 - `src/app/navigation.ts`: menu metadata and the `ViewId` union.
+- `src/App.tsx`: landing page, `#demo` workspace entry, and workspace view composition.
 - `src/app/AppShell.tsx`: sidebar navigation, mobile view selector, top command bar, scenario selector, workflow controls, and main content region.
-- `src/features/overview/OverviewView.tsx`: Command Center.
-- `src/features/observe/ObserveView.tsx`: intake, source channels, validation, ingestion, and normalized evidence.
+- `src/features/overview/OverviewView.tsx`: compact workspace overview, next action, state summary, and data boundary.
+- `src/features/observe/ObserveView.tsx`: evidence intake, source channels, validation, ingestion, and normalized evidence.
 - `src/features/analyze/AnalyzeView.tsx`: graph visualization, graph details, patterns, bottlenecks, and opportunity signals.
-- `src/features/plan/PlanView.tsx`: governed proposal, versions, required and forbidden data, eligibility rules, actions, assumptions, and status.
-- `src/features/govern/GovernView.tsx`: simulation, policy context, approval or rejection, and gate state.
-- `src/features/execute/ExecuteView.tsx`: incoming request, mock tool calls, execution result, audit trail, and learning loop.
+- `src/features/review-run/ReviewRunView.tsx`: governed proposal, versions, simulation, approval or rejection, execution gate, mock tool calls, and learning loop.
 - `src/features/review/ReviewView.tsx`: audit events, export, import, and recovery controls.
 
 Current React state:
@@ -67,7 +66,7 @@ Current React state:
 - `governanceDecision`: pending, approved, rejected, or changes requested.
 - `runRequested`: whether the user has attempted safe mock execution.
 
-Derived data is calculated from these states and persisted to local storage with generated graph, proposal, simulation, governance, execution, recommendation, and audit snapshots. The menu shell keeps the flow visible without turning the product into a single overloaded dashboard.
+Derived data is calculated from these states and persisted to local storage with generated graph, proposal, simulation, governance, execution, recommendation, and audit snapshots. The workspace shell keeps the flow visible without turning the product into a single overloaded dashboard.
 
 ### 2.3.2 Fixture Loading
 
@@ -240,15 +239,14 @@ This approach keeps behavior deterministic for demos and tests while preserving 
 The menu-based console includes:
 
 - global demo controls and scenario selector in the shell command bar
-- Command Center overview with operator checklist, scripted demo path, readiness state, and operational metrics
-- Observe view for scenario evidence, channel counts, fixture validation, ingestion summary, and normalized work item details
-- Analyze view for the work graph, node inspection, patterns, bottlenecks, and opportunity/risk signals
-- Plan view for proposal generation, proposal versions, rules, assumptions, actions, and proposal status
-- Govern view for simulation, policy checks, rationale, approval/rejection, and execution gate state
-- Execute view for incoming request replay, mock tool calls, execution result, and learning recommendation
-- Review view for audit trail, run summary export/import, localStorage recovery, and reset verification
+- landing page with a code-native product preview and `Launch demo` CTA
+- Overview view for workspace orientation, next action, state summary, and data boundary
+- Evidence view for scenario evidence, channel counts, fixture validation, ingestion summary, and normalized work item details
+- Graph view for the work graph, node inspection, patterns, bottlenecks, and opportunity/risk signals
+- Review & Run view for proposal generation, proposal versions, rules, assumptions, actions, simulation, and approval/rejection
+- Audit view for audit trail, run summary export/import, localStorage recovery, and reset verification
 
-The layout is responsive and avoids marketing-style hero content.
+The layout is responsive, landing-first, and avoids cluttered dashboard chrome.
 
 ## 2.7 Why There Is No Backend Yet
 

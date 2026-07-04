@@ -46,24 +46,25 @@ All scenario data is synthetic and stored in `src/fixtures/demoData.ts`.
 
 ## 10.3 Golden Path
 
-1. Select `IT access requests`.
-2. Click `Load Scenario`.
-3. Confirm Observe shows loaded source counts and channel evidence.
-4. Click `Analyze`.
-5. Inspect Analyze for graph nodes, patterns, bottlenecks, and opportunity/risk signals.
-6. Open Observe if normalized evidence needs to be shown.
-7. Click `Generate Proposal`.
-8. Review Plan for required data, forbidden data, assumptions, eligibility rules, policy checks, escalations, actions, proposal status, and versions.
-9. Open Govern to review simulation, governance notes, approval state, policy context, and execution gate state.
-10. Click `Approve` or `Reject`.
-11. Confirm the approval gate state changes.
-12. Click `Run Mock` after approval.
-13. Confirm Execute shows the incoming request, mock tool calls, execution audit trail, and learning recommendation.
-14. Open Review and click `Export Summary`.
-15. Confirm the exported run summary JSON appears.
-16. Click `Reset`.
-17. Confirm generated output clears from Analyze, Plan, Execute, and Review.
-18. Switch to `Procurement intake` and repeat load, analyze, inspect graph, and proposal generation.
+1. Click `Launch demo` from the product page.
+2. Select `IT access requests`.
+3. Click `Load Workflow`.
+4. Confirm Evidence shows loaded source counts and channel evidence.
+5. Click `Analyze`.
+6. Inspect Graph for graph nodes, patterns, bottlenecks, and opportunity/risk signals.
+7. Open Evidence if normalized evidence needs to be shown.
+8. Click `Generate Proposal`.
+9. Review Review & Run for required data, forbidden data, assumptions, eligibility rules, policy checks, escalations, actions, proposal status, and versions.
+10. Open Review & Run to review simulation, governance notes, approval state, policy context, and execution gate state.
+11. Click `Approve` or `Reject`.
+12. Confirm the approval gate state changes.
+13. Click `Run Simulation` after approval.
+14. Confirm Review & Run shows the incoming request, mock tool calls, execution audit trail, and learning recommendation.
+15. Open Audit and click `Export Summary`.
+16. Confirm the exported run summary JSON appears.
+17. Click `Reset`.
+18. Confirm generated output clears from Graph, Review & Run, and Audit.
+19. Switch to `Procurement intake` and repeat load, analyze, inspect graph, and proposal generation.
 
 The Playwright e2e suite exercises this path for both scenarios with deterministic demo data and the menu-based shell. On failure, Playwright captures screenshots, videos, and traces for debugging; do not commit those artifacts unless they are intentionally attached to an investigation.
 
@@ -126,7 +127,7 @@ If the UI looks stale:
 1. Click `Reset`.
 2. Refresh the browser.
 3. Restart `npm run demo:dev`.
-4. Use the Command Center menu to confirm the current scenario state, then open Analyze, Plan, Execute, and Review to check whether generated artifacts remain.
+4. Use the Overview menu to confirm the current scenario state, then open Graph, Review & Run, and Audit to check whether generated artifacts remain.
 5. Use `npm run build` and `npm run preview` as a fallback.
 6. If localStorage still appears stale, run the Playwright e2e suite to validate reload and reset recovery.
 

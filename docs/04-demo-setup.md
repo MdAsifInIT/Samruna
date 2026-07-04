@@ -29,7 +29,7 @@ Start the local demo server:
 npm run demo:dev
 ```
 
-Open the printed local URL.
+Open the printed local URL, then click `Launch demo` to enter the hash-backed demo workspace.
 
 Fallback production path:
 
@@ -50,22 +50,23 @@ Use `npm run test:e2e:preview` for the preview-backed Playwright path and `npm r
 
 ## 4.3 Demo Walkthrough
 
-### 4.3.1 Open The Dashboard
+### 4.3.1 Open The Product Page
 
-Start with the dashboard. Explain that Work Graph Foundry begins from traces, not a manually designed workflow.
+Start with the landing page. Explain that Work Graph Foundry begins from traces, not a manually designed workflow, then click `Launch demo` to enter the local workspace.
 
 Point out:
 
 - scenario selector
-- `Load Scenario`
-- `Analyze`
-- `Generate Proposal`
+- `Load workflow`
+- `Analyze workflow`
+- `Generate automation proposal`
 - `Approve` and `Reject`
-- `Run Mock`
+- `Run simulation`
 - `Export Summary`
-- `Reset`
+- `Reset workflow state`
 - deterministic mock AI mode
 - governed execution state
+- five workspace views: `Overview`, `Evidence`, `Graph`, `Review & Run`, and `Audit`
 
 ### 4.3.2 Choose A Scenario
 
@@ -73,9 +74,9 @@ Use `IT access requests` for the default story. Use `Procurement intake` to show
 
 All names, tickets, vendors, systems, approvals, and amounts are synthetic.
 
-### 4.3.3 Load Scenario Data
+### 4.3.3 Load Workflow Data
 
-Click `Load Scenario`.
+Click `Load workflow`.
 
 Explain:
 
@@ -85,7 +86,7 @@ Show raw traces, cases, policies, approvals, and source channel counts.
 
 ### 4.3.4 Analyze Workflow
 
-Click `Analyze`.
+Click `Analyze workflow`.
 
 Show normalized items, warnings, top system, and raw-to-normalized evidence.
 
@@ -113,7 +114,7 @@ This is the understand and reason step.
 
 ### 4.3.7 Generate The Proposal
 
-Click `Generate Proposal`.
+Click `Generate automation proposal`.
 
 Explain:
 
@@ -143,9 +144,9 @@ Optional branch: click `Reject` to show that the execution gate remains blocked.
 
 This is the govern step.
 
-### 4.3.10 Run Mock Execution
+### 4.3.10 Run Simulation
 
-Click `Run Mock`.
+Click `Run simulation`.
 
 Explain:
 
@@ -165,7 +166,7 @@ This is the improve step.
 
 ## 4.4 Reset And Recovery
 
-Click `Reset` to replay the demo. Reset clears generated local state for the selected scenario and writes a deterministic seeded baseline back to browser localStorage.
+Click `Reset workflow state` to replay the demo. Reset clears generated local state for the selected scenario and writes a deterministic seeded baseline back to browser localStorage.
 
 Seed state helper:
 
@@ -208,12 +209,13 @@ Before presenting:
 - `npm run test:e2e` passes when browser launch is allowed.
 - `npm run build` passes.
 - `npm test` passes.
-- `Load Scenario` renders source counts.
-- `Analyze` renders normalized evidence, graph, and patterns.
-- `Generate Proposal` renders proposal, simulation, and governance notes.
+- Landing page renders first and `Launch demo` opens `#demo`.
+- `Load workflow` renders source counts.
+- `Analyze workflow` renders normalized evidence, graph, and patterns.
+- `Generate automation proposal` renders proposal, simulation, and governance notes.
 - `Approve` opens the execution gate.
 - `Reject` keeps the execution gate blocked.
-- `Run Mock` shows mock tool calls.
+- `Run simulation` shows mock tool calls.
 - Learning recommendation appears.
 - `Export Summary` produces JSON.
 - `Reset` restores seeded demo state.

@@ -4,7 +4,7 @@
 
 Work Graph Foundry is a local-first enterprise work intelligence and governed automation demo. It shows how an AI-native operating layer can observe messy work traces, infer the real process, identify repeated work patterns, generate governed automation, simulate that automation, execute approved work safely, and recommend improvements.
 
-The current demo is intentionally not a chatbot and not a landing page. The first screen is an operating dashboard because the product is meant to feel like a real enterprise tool for process owners, IT operators, compliance reviewers, and automation teams.
+The current demo opens with a customer-facing landing page rather than a chatbot. The first screen introduces the product and then moves into a `#demo` workspace with five primary views: Overview, Evidence, Graph, Review & Run, and Audit. The product is meant to feel like a real enterprise tool for process owners, IT operators, compliance reviewers, and automation teams.
 
 ## 1.2 Product Problem
 
@@ -46,17 +46,17 @@ The MVP is demo-ready and does not require enterprise credentials or an OpenAI A
 
 The golden path is:
 
-1. User chooses a scenario.
-2. User clicks `Load Scenario`.
-3. App validates seeded raw work traces.
-4. User clicks `Analyze`.
-5. App normalizes traces, builds a work graph, and detects repeated patterns.
-6. User clicks `Generate Proposal`.
-7. App generates and simulates a governed automation proposal.
+1. User clicks `Launch demo` from the product page.
+2. User chooses a scenario.
+3. User clicks `Load Workflow`.
+4. App validates seeded raw work traces and shows source evidence.
+5. User clicks `Analyze`.
+6. App normalizes traces, builds a work graph, and detects repeated patterns.
+7. User clicks `Generate Proposal` and reviews the governed automation proposal in `Review & Run`.
 8. User approves or rejects the proposal.
-9. User clicks `Run Mock`.
+9. User runs the simulation after approval.
 10. App executes a new request through safe mock tools only when governance allows it.
-11. App records audit events and recommends a learning-loop improvement.
+11. User opens `Audit` to review audit events and the learning-loop improvement.
 12. User exports a run summary or clicks `Reset` to restore seeded state.
 
 ## 1.5 Agentic Loop
