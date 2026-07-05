@@ -557,6 +557,86 @@ h2 {
   margin: 8px 0 0;
 }
 
+.confidence-strip {
+  align-items: stretch;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.confidence-strip > span {
+  align-items: center;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  display: inline-flex;
+  font-size: var(--text-sm);
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px 9px;
+}
+
+.confidence-strip strong {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.provider-detail {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  margin: 8px 0 0;
+  max-width: 72ch;
+}
+
+.provider-fallback-alert {
+  background: var(--amber-soft);
+  border: 1px solid rgb(180 83 9 / 28%);
+  border-radius: var(--radius);
+  color: var(--amber);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  margin: 10px 0 0;
+  max-width: 72ch;
+  padding: 8px 10px;
+}
+
+.backend-sync-alert {
+  align-items: center;
+  background: rgb(245 158 11 / 10%);
+  border: 1px solid rgb(245 158 11 / 26%);
+  border-radius: var(--radius);
+  color: #8a4b00;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  gap: 8px;
+  margin: 10px 0 0;
+  max-width: 72ch;
+  padding: 8px 10px;
+}
+
+.backend-sync-alert span {
+  flex: 1 1 260px;
+}
+
+.backend-sync-alert button {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid rgb(180 83 9 / 28%);
+  border-radius: var(--radius);
+  color: var(--amber);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  gap: 5px;
+  min-height: 30px;
+  padding: 0 8px;
+}
+
 .eyebrow {
   color: var(--muted);
   font-size: var(--text-xs);
@@ -1734,6 +1814,12 @@ h2 {
   padding: 12px;
 }
 
+.execution-boundary-mock {
+  background: var(--blue-soft);
+  border-color: rgb(37 99 235 / 24%);
+  color: var(--blue);
+}
+
 .execution-audit ol {
   margin: 0;
   padding-left: 18px;
@@ -1866,6 +1952,47 @@ h2 {
   margin-top: 14px;
 }
 
+.workflow-stage-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  margin-top: 14px;
+  padding: 12px;
+}
+
+.workflow-stage-panel span {
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  display: grid;
+  font-size: var(--text-xs);
+  gap: 3px;
+  min-height: 58px;
+  padding: 8px;
+  text-transform: capitalize;
+}
+
+.workflow-stage-panel strong {
+  color: var(--text);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+}
+
+.workflow-stage-panel span[data-state="complete"] {
+  background: var(--teal-soft);
+  border-color: rgb(15 118 110 / 24%);
+}
+
+.workflow-stage-panel span[data-state="current"] {
+  background: var(--blue-soft);
+  border-color: rgb(37 99 235 / 28%);
+}
+
 .overview-boundary article {
   padding: 16px;
 }
@@ -1978,8 +2105,40 @@ h2 {
 .review-run-status {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   margin-top: 16px;
+}
+
+.proposal-provider-card {
+  align-items: center;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(160px, 0.32fr) minmax(0, 1fr);
+  margin-top: 14px;
+  padding: 12px;
+}
+
+.proposal-provider-card span {
+  color: var(--muted);
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  margin-bottom: 4px;
+}
+
+.proposal-provider-card strong {
+  color: var(--text);
+  display: block;
+  font-size: var(--text-md);
+}
+
+.proposal-provider-card p {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  margin: 0;
 }
 
 .review-run-status div {
@@ -2409,11 +2568,16 @@ h2 {
 
   .landing-actions,
   .landing-proof,
+  .proposal-provider-card,
   .review-run-actions,
   .review-run-version,
   .review-run-version label,
   .review-run-version select {
     width: 100%;
+  }
+
+  .proposal-provider-card {
+    grid-template-columns: 1fr;
   }
 
   .landing-primary-action,

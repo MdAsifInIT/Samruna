@@ -3,19 +3,31 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "dev": "vite --host 127.0.0.1 --configLoader runner",
     "demo:dev": "vite --host 127.0.0.1 --configLoader runner",
     "demo:reset": "node scripts/demo-state.mjs reset",
     "demo:seed": "node scripts/demo-state.mjs seed",
+    "backend:dev": "tsx server/index.ts",
+    "backend:seed": "tsx server/cli.ts seed",
+    "backend:reset": "tsx server/cli.ts reset",
+    "dev:fullstack": "tsx server/dev-fullstack.ts",
+    "preview:fullstack": "tsx server/index.ts --serve-static",
     "build": "tsc -b && vite build --configLoader runner",
     "verify:demo": "npm run typecheck && npm test && npm run build && npm audit --audit-level=low",
+    "verify:fullstack": "npm run typecheck && npm test && npm run test:backend && npm run build && npm run scan:frontend-secrets && npm audit --audit-level=low",
+    "scan:frontend-secrets": "node scripts/scan-frontend-secrets.mjs",
     "preview": "vite preview --host 127.0.0.1 --configLoader runner",
     "typecheck": "tsc -b",
+    "typecheck:server": "tsc -p tsconfig.server.json",
     "typecheck:e2e": "tsc -p tsconfig.e2e.json",
     "test": "vitest run --configLoader runner --pool vmThreads",
-    "test:e2e": "playwright test",
-    "test:e2e:preview": "playwright test --config=playwright.preview.config.ts",
+    "test:backend": "vitest run --config vitest.server.config.ts --configLoader runner --pool vmThreads",
+    "test:e2e": "npm run build && playwright test",
+    "test:e2e:preview": "npm run build && playwright test --config=playwright.preview.config.ts",
     "test:e2e:install": "playwright install chromium"
   },
   "dependencies": {
@@ -34,6 +46,7 @@
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "jsdom": "29.1.1",
+    "tsx": "^4.23.0",
     "vitest": "4.1.9"
   }
 }

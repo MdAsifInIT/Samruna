@@ -2,7 +2,7 @@
 
 ## 2.1 Architecture Summary
 
-Work Graph Foundry is implemented as a local-first browser MVP. React renders a landing-first product page and a hash-backed demo workspace, while TypeScript domain modules perform the product logic. There is no backend in the current MVP because the demo uses local fixtures, browser-local persistence, safe mock execution, and deterministic provider behavior.
+Work Graph Foundry is implemented as a local-first full-stack demo. React renders a landing-first product page and a hash-backed demo workspace, while a local TypeScript backend owns workspace state, SQLite persistence, API envelopes, seed/reset, import/export, and audit retrieval. Shared TypeScript domain modules still perform the deterministic product logic.
 
 This architecture keeps the solution easy to run, easy to test, and easy for a new developer or agent to inspect.
 
@@ -11,8 +11,9 @@ This architecture keeps the solution easy to run, easy to test, and easy for a n
 ```mermaid
 flowchart LR
   S["Scenario selector"] --> A["Raw work traces"]
-  A --> P["Local persistence"]
+  A --> P["Local backend persistence"]
   P --> A
+  P --> Q["SQLite artifact mirror"]
   A --> B["Fixture validation"]
   B --> C["Ingestion and normalization"]
   C --> D["Normalized work items"]
@@ -66,7 +67,7 @@ Current React state:
 - `governanceDecision`: pending, approved, rejected, or changes requested.
 - `runRequested`: whether the user has attempted safe mock execution.
 
-Derived data is calculated from these states and persisted to local storage with generated graph, proposal, simulation, governance, execution, recommendation, and audit snapshots. The workspace shell keeps the flow visible without turning the product into a single overloaded dashboard.
+Derived data is calculated from these states and persisted by the local backend with generated graph, proposal, simulation, governance, execution, recommendation, and audit snapshots. The browser keeps a small local mirror for reload resilience and backend-unavailable fallback. The workspace shell keeps the flow visible without turning the product into a single overloaded dashboard.
 
 ### 2.3.2 Fixture Loading
 
@@ -176,7 +177,7 @@ No real enterprise system is called.
 - `MockAiProvider`
 - `OpenAiResponsesProvider`
 
-The mock provider is the default. The OpenAI provider is a boundary for future trusted server-side integration.
+The mock provider is the default. The OpenAI provider is activated only by trusted backend configuration through `server/ai.ts`; browser code reads provider status from backend snapshots and does not import the OpenAI-capable provider path.
 
 ### 2.3.11 Scenario And Persistence
 
@@ -186,7 +187,9 @@ The mock provider is the default. The OpenAI provider is a boundary for future t
 - `loadDemoScenario(scenarioId)`
 - `loadDemoFixtures()` for the default IT access scenario
 
-`src/domain/persistence.ts` owns browser-local demo state:
+`server/workspace.ts` owns the mutable backend workspace state and reuses `src/domain/persistence.ts` for export/import compatibility. The default SQLite path is `.wgf/work-graph-foundry.sqlite`, overrideable with `WGF_DB_PATH`.
+
+The persisted demo state includes:
 
 - selected scenario
 - staged operator flags
@@ -198,7 +201,7 @@ The mock provider is the default. The OpenAI provider is a boundary for future t
 - learning recommendations
 - audit events
 
-The app persists these snapshots to `localStorage` under a versioned key. Reset returns the selected scenario to a deterministic seeded baseline.
+The backend persists these snapshots under a versioned state contract and mirrors generated artifacts into an artifacts table for verification. The browser also writes the same snapshot to `localStorage` as a fallback mirror. Reset returns the selected scenario to a deterministic seeded baseline.
 
 ## 2.4 Data Flow
 
@@ -215,7 +218,8 @@ The data flow is strictly ordered:
 9. `canExecute(records, proposal)`
 10. `runApprovedWorkflow(...)`
 11. `recommendLearningUpdate(...)`
-12. `saveDemoState(snapshot)`
+12. `POST /api/workspace/run`
+13. `GET /api/workspace/export`
 
 Do not skip earlier stages when adding features. Later stages assume earlier contracts are valid.
 
@@ -244,28 +248,22 @@ The menu-based console includes:
 - Evidence view for scenario evidence, channel counts, fixture validation, ingestion summary, and normalized work item details
 - Graph view for the work graph, node inspection, patterns, bottlenecks, and opportunity/risk signals
 - Review & Run view for proposal generation, proposal versions, rules, assumptions, actions, simulation, and approval/rejection
-- Audit view for audit trail, run summary export/import, localStorage recovery, and reset verification
+- Audit view for audit trail, run summary export/import, backend state recovery, browser fallback mirror recovery, and reset verification
 - Compact top-bar workflow context for scenario, step, and execution gate state
 
 The layout is responsive, landing-first, and avoids cluttered dashboard chrome.
 
-## 2.7 Why There Is No Backend Yet
+## 2.7 Backend Boundary
 
-The current MVP does not need a backend because:
+The local backend is intentionally demo-grade:
 
-- data is local
-- execution is mocked
-- there is no authentication
-- persistence is browser-local and does not require a server
-- live OpenAI calls are optional and not used by browser default
+- data remains synthetic and local
+- execution remains mocked
+- there is no authentication or RBAC
+- state persists to local SQLite
+- live OpenAI proposal generation is optional, server-side only, and not used by default
 
-Add a backend when implementing:
-
-- live OpenAI calls
-- enterprise connectors
-- persistent audits
-- real users and roles
-- real tool execution
+Production still requires authenticated APIs, scoped connectors, production secret management, immutable audit storage, and real tool-execution controls.
 
 ## 2.8 Future Production Architecture
 

@@ -27,7 +27,7 @@ export default defineConfig({
     }
   ],
   webServer: {
-    command: `npm run dev -- --port ${port} --strictPort`,
+    command: `node --import tsx server/index.ts --serve-static --port ${port}`,
     url: `http://127.0.0.1:${port}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000

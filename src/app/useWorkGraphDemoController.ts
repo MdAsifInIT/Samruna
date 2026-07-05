@@ -7,8 +7,8 @@ import {
   ShieldCheck,
   type LucideIcon
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { createAiProvider } from "../ai/providers";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createApiClient } from "./apiClient";
 import { recommendLearningUpdate, runApprovedWorkflow } from "../domain/execution";
 import { listDemoScenarios, loadDemoScenario, validateDemoFixtures } from "../domain/fixtures";
 import { buildWorkGraph } from "../domain/graph";
@@ -17,15 +17,20 @@ import { ingestWorkTraces } from "../domain/ingestion";
 import { detectWorkPatterns } from "../domain/patterns";
 import {
   createSeedDemoState,
+  createMockAiProviderSnapshot,
   exportRunSummary,
   importRunSummary,
   loadPersistedDemoState,
   resetPersistedDemoState,
   saveDemoState,
+  type AiProviderSnapshot,
   type PersistedDemoState
 } from "../domain/persistence";
 import { generateAutomationProposal } from "../domain/planner";
 import { simulateAutomation } from "../domain/simulation";
+import type {
+  WorkspaceSnapshot
+} from "../domain/api";
 import type {
   AuditEvent,
   AutomationProposal,
@@ -99,6 +104,8 @@ export interface FoundationPanel {
   detail: string;
 }
 
+export type BackendSyncStatus = "connecting" | "synced" | "syncing" | "fallback" | "error";
+
 const PROPOSAL_GENERATED_AT_BASE = Date.UTC(2026, 4, 16, 9, 40, 0);
 
 export function useWorkGraphDemoController() {
@@ -110,66 +117,109 @@ export function useWorkGraphDemoController() {
   const [importError, setImportError] = useState("");
   const [selectedGraphNodeId, setSelectedGraphNodeId] = useState<string>();
   const [selectedPatternId, setSelectedPatternId] = useState<string>();
+  const [backendAvailable, setBackendAvailable] = useState(false);
+  const [backendSyncStatus, setBackendSyncStatus] = useState<BackendSyncStatus>("connecting");
+  const [backendSyncError, setBackendSyncError] = useState("");
+  const [healthProvider, setHealthProvider] = useState<AiProviderSnapshot>();
+  const [backendWorkspace, setBackendWorkspace] = useState<WorkspaceSnapshot>();
+  const backendQueue = useRef<Promise<void>>(Promise.resolve());
 
-  const aiProvider = useMemo(() => createAiProvider(), []);
-  const scenario = useMemo(() => loadDemoScenario(demoState.selectedScenarioId), [demoState.selectedScenarioId]);
-  const fixtures = scenario.fixtures;
-  const validation = useMemo(() => validateDemoFixtures(fixtures), [fixtures]);
-  const ingestion = useMemo(
-    () => (demoState.analysisRequested ? ingestWorkTraces(fixtures.rawTraces, fixtures.approvalHistory) : undefined),
-    [demoState.analysisRequested, fixtures]
+  const aiProvider = useMemo(
+    () => ({ status: backendWorkspace?.aiProvider ?? demoState.aiProvider ?? healthProvider ?? createMockAiProviderSnapshot() }),
+    [backendWorkspace?.aiProvider, demoState.aiProvider, healthProvider]
   );
-  const patternDetection = useMemo(() => (ingestion ? detectWorkPatterns(ingestion.items) : undefined), [ingestion]);
-  const sampleItem = ingestion?.items[0];
-  const topPattern = patternDetection?.patterns[0];
-  const graph = useMemo(
-    () => (ingestion ? buildWorkGraph(ingestion.items, scenario.id, topPattern?.id ?? `scenario-${scenario.id}`) : undefined),
-    [ingestion, scenario.id, topPattern?.id]
+  const apiClient = useMemo(() => createApiClient(), []);
+  const localScenario = useMemo(() => loadDemoScenario(demoState.selectedScenarioId), [demoState.selectedScenarioId]);
+  const localFixtures = localScenario.fixtures;
+  const localValidation = useMemo(() => validateDemoFixtures(localFixtures), [localFixtures]);
+  const localIngestion = useMemo(
+    () => (demoState.analysisRequested ? ingestWorkTraces(localFixtures.rawTraces, localFixtures.approvalHistory) : undefined),
+    [demoState.analysisRequested, localFixtures]
   );
-  const topBottleneck = topPattern
-    ? patternDetection?.bottlenecks.find((bottleneck) => bottleneck.patternId === topPattern.id)
+  const localPatternDetection = useMemo(
+    () => (localIngestion ? detectWorkPatterns(localIngestion.items) : undefined),
+    [localIngestion]
+  );
+  const localTopPattern = localPatternDetection?.patterns[0];
+  const localGraph = useMemo(
+    () =>
+      localIngestion
+        ? buildWorkGraph(localIngestion.items, localScenario.id, localTopPattern?.id ?? `scenario-${localScenario.id}`)
+        : undefined,
+    [localIngestion, localScenario.id, localTopPattern?.id]
+  );
+  const localTopBottleneck = localTopPattern
+    ? localPatternDetection?.bottlenecks.find((bottleneck) => bottleneck.patternId === localTopPattern.id)
     : undefined;
-  const topOpportunity = topPattern
-    ? patternDetection?.opportunities.find((opportunity) => opportunity.patternId === topPattern.id)
+  const localTopOpportunity = localTopPattern
+    ? localPatternDetection?.opportunities.find((opportunity) => opportunity.patternId === localTopPattern.id)
     : undefined;
-  const proposal = useMemo(() => pickProposalVersion(demoState.proposals, demoState.selectedProposalId), [
+  const localProposal = useMemo(() => pickProposalVersion(demoState.proposals, demoState.selectedProposalId), [
     demoState.proposals,
     demoState.selectedProposalId
   ]);
-  const proposalVersions = useMemo(() => sortProposalVersions(demoState.proposals), [demoState.proposals]);
-  const proposalGenerationReady = Boolean(topPattern && graph && topBottleneck && topOpportunity);
-  const simulation = proposal && ingestion ? simulateAutomation(proposal, ingestion.items) : undefined;
-  const governanceDecisionLabel = governanceDecisionToLabel(demoState.governanceDecision);
-  const governanceRecords = useMemo(
-    () => (proposal ? buildGovernanceRecords(proposal, demoState.governanceDecision) : []),
-    [demoState.governanceDecision, proposal]
+  const localProposalVersions = useMemo(() => sortProposalVersions(demoState.proposals), [demoState.proposals]);
+  const localSimulation = localProposal && localIngestion ? simulateAutomation(localProposal, localIngestion.items) : undefined;
+  const localGovernanceRecords = useMemo(
+    () => (localProposal ? buildGovernanceRecords(localProposal, demoState.governanceDecision) : []),
+    [demoState.governanceDecision, localProposal]
   );
-  const executionReady = proposal ? canExecute(governanceRecords, proposal) : false;
-  const executionRun = useMemo(
+  const localExecutionReady = localProposal ? canExecute(localGovernanceRecords, localProposal) : false;
+  const localExecutionRun = useMemo(
     () =>
-      proposal && demoState.runRequested
+      localProposal && demoState.runRequested
         ? runApprovedWorkflow({
-            proposal,
-            requestTrace: fixtures.newIncomingTrace,
-            approved: executionReady
+            proposal: localProposal,
+            requestTrace: localFixtures.newIncomingTrace,
+            approved: localExecutionReady
           })
         : undefined,
-    [demoState.runRequested, executionReady, fixtures.newIncomingTrace, proposal]
+    [demoState.runRequested, localExecutionReady, localFixtures.newIncomingTrace, localProposal]
   );
-  const executionGateLabel = executionReady
-    ? executionRun?.status ?? "Governance approved"
+  const localExecutionGateLabel = localExecutionReady
+    ? localExecutionRun?.status ?? "Governance approved"
     : demoState.governanceDecision === "rejected"
       ? "Blocked by rejection"
       : "Blocked until approval";
-  const executionGateCopy = executionReady
+  const localExecutionGateCopy = localExecutionReady
     ? "Governance has opened the gate for this proposal version."
     : demoState.governanceDecision === "rejected"
       ? "This proposal was rejected, so execution stays blocked until a new review approves it."
       : "This proposal is still awaiting approval, so execution stays blocked.";
-  const learningRecommendation = useMemo(
-    () => (simulation && executionRun ? recommendLearningUpdate({ simulation, execution: executionRun }) : undefined),
-    [executionRun, simulation]
+  const localLearningRecommendation = useMemo(
+    () =>
+      localSimulation && localExecutionRun
+        ? recommendLearningUpdate({ simulation: localSimulation, execution: localExecutionRun })
+        : undefined,
+    [localExecutionRun, localSimulation]
   );
+  const authoritativeWorkspace = backendAvailable ? backendWorkspace : undefined;
+  const activeState = authoritativeWorkspace?.state ?? demoState;
+  const governanceDecisionLabel = governanceDecisionToLabel(activeState.governanceDecision);
+  const scenario = authoritativeWorkspace?.scenario ?? localScenario;
+  const fixtures = scenario.fixtures;
+  const validation = authoritativeWorkspace?.validation ?? localValidation;
+  const ingestion = authoritativeWorkspace?.ingestion ?? localIngestion;
+  const patternDetection = authoritativeWorkspace?.patternDetection ?? localPatternDetection;
+  const sampleItem = ingestion?.items[0];
+  const topPattern = patternDetection?.patterns[0];
+  const graph = authoritativeWorkspace?.graph ?? localGraph;
+  const topBottleneck = topPattern
+    ? patternDetection?.bottlenecks.find((bottleneck) => bottleneck.patternId === topPattern.id)
+    : localTopBottleneck;
+  const topOpportunity = topPattern
+    ? patternDetection?.opportunities.find((opportunity) => opportunity.patternId === topPattern.id)
+    : localTopOpportunity;
+  const proposal = authoritativeWorkspace?.proposal ?? localProposal;
+  const proposalVersions = authoritativeWorkspace?.proposalVersions ?? localProposalVersions;
+  const proposalGenerationReady = Boolean(topPattern && graph && topBottleneck && topOpportunity);
+  const simulation = authoritativeWorkspace?.simulation ?? localSimulation;
+  const governanceRecords = authoritativeWorkspace?.governanceRecords ?? localGovernanceRecords;
+  const executionReady = authoritativeWorkspace?.executionReady ?? localExecutionReady;
+  const executionRun = authoritativeWorkspace?.executionRun ?? localExecutionRun;
+  const executionGateLabel = authoritativeWorkspace?.executionGateLabel ?? localExecutionGateLabel;
+  const executionGateCopy = authoritativeWorkspace?.executionGateCopy ?? localExecutionGateCopy;
+  const learningRecommendation = authoritativeWorkspace?.learningRecommendation ?? localLearningRecommendation;
   const simulationCasePreview = useMemo<SimulationCasePreviewItem[]>(() => {
     if (!simulation) {
       return [];
@@ -213,37 +263,38 @@ export function useWorkGraphDemoController() {
       ? graph.edges.filter((edge) => edge.source === selectedGraphNode.id || edge.target === selectedGraphNode.id)
       : [];
   const visualGraph = useMemo(() => (graph ? buildVisualGraph(graph.nodes, graph.edges) : undefined), [graph]);
-  const workflowStages = useMemo(
+  const localWorkflowStages = useMemo(
     () =>
       buildWorkflowStages({
-        sampleLoaded: demoState.sampleLoaded,
-        analysisRequested: demoState.analysisRequested,
+        sampleLoaded: activeState.sampleLoaded,
+        analysisRequested: activeState.analysisRequested,
         graphReady: Boolean(graph),
-        proposalRequested: demoState.proposalRequested,
-        governanceDecision: demoState.governanceDecision,
+        proposalRequested: activeState.proposalRequested,
+        governanceDecision: activeState.governanceDecision,
         executionReady,
         executionRun: Boolean(executionRun),
         learningRecommendation: Boolean(learningRecommendation)
       }),
     [
-      demoState.analysisRequested,
-      demoState.governanceDecision,
-      demoState.proposalRequested,
-      demoState.sampleLoaded,
+      activeState.analysisRequested,
+      activeState.governanceDecision,
+      activeState.proposalRequested,
+      activeState.sampleLoaded,
       executionReady,
       executionRun,
       graph,
       learningRecommendation
     ]
   );
+  const workflowStages = authoritativeWorkspace?.workflowStages ?? localWorkflowStages;
   const currentStage =
     workflowStages.find((stage) => stage.state === "current") ??
     workflowStages.find((stage) => stage.state === "locked") ??
     workflowStages.find((stage) => stage.state === "available");
-  const auditEvents = useMemo(
+  const localAuditEvents = useMemo(
     () =>
       buildAuditEvents({
-        state: demoState,
+        state: activeState,
         scenario,
         proposal,
         ingestion,
@@ -251,11 +302,12 @@ export function useWorkGraphDemoController() {
         executionStatus: executionRun?.status,
         recommendation: learningRecommendation
       }),
-    [demoState, executionRun?.status, governanceRecords, ingestion, learningRecommendation, proposal, scenario]
+    [activeState, executionRun?.status, governanceRecords, ingestion, learningRecommendation, proposal, scenario]
   );
+  const auditEvents = authoritativeWorkspace?.auditEvents ?? localAuditEvents;
   const snapshot = useMemo<PersistedDemoState>(
     () => ({
-      ...demoState,
+      ...activeState,
       graph,
       selectedProposalId: proposal?.id,
       governanceRecords,
@@ -263,12 +315,23 @@ export function useWorkGraphDemoController() {
       executionRuns: executionRun ? [executionRun] : [],
       recommendations: learningRecommendation ? [learningRecommendation] : [],
       auditEvents,
-      updatedAt: new Date().toISOString()
+      aiProvider: activeState.aiProvider ?? aiProvider.status,
+      updatedAt: activeState.updatedAt
     }),
-    [auditEvents, demoState, executionRun, governanceRecords, graph, learningRecommendation, proposal?.id, simulation]
+    [
+      activeState,
+      aiProvider.status,
+      auditEvents,
+      executionRun,
+      governanceRecords,
+      graph,
+      learningRecommendation,
+      proposal?.id,
+      simulation
+    ]
   );
   const topSystem = ingestion ? topEntry(ingestion.summary.systemCounts) : undefined;
-  const foundationPanels = buildFoundationPanels(demoState, scenario, ingestion, proposal?.auditRationale);
+  const foundationPanels = buildFoundationPanels(activeState, scenario, ingestion, proposal?.auditRationale);
 
   useEffect(() => {
     if (graph?.nodes.length) {
@@ -293,8 +356,95 @@ export function useWorkGraphDemoController() {
   }, [patternDetection]);
 
   useEffect(() => {
+    let active = true;
+
+    refreshBackend()
+      .then((workspace) => {
+        if (!active) {
+          return;
+        }
+
+        applyWorkspaceSnapshot(workspace);
+      })
+      .catch((error) => {
+        if (active) {
+          setBackendWorkspace(undefined);
+          setBackendAvailable(false);
+          setBackendSyncStatus("fallback");
+          setBackendSyncError(messageFromApiError(error, "Backend is unavailable; changes are using the browser fallback mirror."));
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [apiClient]);
+
+  useEffect(() => {
     saveDemoState(snapshot);
   }, [snapshot]);
+
+  const applyWorkspaceSnapshot = (workspace: WorkspaceSnapshot) => {
+    setBackendWorkspace(workspace);
+    setDemoState({
+      ...workspace.state,
+      aiProvider: workspace.aiProvider
+    });
+  };
+
+  const refreshBackend = async (): Promise<WorkspaceSnapshot> => {
+    setBackendSyncStatus("connecting");
+    const [health, workspace] = await Promise.all([apiClient.getHealth(), apiClient.getWorkspace()]);
+
+    setHealthProvider(health.aiProvider);
+    setBackendAvailable(true);
+    setBackendSyncStatus("synced");
+    setBackendSyncError("");
+
+    return workspace;
+  };
+
+  const runWorkspaceAction = (
+    remoteAction: () => Promise<WorkspaceSnapshot>,
+    fallbackAction: () => void,
+    failureMessage = "Backend sync failed; the workspace did not accept that action. Use Retry backend or Reset workflow state before continuing."
+  ) => {
+    const shouldTryBackend = backendAvailable || backendSyncStatus === "connecting" || backendSyncStatus === "syncing";
+    const canFallbackAfterConnectFailure = !backendAvailable && backendSyncStatus === "connecting";
+
+    if (!shouldTryBackend) {
+      setBackendWorkspace(undefined);
+      fallbackAction();
+      setBackendSyncStatus("fallback");
+      setBackendSyncError("Backend is unavailable; changes are using the browser fallback mirror.");
+      return;
+    }
+
+    setBackendSyncStatus("syncing");
+    backendQueue.current = backendQueue.current
+      .then(remoteAction)
+      .then((workspace) => {
+        setBackendAvailable(true);
+        setBackendSyncStatus("synced");
+        setBackendSyncError("");
+        applyWorkspaceSnapshot(workspace);
+      })
+      .catch((error) => {
+        if (canFallbackAfterConnectFailure) {
+          setBackendWorkspace(undefined);
+          fallbackAction();
+          setBackendAvailable(false);
+          setBackendSyncStatus("fallback");
+          setBackendSyncError(messageFromApiError(error, "Backend is unavailable; changes are using the browser fallback mirror."));
+          return;
+        }
+
+        setBackendWorkspace(undefined);
+        setBackendAvailable(false);
+        setBackendSyncStatus("error");
+        setBackendSyncError(messageFromApiError(error, failureMessage));
+      });
+  };
 
   const updateState = (updater: (state: PersistedDemoState) => PersistedDemoState) => {
     setDemoState((current) => updater({ ...current, updatedAt: new Date().toISOString() }));
@@ -303,19 +453,25 @@ export function useWorkGraphDemoController() {
   const selectScenario = (scenarioId: ScenarioId) => {
     setSelectedGraphNodeId(undefined);
     setSelectedPatternId(undefined);
-    setDemoState(createSeedDemoState(scenarioId, new Date().toISOString()));
     setExportText("");
     setImportText("");
     setImportError("");
+    runWorkspaceAction(
+      () => apiClient.selectScenario({ scenarioId }),
+      () => setDemoState(createSeedDemoState(scenarioId, new Date().toISOString()))
+    );
   };
 
   const resetDemo = () => {
     setSelectedGraphNodeId(undefined);
     setSelectedPatternId(undefined);
-    setDemoState(resetPersistedDemoState(demoState.selectedScenarioId));
     setExportText("");
     setImportText("");
     setImportError("");
+    runWorkspaceAction(
+      () => apiClient.resetWorkspace({ scenarioId: activeState.selectedScenarioId }),
+      () => setDemoState(resetPersistedDemoState(activeState.selectedScenarioId))
+    );
   };
 
   const importSummary = () => {
@@ -323,9 +479,12 @@ export function useWorkGraphDemoController() {
       const imported = importRunSummary(importText);
       setSelectedGraphNodeId(undefined);
       setSelectedPatternId(undefined);
-      setDemoState(imported);
-      saveDemoState(imported);
       setImportError("");
+      runWorkspaceAction(
+        () => apiClient.importWorkspace({ summary: importText }),
+        () => setDemoState(imported),
+        "Backend import failed; the imported state was not accepted by the backend."
+      );
     } catch (error) {
       setImportError(
         error instanceof SyntaxError
@@ -342,37 +501,50 @@ export function useWorkGraphDemoController() {
       return;
     }
 
-    updateState((state) => {
-      const version = nextProposalVersion(state.proposals, topPattern.id);
-      const nextProposal = generateAutomationProposal({
-        pattern: topPattern,
-        graph,
-        policyRules: fixtures.policyRules,
-        bottleneck: topBottleneck,
-        opportunity: topOpportunity,
-        version,
-        changeSummary,
-        generatedAt: generatedAtForProposalVersion(version)
-      });
+    runWorkspaceAction(
+      () => apiClient.createProposal({ changeSummary }),
+      () => updateState((state) => {
+        const version = nextProposalVersion(state.proposals, topPattern.id);
+        const generatedAt = generatedAtForProposalVersion(version);
+        const nextProposal = generateAutomationProposal({
+          pattern: topPattern,
+          graph,
+          policyRules: fixtures.policyRules,
+          bottleneck: topBottleneck,
+          opportunity: topOpportunity,
+          version,
+          changeSummary,
+          generatedAt
+        });
 
-      return {
-        ...state,
-        proposalRequested: true,
-        selectedProposalId: nextProposal.id,
-        proposals: [...state.proposals.filter((proposal) => proposal.id !== nextProposal.id), nextProposal],
-        governanceDecision: "pending",
-        runRequested: false,
-        governanceRecords: [],
-        executionRuns: [],
-        recommendations: [],
-        simulation: undefined
-      };
-    });
+        return {
+          ...state,
+          proposalRequested: true,
+          selectedProposalId: nextProposal.id,
+          proposals: [...state.proposals.filter((proposal) => proposal.id !== nextProposal.id), nextProposal],
+          governanceDecision: "pending",
+          runRequested: false,
+          governanceRecords: [],
+          executionRuns: [],
+          recommendations: [],
+          simulation: undefined,
+          aiProvider: createMockAiProviderSnapshot({
+            providerMode: "mock",
+            providerLabel: "Deterministic simulation",
+            model: "deterministic-domain-planner",
+            status: "succeeded",
+            validationStatus: "not_applicable",
+            requestedAt: generatedAt,
+            completedAt: generatedAt
+          })
+        };
+      })
+    );
   };
 
   const generateProposalFromCurrentState = () => {
     createProposalRevision(
-      demoState.proposals.length
+      activeState.proposals.length
         ? "Revision refreshed from the latest graph, policy, and bottleneck inputs."
         : "Initial proposal generated from the graph, policy, and bottleneck inputs."
     );
@@ -384,25 +556,33 @@ export function useWorkGraphDemoController() {
     }
 
     createProposalRevision(
-      `Revision v${nextProposalVersion(demoState.proposals, proposal.patternId)} refreshes governance review from the latest deterministic analysis.`
+      `Revision v${nextProposalVersion(activeState.proposals, proposal.patternId)} refreshes governance review from the latest deterministic analysis.`
     );
   };
 
   const selectProposalVersion = (proposalId: string) => {
-    updateState((state) => ({
-      ...state,
-      selectedProposalId: proposalId,
-      governanceDecision: "pending",
-      runRequested: false
-    }));
+    runWorkspaceAction(
+      () => apiClient.selectProposal({ proposalId }),
+      () =>
+        updateState((state) => ({
+          ...state,
+          selectedProposalId: proposalId,
+          governanceDecision: "pending",
+          runRequested: false
+        }))
+    );
   };
+
+  const providerStatusLabel = providerStatusToLabel(aiProvider.status);
+  const providerStatusDetail = providerStatusToDetail(aiProvider.status);
+  const providerFallbackMessage = providerFallbackToMessage(aiProvider.status);
 
   return {
     aiProvider,
     auditEvents,
     channelLabels,
     currentStage,
-    demoState,
+    demoState: activeState,
     executionGateCopy,
     executionGateLabel,
     executionReady,
@@ -410,6 +590,9 @@ export function useWorkGraphDemoController() {
     exportText,
     fixtures,
     foundationPanels,
+    backendAvailable,
+    backendSyncError,
+    backendSyncStatus,
     governanceDecisionLabel,
     governanceRecords,
     graph,
@@ -437,37 +620,103 @@ export function useWorkGraphDemoController() {
     validation,
     visualGraph,
     workflowStages,
+    providerStatusLabel,
+    providerStatusDetail,
+    providerFallbackMessage,
     actions: {
       analyzeWorkflow: () =>
-        updateState((state) => ({
-          ...state,
-          analysisRequested: true
-        })),
+        {
+          runWorkspaceAction(
+            () => apiClient.analyzeWorkflow(),
+            () =>
+              updateState((state) => ({
+                ...state,
+                analysisRequested: true
+              }))
+          );
+        },
       approveProposal: () =>
-        updateState((state) => ({
-          ...state,
-          governanceDecision: "approved"
-        })),
+        {
+          runWorkspaceAction(
+            () => apiClient.decideGovernance({ decision: "approved" }),
+            () =>
+              updateState((state) => ({
+                ...state,
+                governanceDecision: "approved"
+              }))
+          );
+        },
       createSelectedProposalRevision,
-      exportSummary: () => setExportText(exportRunSummary(snapshot)),
+      exportSummary: () => {
+        if (backendAvailable) {
+          setBackendSyncStatus("syncing");
+          apiClient
+            .exportWorkspace()
+            .then((summary) => {
+              setExportText(summary);
+              setBackendSyncStatus("synced");
+              setBackendSyncError("");
+            })
+            .catch((error) => {
+              setBackendWorkspace(undefined);
+              setBackendAvailable(false);
+              setBackendSyncStatus("error");
+              setBackendSyncError(messageFromApiError(error, "Backend export failed; showing browser fallback export."));
+              setExportText(exportRunSummary(snapshot));
+            });
+          return;
+        }
+
+        setBackendSyncStatus("fallback");
+        setBackendSyncError("Backend is unavailable; export was generated from the browser fallback mirror.");
+        setExportText(exportRunSummary(snapshot));
+      },
       generateProposalFromCurrentState,
       importSummary,
       loadSelectedScenario: () =>
-        updateState((state) => ({
-          ...state,
-          sampleLoaded: true
-        })),
+        {
+          runWorkspaceAction(
+            () => apiClient.loadWorkflow(),
+            () =>
+              updateState((state) => ({
+                ...state,
+                sampleLoaded: true
+              }))
+          );
+        },
       rejectProposal: () =>
-        updateState((state) => ({
-          ...state,
-          governanceDecision: "rejected"
-        })),
+        {
+          runWorkspaceAction(
+            () => apiClient.decideGovernance({ decision: "rejected" }),
+            () =>
+              updateState((state) => ({
+                ...state,
+                governanceDecision: "rejected"
+              }))
+          );
+        },
       resetDemo,
+      retryBackendSync: () => {
+        refreshBackend()
+          .then(applyWorkspaceSnapshot)
+          .catch((error) => {
+            setBackendWorkspace(undefined);
+            setBackendAvailable(false);
+            setBackendSyncStatus("fallback");
+            setBackendSyncError(messageFromApiError(error, "Backend is still unavailable; browser fallback mirror remains active."));
+          });
+      },
       runMockExecution: () =>
-        updateState((state) => ({
-          ...state,
-          runRequested: true
-        })),
+        {
+          runWorkspaceAction(
+            () => apiClient.runApprovedWorkflow(),
+            () =>
+              updateState((state) => ({
+                ...state,
+                runRequested: true
+              }))
+          );
+        },
       selectGraphNode: setSelectedGraphNodeId,
       selectPattern: setSelectedPatternId,
       selectProposalVersion,
@@ -479,6 +728,58 @@ export function useWorkGraphDemoController() {
 }
 
 export type WorkGraphDemoController = ReturnType<typeof useWorkGraphDemoController>;
+
+function messageFromApiError(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) {
+    return `${fallback} ${error.message}`;
+  }
+
+  return fallback;
+}
+
+function providerStatusToLabel(provider: AiProviderSnapshot): string {
+  const invocation = provider.lastInvocation;
+
+  if (invocation?.status === "fallback") {
+    return "Fallback used";
+  }
+
+  if (provider.mode === "openai") {
+    return provider.available ? "Live OpenAI" : "OpenAI unavailable";
+  }
+
+  return "Deterministic mock";
+}
+
+function providerStatusToDetail(provider: AiProviderSnapshot): string {
+  const invocation = provider.lastInvocation;
+  const model = invocation?.model ?? provider.model;
+  const modelText = model ? `Model: ${model}. ` : "";
+
+  if (invocation?.status === "fallback") {
+    return `${modelText}Deterministic proposal used after ${invocation.errorCode ?? "provider_error"}.`;
+  }
+
+  if (invocation) {
+    return `${modelText}Output validation: ${invocation.validationStatus}. Generated ${formatProposalTimestamp(invocation.completedAt)}.`;
+  }
+
+  if (provider.mode === "openai") {
+    return `${modelText}Server-side provider is ready; proposals stay validated before persistence.`;
+  }
+
+  return `${modelText}No server key required; deterministic proposal generation is active.`;
+}
+
+function providerFallbackToMessage(provider: AiProviderSnapshot): string {
+  const invocation = provider.lastInvocation;
+
+  if (invocation?.status !== "fallback") {
+    return "";
+  }
+
+  return `Live proposal generation fell back to deterministic planning. Reason code: ${invocation.errorCode ?? "provider_error"}.`;
+}
 
 function buildWorkflowStages(input: {
   sampleLoaded: boolean;
@@ -772,15 +1073,23 @@ function buildAuditEvents(input: {
   }
 
   if (input.state.proposalRequested) {
+    const providerDetail = providerAuditDetail(input.state.aiProvider ?? createMockAiProviderSnapshot());
+
     events.push(
       createAuditEvent({
         id: `audit-${input.scenario.id}-proposal-${input.proposal?.version ?? "requested"}`,
         timestamp: "2026-05-16T09:40:00Z",
         actor: "planner_agent",
-        action: "Proposal generated",
+        action:
+          input.state.aiProvider?.lastInvocation?.providerMode === "openai" &&
+          input.state.aiProvider.lastInvocation.status === "succeeded"
+            ? "Live OpenAI proposal generated"
+            : input.state.aiProvider?.lastInvocation?.status === "fallback"
+              ? "Fallback proposal generated"
+              : "Mock proposal generated",
         detail: input.proposal
-          ? `Proposal v${input.proposal.version} inputs, assumptions, policy checks, actions, and escalations were made reviewable.`
-          : "Proposal inputs, assumptions, policy checks, actions, and escalations were made reviewable."
+          ? `Proposal v${input.proposal.version} inputs, assumptions, policy checks, actions, and escalations were made reviewable. ${providerDetail}`
+          : `Proposal inputs, assumptions, policy checks, actions, and escalations were made reviewable. ${providerDetail}`
       })
     );
   }
@@ -846,8 +1155,8 @@ function buildFoundationPanels(
     {
       title: "Agentic Planner",
       icon: Brain,
-      value: state.proposalRequested ? "Proposal generated" : "Deterministic provider default",
-      detail: proposalRationale ?? "Automation proposals are generated from graph insights."
+      value: state.proposalRequested ? "Proposal generated" : state.aiProvider.label,
+      detail: proposalRationale ?? `${state.aiProvider.label} generates proposals from graph insights.`
     },
     {
       title: "Governance",
@@ -867,6 +1176,22 @@ function buildFoundationPanels(
       detail: "Workflow, artifacts, decisions, results, recommendations, and audits persist locally."
     }
   ];
+}
+
+function providerAuditDetail(provider: AiProviderSnapshot): string {
+  const invocation = provider.lastInvocation;
+
+  if (!invocation) {
+    return `Provider mode: ${provider.label}.`;
+  }
+
+  const model = invocation.model ? ` Model: ${invocation.model}.` : "";
+
+  if (invocation.status === "fallback") {
+    return `Provider mode: ${invocation.providerLabel}.${model} Fallback reason code: ${invocation.errorCode ?? "provider_error"}.`;
+  }
+
+  return `Provider mode: ${invocation.providerLabel}.${model} Output validation: ${invocation.validationStatus}.`;
 }
 
 export function graphNodeAuditRelevance(kind: string, scenarioLabel: string, bottleneckEvidence?: string) {

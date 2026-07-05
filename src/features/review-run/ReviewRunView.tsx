@@ -9,6 +9,7 @@ interface ReviewRunViewProps {
 export function ReviewRunView({ controller }: ReviewRunViewProps) {
   const {
     actions,
+    aiProvider,
     demoState,
     executionGateCopy,
     executionGateLabel,
@@ -18,6 +19,9 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
     governanceDecisionLabel,
     learningRecommendation,
     proposal,
+    providerFallbackMessage,
+    providerStatusDetail,
+    providerStatusLabel,
     proposalGenerationReady,
     proposalVersions,
     scenario,
@@ -28,7 +32,10 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
   if (!proposal || !simulation) {
     return (
       <section className="review-run-panel" aria-label="Review and run workflow">
-        <EmptyState title="No proposal generated" action="Analyze the workflow, then Generate Proposal from the command bar." />
+        <EmptyState
+          title="No proposal generated"
+          action="Load and analyze the workflow, then generate a backend-backed proposal from the command bar."
+        />
       </section>
     );
   }
@@ -56,9 +63,17 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
             onClick={actions.runMockExecution}
           >
             <Play size={16} />
-            <span>Run approved workflow</span>
+            <span>Run mock simulation</span>
           </button>
         </div>
+      </div>
+
+      <div className="proposal-provider-card" aria-label="Proposal provider provenance">
+        <div>
+          <span>Proposal source</span>
+          <strong>{providerStatusLabel}</strong>
+        </div>
+        <p>{providerFallbackMessage || providerStatusDetail}</p>
       </div>
 
       <div className="review-run-status" data-decision={demoState.governanceDecision}>
@@ -83,6 +98,10 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
         <div>
           <span>Avoided delay</span>
           <strong>{simulation.avoidedDelayHours}h</strong>
+        </div>
+        <div>
+          <span>Enterprise execution</span>
+          <strong>Mock only</strong>
         </div>
       </div>
 
@@ -132,6 +151,18 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
               <dt>Generated</dt>
               <dd>{formatProposalTimestamp(proposal.generatedAt)}</dd>
             </div>
+            <div>
+              <dt>Provider</dt>
+              <dd>{aiProvider.status.lastInvocation?.providerLabel ?? aiProvider.status.label}</dd>
+            </div>
+            <div>
+              <dt>Model</dt>
+              <dd>{aiProvider.status.lastInvocation?.model ?? aiProvider.status.model ?? "Not configured"}</dd>
+            </div>
+            <div>
+              <dt>Validation</dt>
+              <dd>{aiProvider.status.lastInvocation?.validationStatus ?? "Not generated yet"}</dd>
+            </div>
           </dl>
           <h4>Required data</h4>
           <ul>
@@ -179,6 +210,9 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
         <article>
           <h3>Workflow runner</h3>
           <p className="execution-boundary">{executionGateCopy}</p>
+          <p className="execution-boundary execution-boundary-mock">
+            Mock simulation only. No enterprise connector, provisioning system, or customer workflow is modified.
+          </p>
           <h4>Incoming request</h4>
           <p>{fixtures.newIncomingTrace.body}</p>
           <h4>Simulated tool calls</h4>
@@ -193,17 +227,17 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
           ) : (
             <p>
               {executionReady
-                ? "Run the simulation to generate tool calls."
+                ? "Run the mock simulation to generate simulated tool calls."
                 : demoState.governanceDecision === "rejected"
-                  ? "Execution is blocked by rejection until the proposal is revised and approved."
-                  : "Execution is blocked until approval opens the gate."}
+                  ? "Mock execution is blocked by rejection until the proposal is revised and approved."
+                  : "Mock execution is blocked until approval opens the gate."}
             </p>
           )}
           <h4>Learning loop</h4>
           <p>
             {learningRecommendation
               ? `${learningRecommendation.recommendation} ${learningRecommendation.expectedImpact}`
-              : "Learning recommendation appears after a run."}
+              : "Learning recommendation appears after a mock run."}
           </p>
         </article>
       </div>

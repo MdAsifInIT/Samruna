@@ -5,18 +5,26 @@
 Start the demo:
 
 ```powershell
-npm run demo:dev
+npm run backend:seed
+npm run dev:fullstack
 ```
 
 Open the local URL printed by Vite.
 
+If Vite dev dependency optimization is blocked in a restricted environment, use the built one-origin server:
+
+```powershell
+npm run build
+npm run preview:fullstack -- --port 4174
+```
+
 Local POC verification without browser automation:
 
 ```powershell
-npm run verify:demo
+npm run verify:fullstack
 ```
 
-That command typechecks, runs the test suite, builds the app, and audits dependencies. Use it as the non-browser verification gate in this environment.
+That command typechecks, runs the app and backend test suites, builds the app, and audits dependencies. Use it as the non-browser verification gate in this environment.
 
 Browser e2e verification:
 
@@ -24,13 +32,13 @@ Browser e2e verification:
 npm run test:e2e
 ```
 
-That command starts the Vite app through Playwright, runs deterministic local Chromium tests, and verifies both golden scenarios plus menu navigation, localStorage reload, reset recovery, export/import, rejection, and mobile overflow.
+That command starts the full-stack app through Playwright, runs deterministic local Chromium tests, and verifies both golden scenarios plus menu navigation, backend workspace readback, browser mirror reload, reset recovery, export/import, rejection, and mobile overflow.
 
 Production-preview fallback:
 
 ```powershell
 npm run build
-npm run preview
+npm run preview:fullstack -- --port 4174
 ```
 
 For the compact hackathon talk track, safe/local scope, and browser fallback steps, see [Hackathon Demo](11-hackathon-demo.md).
@@ -76,25 +84,25 @@ Normal operator reset:
 
 - Click `Reset` in the app.
 
-Seed helper:
+Backend seed/reset helper:
+
+```powershell
+npm run backend:seed
+npm run backend:reset
+```
+
+Legacy browser-mirror helper:
 
 ```powershell
 npm run demo:seed
-npm run demo:seed -- procurement-intake
-```
-
-Browser reset snippet helper:
-
-```powershell
 npm run demo:reset
-npm run demo:reset -- procurement-intake
 ```
 
-The CLI helper prints deterministic JSON or a browser-console localStorage snippet. The app itself owns the normal reset path because the persisted state lives in the browser profile.
+The backend helpers seed or reset SQLite state. The legacy browser helpers print deterministic JSON or a browser-console `localStorage` snippet for fallback-only recovery.
 
-If you do have browser access, pair the CLI helpers with `npm run demo:dev` or `npm run preview` to confirm the seeded state in the UI.
+If you do have browser access, pair the CLI helpers with `npm run dev:fullstack` or `npm run preview:fullstack` to confirm the seeded state in the UI.
 
-The e2e suite also validates browser recovery behavior by reloading persisted localStorage state, opening the relevant menu views, then resetting the app and confirming generated run state stays cleared after another reload.
+The e2e suite validates backend workspace readback plus browser mirror recovery by reloading persisted state, opening the relevant menu views, then resetting the app and confirming generated run state stays cleared after another reload.
 
 ## 10.5 Import And Export
 
@@ -128,15 +136,16 @@ If the UI looks stale:
 
 1. Click `Reset`.
 2. Refresh the browser.
-3. Restart `npm run demo:dev`.
+3. Restart `npm run dev:fullstack`.
 4. Use the Overview menu to confirm the current scenario state, then open Graph, Review & Run, and Audit to check whether generated artifacts remain.
-5. Use `npm run build` and `npm run preview` as a fallback.
-6. If localStorage still appears stale, run the Playwright e2e suite to validate reload and reset recovery.
+5. Use `npm run build` and `npm run preview:fullstack -- --port 4174` as a fallback.
+6. If backend or browser mirror state still appears stale, run the Playwright e2e suite to validate reload and reset recovery.
 
 If tests or build fail, run:
 
 ```powershell
 npm run verify:demo
+npm run verify:fullstack
 ```
 
 Fix deterministic domain failures before changing the UI.
@@ -157,8 +166,9 @@ Review the failure screenshot, video, and trace before changing application beha
 When browser automation is not available, verify the local POC with:
 
 1. `npm install`
-2. `npm run demo:dev` to confirm the app starts
-3. `npm run verify:demo` to confirm typecheck, tests, build, and audit
-4. `npm run demo:seed` and `npm run demo:reset` to confirm the operator helpers still emit deterministic output
+2. `npm run backend:seed` to initialize local SQLite state
+3. `npm run dev:fullstack` or `npm run preview:fullstack -- --port 4174` to confirm the API-backed app starts
+4. `npm run verify:fullstack` to confirm typecheck, app tests, backend tests, build, and audit
+5. `npm run backend:reset` to confirm the backend operator helper restores deterministic output
 
 When browser automation is available, `npm run test:e2e` and `npm run test:e2e:preview` are the browser verification gates. The commands require Playwright browser binaries; if Chromium is missing, install it after dependencies with `npm run test:e2e:install`.

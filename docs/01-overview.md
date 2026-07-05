@@ -26,7 +26,8 @@ The repository currently contains a complete local MVP:
 - seeded IT access request and procurement intake fixture data
 - typed domain contracts
 - scenario selection and validation
-- browser-local persisted demo state
+- local backend API with SQLite persisted demo state
+- browser fallback mirror for reload resilience
 - deterministic ingestion and normalization
 - work graph generation
 - pattern detection and bottleneck scoring
@@ -99,8 +100,9 @@ Start with:
 Important source files:
 
 - `src/App.tsx`: dashboard orchestration.
+- `server/workspace.ts`: backend workspace state, seed/reset, import/export, and API-backed action flow.
 - `src/domain/types.ts`: shared contracts.
-- `src/domain/persistence.ts`: local demo state persistence.
+- `src/domain/persistence.ts`: versioned demo state export/import and browser fallback mirror.
 - `src/fixtures/demoData.ts`: seeded synthetic scenario data.
 - `src/ai/providers.ts`: mock and optional OpenAI provider boundary.
 
@@ -117,4 +119,4 @@ The default story centers on IT access requests:
 
 The strongest demo moment is that the workflow is discovered from traces rather than predefined by the user.
 
-The second scenario, procurement intake, demonstrates that the same domain pipeline can handle another realistic enterprise workflow without a backend or live connector. It keeps low-risk software procurement on a candidate fast path while vendor onboarding and invoice exceptions remain human-reviewed.
+The second scenario, procurement intake, demonstrates that the same domain pipeline and local backend can handle another realistic enterprise workflow without a live connector. It keeps low-risk software procurement on a candidate fast path while vendor onboarding and invoice exceptions remain human-reviewed.

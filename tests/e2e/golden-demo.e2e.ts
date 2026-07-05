@@ -1,4 +1,4 @@
-import { expect, type ConsoleMessage, type Page, test as base } from "@playwright/test";
+import { expect, type APIRequestContext, type ConsoleMessage, type Page, test as base } from "@playwright/test";
 
 const DEMO_STORAGE_KEY = "work-graph-foundry.demo-state.v1";
 
@@ -79,7 +79,8 @@ const qaViewports = [
   { name: "small mobile", width: 375, height: 812 }
 ];
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page, request }) => {
+  await request.post("/api/workspace/reset", { data: { scenarioId: "it-access" } });
   await page.goto("/");
   await page.evaluate((storageKey) => window.localStorage.removeItem(storageKey), DEMO_STORAGE_KEY);
   await page.reload();
@@ -107,6 +108,10 @@ test("loads the landing-first screen without browser page or console errors", as
   await expect(page.getByLabel("Workflow context").first()).toContainText("Scenario: IT access requests");
   await expect(page.getByLabel("Workflow context").first()).toContainText("Step: Overview");
   await expect(page.getByLabel("Workflow context").first()).toContainText("Gate: Approval needed");
+  await expect(page.getByLabel("Backend and provider status")).toContainText("AI provider");
+  await expect(page.getByLabel("Backend and provider status")).toContainText("Deterministic mock");
+  await expect(page.getByLabel("Backend and provider status")).toContainText("Backend connected");
+  await expect(page.getByLabel("Backend and provider status")).toContainText("Mock simulation only");
   await expect(page.getByRole("button", { name: "Evidence", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Graph", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Review & Run", exact: true })).toBeVisible();
@@ -116,23 +121,27 @@ test("loads the landing-first screen without browser page or console errors", as
 });
 
 for (const scenario of scenarios) {
-  test(`runs the ${scenario.id} workflow demo path and reset clears generated output`, async ({ page }) => {
-    await runGoldenPath(page, scenario);
+  test(`runs the ${scenario.id} workflow demo path and reset clears generated output`, async ({ page, request }) => {
+    await runGoldenPath(page, request, scenario);
 
     const exported = await exportSummary(page);
     expect(exported.scenarioId).toBe(scenario.id);
     expect(exported.state.selectedScenarioId).toBe(scenario.id);
     expect(exported.state.proposals).toHaveLength(1);
     expect(exported.state.executionRuns).toHaveLength(1);
+    await expectWorkspaceApiState(request, {
+      executionRuns: 1,
+      selectedScenarioId: scenario.id
+    });
 
-    await resetDemo(page, scenario);
+    await resetDemo(page, request, scenario);
   });
 }
 
-test("keeps simulated execution blocked after governance rejects a proposal", async ({ page }) => {
+test("keeps simulated execution blocked after governance rejects a proposal", async ({ page, request }) => {
   const scenario = scenarios[0];
 
-  await generateProposal(page, scenario);
+  await generateProposal(page, request, scenario);
   await openView(page, "Review & Run");
   await page.getByRole("button", { name: "Reject" }).click();
 
@@ -140,7 +149,7 @@ test("keeps simulated execution blocked after governance rejects a proposal", as
   await expect(page.getByText("Blocked by rejection").first()).toBeVisible();
   await openView(page, "Review & Run");
   await expect(page.getByText("Execution is blocked by rejection until the proposal is revised and approved.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Run approved workflow" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Run mock simulation" })).toBeDisabled();
   await expect(page.getByText(scenario.mockOutput)).toHaveCount(0);
 
   await waitForStoredDemoStateField(page, "governanceDecision", "rejected");
@@ -148,12 +157,16 @@ test("keeps simulated execution blocked after governance rejects a proposal", as
   expect(rejectedState.governanceDecision).toBe("rejected");
   expect(rejectedState.runRequested).toBe(false);
   expect(rejectedState.executionRuns).toHaveLength(0);
+  await expectWorkspaceApiState(request, {
+    governanceDecision: "rejected",
+    runRequested: false
+  });
 });
 
-test("recovers a generated run after reload and restores seeded localStorage after reset", async ({ page }) => {
+test("recovers a generated run after reload and restores seeded workspace state after reset", async ({ page, request }) => {
   const scenario = scenarios[0];
 
-  await runGoldenPath(page, scenario);
+  await runGoldenPath(page, request, scenario);
   await expect(page.getByText(scenario.mockOutput)).toBeVisible();
 
   const savedRun = await readStoredDemoState(page);
@@ -171,9 +184,9 @@ test("recovers a generated run after reload and restores seeded localStorage aft
   await openView(page, "Review & Run");
   await expect(page.getByRole("heading", { name: "Workflow runner" })).toBeVisible();
   await expect(page.getByText(scenario.mockOutput)).toBeVisible();
-  await expect(page.getByRole("button", { name: "Run approved workflow" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Run mock simulation" })).toBeEnabled();
 
-  await resetDemo(page, scenario);
+  await resetDemo(page, request, scenario);
 
   const resetState = await readStoredDemoState(page);
   expect(resetState).toMatchObject({
@@ -187,6 +200,11 @@ test("recovers a generated run after reload and restores seeded localStorage aft
   expect(resetState.proposals).toHaveLength(0);
   expect(resetState.executionRuns).toHaveLength(0);
   expect(resetState.recommendations).toHaveLength(0);
+  await expectWorkspaceApiState(request, {
+    executionRuns: 0,
+    governanceDecision: "pending",
+    selectedScenarioId: scenario.id
+  });
 
   await page.reload();
 
@@ -196,13 +214,13 @@ test("recovers a generated run after reload and restores seeded localStorage aft
   await openView(page, "Review & Run");
   await expect(page.getByRole("heading", { name: "Workflow runner" })).toHaveCount(0);
   await expect(page.getByText(scenario.mockOutput)).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Run approved workflow" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Run mock simulation" })).toHaveCount(0);
 });
 
-test("restores a generated run from an exported summary import round trip", async ({ page }) => {
+test("restores a generated run from an exported summary import round trip", async ({ page, request }) => {
   const exportedScenario = scenarios[1];
 
-  await runGoldenPath(page, exportedScenario);
+  await runGoldenPath(page, request, exportedScenario);
   const exportedSummaryText = await exportSummaryText(page);
 
   await page.getByLabel("Select workflow").selectOption(scenarios[0].id);
@@ -226,9 +244,13 @@ test("restores a generated run from an exported summary import round trip", asyn
   expect(importedState.selectedScenarioId).toBe(exportedScenario.id);
   expect(importedState.governanceDecision).toBe("approved");
   expect(importedState.executionRuns).toHaveLength(1);
+  await expectWorkspaceApiState(request, {
+    executionRuns: 1,
+    selectedScenarioId: exportedScenario.id
+  });
 });
 
-test("recovers to seeded state when persisted localStorage is malformed", async ({ page }) => {
+test("recovers to seeded state when persisted workspace mirror is malformed", async ({ page, request }) => {
   await page.evaluate((storageKey) => window.localStorage.setItem(storageKey, "{not-json"), DEMO_STORAGE_KEY);
   await page.reload();
   await enterWorkspace(page);
@@ -238,7 +260,7 @@ test("recovers to seeded state when persisted localStorage is malformed", async 
   await openView(page, "Graph");
   await expect(page.getByRole("heading", { name: scenarios[0].graphTitle })).toHaveCount(0);
   await openView(page, "Review & Run");
-  await expect(page.getByRole("button", { name: "Run approved workflow" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Run mock simulation" })).toHaveCount(0);
 
   await waitForStoredDemoStateField(page, "selectedScenarioId", scenarios[0].id);
   const recoveredState = await readStoredDemoState(page);
@@ -252,9 +274,13 @@ test("recovers to seeded state when persisted localStorage is malformed", async 
   });
   expect(recoveredState.proposals).toHaveLength(0);
   expect(recoveredState.executionRuns).toHaveLength(0);
+  await expectWorkspaceApiState(request, {
+    executionRuns: 0,
+    selectedScenarioId: scenarios[0].id
+  });
 });
 
-test("performance smoke keeps core interactions within the long-task budget", async ({ page }) => {
+test("performance smoke keeps core interactions within the long-task budget", async ({ page, request }) => {
   await page.addInitScript(() => {
     const monitoredWindow = window as Window & { __wgfLongTasks?: LongTaskEntry[] };
     monitoredWindow.__wgfLongTasks = [];
@@ -284,12 +310,12 @@ test("performance smoke keeps core interactions within the long-task budget", as
   await openView(page, "Graph");
   await openView(page, "Overview");
 
-  await generateProposal(page, scenarios[0]);
+  await generateProposal(page, request, scenarios[0]);
   await openView(page, "Graph");
   await openView(page, "Review & Run");
   await openView(page, "Review & Run");
-  await page.getByRole("button", { name: "Approve" }).click();
-  await page.getByRole("button", { name: "Run approved workflow" }).click();
+  await page.getByRole("button", { name: "Approve", exact: true }).click();
+  await page.getByRole("button", { name: "Run mock simulation" }).click();
   await expect(page.getByText(scenarios[0].mockOutput)).toBeVisible();
   await settleFrames(page);
 
@@ -310,7 +336,8 @@ test("performance smoke keeps core interactions within the long-task budget", as
 
 for (const viewport of qaViewports) {
   test(`keeps the landing page and workspace usable without horizontal overflow at ${viewport.width}px ${viewport.name}`, async ({
-    page
+    page,
+    request
   }) => {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto("/");
@@ -319,29 +346,33 @@ for (const viewport of qaViewports) {
     await expect(page.getByLabel("Work Graph Foundry product preview")).toBeVisible();
     await assertNoHorizontalOverflow(page, `${viewport.name} landing`);
 
-    await runGoldenPath(page, scenarios[0]);
+    await runGoldenPath(page, request, scenarios[0]);
     await expect(page.getByRole("heading", { name: "Workflow runner" })).toBeVisible();
     await assertNoHorizontalOverflow(page, `${viewport.name} workspace`);
   });
 }
 
-async function runGoldenPath(page: Page, scenario: ScenarioExpectation) {
-  await generateProposal(page, scenario);
+async function runGoldenPath(page: Page, request: APIRequestContext, scenario: ScenarioExpectation) {
+  await generateProposal(page, request, scenario);
 
-  await page.getByRole("button", { name: "Approve" }).click();
+  await page.getByRole("button", { name: "Approve", exact: true }).click();
   await expect(page.getByText("Available").first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Run approved workflow" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Run mock simulation" })).toBeEnabled();
 
-  await page.getByRole("button", { name: "Run approved workflow" }).click();
+  await page.getByRole("button", { name: "Run mock simulation" }).click();
   await expect(page.getByRole("heading", { name: "Workflow runner" })).toBeVisible();
   await expect(page.getByText(scenario.mockOutput)).toBeVisible();
+  await expectWorkspaceApiState(request, {
+    executionRuns: 1,
+    selectedScenarioId: scenario.id
+  });
 }
 
 async function expectScenarioContext(page: Page, label: string) {
   await expect(page.getByLabel("Workflow context").first()).toContainText(`Scenario: ${label}`);
 }
 
-async function generateProposal(page: Page, scenario: ScenarioExpectation) {
+async function generateProposal(page: Page, request: APIRequestContext, scenario: ScenarioExpectation) {
   await enterWorkspace(page);
   await page.getByLabel("Select workflow").selectOption(scenario.id);
   await expectScenarioContext(page, scenario.label);
@@ -357,9 +388,16 @@ async function generateProposal(page: Page, scenario: ScenarioExpectation) {
   await page.getByRole("button", { name: "Generate automation proposal" }).click();
   await expect(page.getByRole("heading", { name: "Governed automation proposal" })).toBeVisible();
   await openView(page, "Review & Run");
+  await expect(page.getByLabel("Proposal provider provenance")).toContainText("Deterministic mock");
+  await expect(page.getByLabel("Proposal provider provenance")).toContainText("Output validation");
   await expect(page.getByRole("heading", { name: "Review before execution" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Run approved workflow" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Run mock simulation" })).toBeDisabled();
+  await expect(page.getByText("Mock simulation only. No enterprise connector, provisioning system, or customer workflow is modified.")).toBeVisible();
   await expect(page.getByText("Blocked").first()).toBeVisible();
+  await expectWorkspaceApiState(request, {
+    governanceDecision: "pending",
+    selectedScenarioId: scenario.id
+  });
 }
 
 async function exportSummary(page: Page) {
@@ -383,7 +421,7 @@ async function exportSummaryText(page: Page) {
   return runSummary.inputValue();
 }
 
-async function resetDemo(page: Page, scenario: ScenarioExpectation) {
+async function resetDemo(page: Page, request: APIRequestContext, scenario: ScenarioExpectation) {
   await openView(page, "Audit");
   await page.getByRole("button", { name: "Reset workflow state" }).click();
 
@@ -394,7 +432,12 @@ async function resetDemo(page: Page, scenario: ScenarioExpectation) {
   await expect(page.getByRole("heading", { name: "Governed automation proposal" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Workflow runner" })).toHaveCount(0);
   await expect(page.getByText(scenario.mockOutput)).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Run approved workflow" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Run mock simulation" })).toHaveCount(0);
+  await expectWorkspaceApiState(request, {
+    executionRuns: 0,
+    proposals: 0,
+    selectedScenarioId: scenario.id
+  });
 }
 
 async function settleFrames(page: Page) {
@@ -504,4 +547,20 @@ async function waitForStoredDemoStateField(page: Page, field: keyof StoredDemoSt
     },
     [DEMO_STORAGE_KEY, field, expected]
   );
+}
+
+async function expectWorkspaceApiState(request: APIRequestContext, expected: Record<string, string | number | boolean>) {
+  const response = await request.get("/api/workspace");
+  expect(response.ok()).toBeTruthy();
+  const body = (await response.json()) as {
+    data?: {
+      state?: Record<string, unknown>;
+    };
+  };
+  const state = body.data?.state ?? {};
+
+  for (const [field, value] of Object.entries(expected)) {
+    const actual = state[field];
+    expect(Array.isArray(actual) && typeof value === "number" ? actual.length : actual, `workspace API field ${field}`).toBe(value);
+  }
 }

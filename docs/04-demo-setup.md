@@ -4,7 +4,7 @@
 
 Required:
 
-- Node.js compatible with the installed package versions.
+- Node.js 24 for the local backend and built-in `node:sqlite`.
 - npm.
 - Local browser.
 - No external services.
@@ -13,7 +13,7 @@ Required:
 
 Optional:
 
-- `OPENAI_API_KEY` for future trusted server-side integration. The current browser demo does not use it.
+- Optional `OPENAI_API_KEY` for trusted backend-only live proposal generation. The browser demo does not use or receive it.
 
 ## 4.2 Local Run Steps
 
@@ -23,10 +23,11 @@ Install:
 npm install
 ```
 
-Start the local demo server:
+Start the API-backed local demo:
 
 ```powershell
-npm run demo:dev
+npm run backend:seed
+npm run dev:fullstack
 ```
 
 Open the printed local URL, then click `Launch` to enter the hash-backed demo workspace.
@@ -35,7 +36,7 @@ Fallback production path:
 
 ```powershell
 npm run build
-npm run preview
+npm run preview:fullstack -- --port 4174
 ```
 
 Use this fallback if Vite dev optimization is blocked by the environment.
@@ -61,7 +62,7 @@ Point out:
 - `Analyze workflow`
 - `Generate automation proposal`
 - `Approve` and `Reject` in `Review & Run`
-- `Run approved workflow`
+- `Run mock simulation`
 - `Export Summary` in `Audit`
 - `Reset workflow state` in `Audit`
 - deterministic mock AI mode
@@ -145,9 +146,9 @@ Optional branch: click `Reject` to show that the execution gate remains blocked.
 
 This is the govern step.
 
-### 4.3.10 Run Approved Workflow
+### 4.3.10 Run Mock Simulation
 
-Click `Run approved workflow`.
+Click `Run mock simulation`.
 
 Explain:
 
@@ -167,20 +168,20 @@ This is the improve step.
 
 ## 4.4 Reset And Recovery
 
-Click `Reset workflow state` in `Audit` to replay the demo. Reset clears generated local state for the selected scenario and writes a deterministic seeded baseline back to browser localStorage.
+Click `Reset workflow state` in `Audit` to replay the demo. In full-stack mode, reset clears generated backend state for the selected scenario, persists the deterministic seeded baseline to SQLite, and refreshes the browser fallback mirror.
 
-Seed state helper:
+Backend seed/reset helpers:
+
+```powershell
+npm run backend:seed
+npm run backend:reset
+```
+
+Legacy browser-mirror helpers:
 
 ```powershell
 npm run demo:seed
-npm run demo:seed -- procurement-intake
-```
-
-Browser reset snippet helper:
-
-```powershell
 npm run demo:reset
-npm run demo:reset -- procurement-intake
 ```
 
 If the app appears stale:
@@ -216,7 +217,7 @@ Before presenting:
 - `Generate automation proposal` renders proposal, simulation, and governance notes.
 - `Approve` opens the execution gate in `Review & Run`.
 - `Reject` keeps the execution gate blocked in `Review & Run`.
-- `Run approved workflow` shows mock tool calls.
+- `Run mock simulation` shows mock tool calls.
 - Learning recommendation appears.
 - `Export Summary` produces JSON in `Audit`.
 - `Reset` restores seeded demo state in `Audit`.

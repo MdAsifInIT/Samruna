@@ -1,5 +1,31 @@
 # Frontend UI Overhaul Task Log
 
+## Live OpenAI Integration Pass
+
+- Status: backend implementation pass complete for non-browser gates.
+- Scope: route proposal generation through a server-owned AI provider, expose non-secret provider metadata, keep deterministic fallback, update docs/tests, and maintain `loop_task_phases.md`.
+- Out of scope: enterprise connectors, auth/RBAC, live provisioning, real customer data, browser-side secrets, and real execution.
+- Agents used: `worker_major` for architecture/secret-boundary review, `worker_nano` for loop/log documentation setup.
+- Decisions:
+  - `OPENAI_API_KEY`, `OPENAI_MODEL`, and `OPENAI_TIMEOUT_MS` are read only by `server/ai.ts`.
+  - The backend injects an `AiProvider` into `WorkspaceService`; no-key mode stays deterministic.
+  - Live proposal output is normalized to stable proposal identity before persistence.
+  - Provider mode/model/invocation metadata is persisted without prompts, keys, headers, or raw provider errors.
+  - The browser displays backend-supplied provider metadata and no longer imports the OpenAI-capable provider module.
+- Verification:
+  - `npm run typecheck:server` passed.
+  - `npm test -- --run src/ai/providers.test.ts src/domain/persistence.test.ts` passed.
+  - `npm run test:backend` passed, 20 tests.
+  - `npm run typecheck` passed.
+  - `npm test` passed, 62 tests.
+  - `npm run typecheck:e2e` passed.
+  - `npm run build` passed.
+  - `npm run verify:fullstack` passed, including `npm audit --audit-level=low` with 0 vulnerabilities.
+  - Direct full-stack HTTP smoke with temp `WGF_DB_PATH` passed.
+  - Production `dist/` scan found no `OPENAI_API_KEY`, `Bearer `, OpenAI endpoint, or OpenAI provider strings.
+- Browser blocker: `npm run test:e2e -- --max-failures=1` built successfully, then failed before app assertions because Playwright Chromium launch is blocked with `browserType.launch: spawn EPERM`.
+- Hackathon Reviewer score: 91/100 after the stale full-stack plan wording was corrected; no blocking findings remain.
+
 ## Decisions
 
 - Made the app landing-first with a `Launch` CTA and a hash-backed `#demo` workspace.
@@ -137,3 +163,90 @@
 - The Pages deploy failure was isolated to `actions/deploy-pages` after artifact upload; workflow actions were bumped to the current Node-24-compatible majors (`configure-pages@v6`, `upload-pages-artifact@v5`, `deploy-pages@v5`).
 - The real GitHub Pages deployment still needs a fresh CI run after commit/push or manual workflow dispatch; local checks cannot complete GitHub's hosted Pages deployment step.
 - If the next run still fails after the new artifact sanity check passes, GitHub Pages must be enabled for custom workflows in repository settings, or by an admin through the Pages API/settings UI.
+
+## Frontend Confidence Hardening Pass
+
+- Branch: `backend-branch`.
+- Agents used so far: `worker_major` read-only hackathon/customer-confidence reviewer.
+- Reviewer score before edits: 76/100.
+- Blocking findings addressed:
+  - Provider provenance could be misleading because the browser generated local mock proposal state before backend sync.
+  - Backend-connected vs browser-fallback mode was not visible on the happy path.
+- Changes made:
+  - Controller actions now use backend workspace snapshots as authoritative when the backend is available; local domain updates are reserved for browser fallback mode.
+  - Added visible provider/source-of-truth status in the shell, sanitized fallback metadata, and retry/reset controls for backend failure.
+  - Renamed the execution CTA to `Run mock simulation` and added no-enterprise-write copy.
+  - Added production frontend secret scan script and wired it into `verify:fullstack`.
+  - Updated component and E2E assertions for provider status, backend state, fallback affordances, and mock-only execution.
+- Verification results for this pass:
+  - `npm run typecheck` passed.
+  - `npm test` passed, 64 tests.
+  - `npm run test:backend` passed, 20 tests.
+  - `npm run build` passed.
+  - `npm run scan:frontend-secrets` passed.
+  - `npm run verify:fullstack` passed, including 0 vulnerabilities.
+  - `npm run typecheck:e2e` passed.
+  - `npm run test:e2e` passed, 12 Chromium tests.
+  - `npm run test:e2e:preview` passed, 12 Chromium tests.
+  - `git diff --check` passed with Windows line-ending warnings only.
+- Residual environment note: elevated Playwright commands still print the non-project PowerShell profile warning from `Microsoft.PowerShell_profile.ps1`, but the commands exit successfully.
+- Final reviewer follow-up:
+  - `worker_major` final read-only score after the main hardening pass was 88/100 with no blocking findings.
+  - Addressed the remaining fast-action `connecting` risk by making actions attempted during initial backend connection try the backend before using fallback.
+  - Addressed the source-scan coverage risk by extending browser source scanning to `src/domain` and `src/fixtures` in addition to app/components/features/entrypoint/CSS.
+  - Final expected readiness after those two follow-up fixes: 91/100; no blocking findings known.
+
+## Backend-Backed Frontend API Authority Pass
+
+- Branch: `backend-branch`.
+- Agents used:
+  - `worker_major` read-only frontend API-boundary reviewer.
+  - `worker_nano` bounded gap scan.
+  - `worker_test` verification runner.
+- Reviewer findings addressed:
+  - Backend `WorkspaceSnapshot` needed to be authoritative for rendered artifacts, not only persisted state.
+  - Browser app TypeScript project still included `src/ai`, relying on import discipline plus bundle scans.
+- Changes made:
+  - `useWorkGraphDemoController` now stores the latest backend workspace snapshot and prefers backend-provided graph, proposal, simulation, governance records, execution gate, workflow stages, audit events, scenario, validation, and provider metadata while the backend is connected.
+  - Browser fallback mode still uses local deterministic domain computation and clears stale backend snapshots when backend sync fails.
+  - `tsconfig.app.json` excludes `src/ai`; server typecheck still includes `src/ai` through `tsconfig.server.json`.
+- Verification results:
+  - `npm run typecheck` passed.
+  - `npm test` passed, 64 tests.
+  - `npm run test:backend` passed, 20 tests.
+  - `npm run build` passed.
+  - `npm run scan:frontend-secrets` passed.
+  - `npm run verify:fullstack` passed, including 0 vulnerabilities.
+  - `npm run typecheck:e2e` passed.
+  - `npm run test:e2e` first failed in sandbox with `browserType.launch: spawn EPERM`, then passed with elevated browser launch, 12 Chromium tests.
+  - `npm run test:e2e:preview` passed with elevated browser launch, 12 Chromium tests.
+  - `git diff --check` passed with Windows line-ending warnings only.
+- Blockers:
+  - Sandbox Chromium launch still requires elevation. Elevated Playwright commands also print the non-project PowerShell profile warning from `Microsoft.PowerShell_profile.ps1`, but exit successfully.
+- Final expected readiness: 92/100; no blocking frontend API-boundary findings known.
+
+## Live OpenAI POC Smoke
+
+- Branch: `backend-branch`.
+- Date: 2026-07-05.
+- Scope: backend-only live OpenAI proposal-generation smoke using the local `.env` key without printing or exposing the key.
+- Commands run:
+  - Checked `OPENAI_API_KEY` presence in process environment without printing the value: not present.
+  - Checked real `.env` for `OPENAI_API_KEY` presence without printing the value: present.
+  - Ran direct `WorkspaceService` live proposal smoke with temp `WGF_DB_PATH`.
+  - Ran local HTTP `/api` smoke through `createApp`, calling reset, health, load, analyze, and proposals.
+- Results:
+  - Direct service smoke passed.
+  - HTTP `/api` smoke passed.
+  - Provider mode: `openai`.
+  - Provider label: `OpenAI Responses API`.
+  - Model reported by backend: `gpt-5.5`.
+  - Invocation status: `succeeded`.
+  - Validation status: `validated`.
+  - Fallback code: none.
+  - Proposal ID: `proposal-pattern-standard_access-v1`.
+  - Audit trail included `Live OpenAI proposal generated`.
+- Boundaries confirmed:
+  - No OpenAI key was printed.
+  - No browser OpenAI call was made.
+  - Enterprise execution was not run; execution remains mock-only.

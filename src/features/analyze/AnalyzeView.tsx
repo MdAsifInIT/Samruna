@@ -153,7 +153,7 @@ export function AnalyzeView({ controller }: AnalyzeViewProps) {
           </div>
         </section>
       ) : (
-        <EmptyState title="No graph generated" action="Load Workflow, then Analyze to build the work graph." />
+        <EmptyState title="No graph generated" action="Load Workflow, then Analyze to build the backend-backed work graph." />
       )}
 
       {patternDetection ? (

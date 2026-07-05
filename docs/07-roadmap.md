@@ -4,14 +4,12 @@
 
 The MVP is intentionally scoped. Current limitations:
 
-- no backend API
-- no database
 - no authentication
 - no role-based access control
 - no live enterprise connectors
 - no real provisioning
-- no server-side OpenAI call path
-- no durable server-side audit history
+- no production-hosted OpenAI deployment, eval suite, or live-key CI path
+- no production-grade multi-user database or immutable audit store
 - no richer visual graph canvas beyond the current selectable graph/pattern inspection
 - limited browser automation coverage beyond the current Chromium golden path
 
@@ -34,8 +32,8 @@ Recommended local POC improvements:
 
 Production-ready next steps:
 
-1. Add a server-side API layer for live OpenAI calls.
-2. Add durable server-side storage for traces, proposals, simulations, governance records, execution runs, and audit events.
+1. Harden the local backend OpenAI path with evals, red-team fixtures, and production deployment controls.
+2. Add production-grade durable storage for traces, proposals, simulations, governance records, execution runs, and audit events.
 3. Add authentication and role-based access control.
 4. Add connector framework for enterprise systems.
 5. Add observability for model calls and execution outcomes.

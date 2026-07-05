@@ -4,8 +4,11 @@ dist/
 .env.local
 .vite/
 .vitest-attachments/
+.wgf/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
 test-results/
 playwright-report/
 *.log
 tmp/
-
