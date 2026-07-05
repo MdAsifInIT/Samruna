@@ -52,7 +52,7 @@ describe("backend API", () => {
         databaseReady: true,
         aiProvider: {
           mode: "mock",
-          label: "Deterministic simulation"
+          label: "Historical validation engine"
         }
       }
     });

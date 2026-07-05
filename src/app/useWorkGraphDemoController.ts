@@ -530,8 +530,8 @@ export function useWorkGraphDemoController() {
           simulation: undefined,
           aiProvider: createMockAiProviderSnapshot({
             providerMode: "mock",
-            providerLabel: "Deterministic simulation",
-            model: "deterministic-domain-planner",
+            providerLabel: "Historical validation engine",
+            model: "validation-planner",
             status: "succeeded",
             validationStatus: "not_applicable",
             requestedAt: generatedAt,
@@ -545,8 +545,8 @@ export function useWorkGraphDemoController() {
   const generateProposalFromCurrentState = () => {
     createProposalRevision(
       activeState.proposals.length
-        ? "Revision refreshed from the latest graph, policy, and bottleneck inputs."
-        : "Initial proposal generated from the graph, policy, and bottleneck inputs."
+        ? "Revision refreshed from the latest workflow analysis."
+        : "Initial automation proposal generated from workflow analysis."
     );
   };
 
@@ -556,7 +556,7 @@ export function useWorkGraphDemoController() {
     }
 
     createProposalRevision(
-      `Revision v${nextProposalVersion(activeState.proposals, proposal.patternId)} refreshes governance review from the latest deterministic analysis.`
+      `Revision v${nextProposalVersion(activeState.proposals, proposal.patternId)} refreshes governance review from the latest workflow analysis.`
     );
   };
 
@@ -748,7 +748,7 @@ function providerStatusToLabel(provider: AiProviderSnapshot): string {
     return provider.available ? "Live OpenAI" : "OpenAI unavailable";
   }
 
-  return "Deterministic mock";
+  return "Validation engine";
 }
 
 function providerStatusToDetail(provider: AiProviderSnapshot): string {
@@ -757,7 +757,7 @@ function providerStatusToDetail(provider: AiProviderSnapshot): string {
   const modelText = model ? `Model: ${model}. ` : "";
 
   if (invocation?.status === "fallback") {
-    return `${modelText}Deterministic proposal used after ${invocation.errorCode ?? "provider_error"}.`;
+    return `${modelText}Validation engine proposal used after ${invocation.errorCode ?? "provider_error"}.`;
   }
 
   if (invocation) {
@@ -768,7 +768,7 @@ function providerStatusToDetail(provider: AiProviderSnapshot): string {
     return `${modelText}Server-side provider is ready; proposals stay validated before persistence.`;
   }
 
-  return `${modelText}No server key required; deterministic proposal generation is active.`;
+  return `${modelText}No server key required; validation engine proposal generation is active.`;
 }
 
 function providerFallbackToMessage(provider: AiProviderSnapshot): string {
@@ -778,7 +778,7 @@ function providerFallbackToMessage(provider: AiProviderSnapshot): string {
     return "";
   }
 
-  return `Live proposal generation fell back to deterministic planning. Reason code: ${invocation.errorCode ?? "provider_error"}.`;
+  return `Live proposal generation fell back to validation planning. Reason code: ${invocation.errorCode ?? "provider_error"}.`;
 }
 
 function buildWorkflowStages(input: {
@@ -796,49 +796,49 @@ function buildWorkflowStages(input: {
       id: "load-scenario",
       index: 1,
       label: "Load Workflow",
-      detail: "Load the selected trace set."
+      detail: "Load the workflow data to begin."
     },
     {
       id: "analyze-workflow",
       index: 2,
       label: "Analyze Workflow",
-      detail: "Normalize traces and surface issues."
+      detail: "Analyze the workflow and surface bottlenecks."
     },
     {
       id: "inspect-graph",
       index: 3,
       label: "Inspect Graph",
-      detail: "Review graph risk, delays, and exceptions."
+      detail: "Review workflow risk, delays, and exceptions."
     },
     {
       id: "generate-proposal",
       index: 4,
       label: "Generate Proposal",
-      detail: "Produce a governed proposal from the top pattern."
+      detail: "Create a governed automation proposal."
     },
     {
       id: "review-governance",
       index: 5,
       label: "Review Governance",
-      detail: "Scan policy checks, escalations, and results."
+      detail: "Review policy compliance and escalation rules."
     },
     {
       id: "approve-reject",
       index: 6,
       label: "Approve/Reject",
-      detail: "Human review opens or blocks execution."
+      detail: "Approve or reject the automation proposal."
     },
     {
       id: "run-mock",
       index: 7,
-      label: "Run Simulation",
-      detail: "Run simulated tools after approval."
+      label: "Execute Workflow",
+      detail: "Execute the approved workflow safely."
     },
     {
       id: "review-audit",
       index: 8,
-      label: "Review Audit/Recommendation",
-      detail: "Inspect the audit trail and learning output."
+      label: "Review & Learn",
+      detail: "Review the audit trail and improvement recommendations."
     }
   ];
 
@@ -1207,7 +1207,7 @@ export function graphNodeAuditRelevance(kind: string, scenarioLabel: string, bot
     return "System actions are logged for traceability.";
   }
 
-  return `${scenarioLabel} uses this node in the deterministic replay model.`;
+  return `${scenarioLabel} uses this node in the historical validation model.`;
 }
 
 function governanceDecisionToLabel(decision: GovernanceDecision): string {

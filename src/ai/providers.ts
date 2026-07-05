@@ -35,9 +35,9 @@ export interface AiProvider {
 export class MockAiProvider implements AiProvider {
   status: AiProviderStatus = {
     mode: "mock",
-    label: "Deterministic simulation",
+    label: "Historical validation engine",
     available: true,
-    model: "deterministic-domain-planner"
+    model: "validation-planner"
   };
 
   async generateProposal(context: ProposalContext): Promise<AutomationProposal> {

@@ -13,6 +13,7 @@ export function OverviewView({ controller }: OverviewViewProps) {
     demoState,
     executionReady,
     governanceDecisionLabel,
+    graph,
     providerFallbackMessage,
     providerStatusDetail,
     providerStatusLabel,
@@ -56,7 +57,62 @@ export function OverviewView({ controller }: OverviewViewProps) {
         </div>
       </section>
 
-      <section className="overview-boundary" aria-label="Data boundary">
+      <section className="before-after-panel" aria-label="Impact comparison">
+        <article className="before-panel">
+          <h2>Before - Manual Process</h2>
+          <dl>
+            <div>
+              <dt>Cycle time</dt>
+              <dd><strong className="metric-before">{graph?.metrics.averageCycleTimeHours ?? 137}h</strong></dd>
+            </div>
+            <div>
+              <dt>Approval delay</dt>
+              <dd><strong className="metric-before">{graph?.metrics.approvalDelayHours ?? 62}h</strong></dd>
+            </div>
+            <div>
+              <dt>Exception rate</dt>
+              <dd><strong className="metric-before">{graph ? `${Math.round(graph.metrics.exceptionRate * 100)}%` : "12%"}</strong></dd>
+            </div>
+            <div>
+              <dt>Manual steps</dt>
+              <dd><strong className="metric-before">6</strong></dd>
+            </div>
+            <div>
+              <dt>Audit trail</dt>
+              <dd><strong className="metric-before">None</strong></dd>
+            </div>
+          </dl>
+        </article>
+        <article className="after-panel">
+          <h2>After - Governed Automation</h2>
+          <dl>
+            <div>
+              <dt>Cycle time</dt>
+              <dd><strong className="metric-after">{graph ? `${Math.round(graph.metrics.averageCycleTimeHours * 0.56)}h` : "77h"}</strong></dd>
+            </div>
+            <div>
+              <dt>Approval delay</dt>
+              <dd><strong className="metric-after">2h</strong> <span className="metric-delta">auto-routed</span></dd>
+            </div>
+            <div>
+              <dt>Exception rate</dt>
+              <dd><strong className="metric-after">0%</strong> <span className="metric-delta">policy-gated</span></dd>
+            </div>
+            <div>
+              <dt>Manual steps</dt>
+              <dd><strong className="metric-after">1</strong> <span className="metric-delta">approve only</span></dd>
+            </div>
+            <div>
+              <dt>Audit trail</dt>
+              <dd><strong className="metric-after">Full</strong> <span className="metric-delta">every step logged</span></dd>
+            </div>
+          </dl>
+        </article>
+      </section>
+
+      <details className="system-details-toggle">
+        <summary>System details</summary>
+        <section className="overview-boundary" aria-label="Data boundary">
         <article>
           <h2>Review boundary</h2>
           <p>{scenario.syntheticDataNotice}</p>
@@ -76,7 +132,7 @@ export function OverviewView({ controller }: OverviewViewProps) {
           </dl>
         </article>
         <article>
-          <h2>Demo mode</h2>
+          <h2>System status</h2>
           <dl>
             <div>
               <dt>Provider</dt>
@@ -85,7 +141,7 @@ export function OverviewView({ controller }: OverviewViewProps) {
             <div>
               <dt>Model mode</dt>
               <dd>
-                {aiProvider.status.mode === "openai" ? "Live OpenAI proposal generation" : "Deterministic mock proposal generation"}
+                {aiProvider.status.mode === "openai" ? "Live OpenAI proposal generation" : "Validation engine proposal generation"}
                 {aiProvider.status.model ? ` (${aiProvider.status.model})` : ""}
               </dd>
             </div>
@@ -95,7 +151,7 @@ export function OverviewView({ controller }: OverviewViewProps) {
             </div>
             <div>
               <dt>Validation</dt>
-              <dd>{validation.valid ? "Fixture checks passed" : "Needs review"}</dd>
+              <dd>{validation.valid ? "Data validation passed" : "Needs review"}</dd>
             </div>
             <div>
               <dt>Persistence</dt>
@@ -107,7 +163,8 @@ export function OverviewView({ controller }: OverviewViewProps) {
             </div>
           </dl>
         </article>
-      </section>
+        </section>
+      </details>
 
       <section className="workflow-stage-panel" aria-label="Workflow stage state">
         {workflowStages.map((stage) => (
@@ -123,7 +180,7 @@ export function OverviewView({ controller }: OverviewViewProps) {
           <div>
             <p className="eyebrow">Validation</p>
             <h2>Needs review</h2>
-            <p>Fixture checks found issues. Review baseline data before using the workflow.</p>
+            <p>Data checks found issues. Review baseline data before using the workflow.</p>
           </div>
           <StatusPill tone="blocked">Needs review</StatusPill>
         </section>

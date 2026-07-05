@@ -18,7 +18,7 @@ describe("App", () => {
     expect(screen.getByLabelText("Work Graph Foundry product preview")).toBeInTheDocument();
     expect(screen.getByLabelText("Connected automation path")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Landing workflow blocks" })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Landing proof and call to action" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Impact evidence" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Overview" })).not.toBeInTheDocument();
   });
 
@@ -28,23 +28,21 @@ describe("App", () => {
 
     expect(window.location.hash).toBe("#demo");
     expect(screen.getByRole("button", { name: "Overview" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getAllByLabelText("Workflow context")[0]).toHaveTextContent("Scenario: IT access requests");
-    expect(screen.getAllByLabelText("Workflow context")[0]).toHaveTextContent("Step: Overview");
-    expect(screen.getAllByLabelText("Workflow context")[0]).toHaveTextContent("Gate: Approval needed");
+    expect(screen.getByRole("heading", { name: "Overview" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Access request operations" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Evidence" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Graph" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Review & Run" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Audit" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Load workflow/i })).toBeInTheDocument();
-    expect(screen.getByLabelText("Backend and provider status")).toHaveTextContent("AI provider");
-    expect(screen.getByLabelText("Backend and provider status")).toHaveTextContent("Deterministic mock");
-    expect(screen.getByLabelText("Backend and provider status")).toHaveTextContent("Mock simulation only");
+    expect(screen.getByLabelText("System status")).toHaveTextContent("AI provider");
+    expect(screen.getByLabelText("System status")).toHaveTextContent("Validation engine");
 
     const summary = screen.getByRole("region", { name: /Operational summary/i });
 
     expect(within(summary).getByRole("heading", { name: /Access request operations/i })).toBeInTheDocument();
-    expect(screen.getByLabelText("Data boundary")).toBeInTheDocument();
+    expect(screen.getByLabelText("Impact comparison")).toBeInTheDocument();
+    expect(screen.getByText("System details")).toBeInTheDocument();
   });
 
   it("shows backend fallback recovery controls when the API is unavailable", async () => {
@@ -73,7 +71,7 @@ describe("App", () => {
         validationStatus: "failed",
         requestedAt: "2026-05-16T09:40:00Z",
         completedAt: "2026-05-16T09:40:04Z",
-        fallbackReason: "Deterministic mock proposal used after provider failure.",
+        fallbackReason: "Validation engine proposal used after provider failure.",
         errorCode: "provider_error"
       }
     };
@@ -82,7 +80,7 @@ describe("App", () => {
     render(<App />);
     await launchDemo();
 
-    expect(screen.getByLabelText("Backend and provider status")).toHaveTextContent("Fallback used");
+    expect(screen.getByLabelText("System status")).toHaveTextContent("Fallback used");
     expect(screen.getAllByText(/Reason code: provider_error/i).length).toBeGreaterThan(0);
     expect(screen.queryByText(/OPENAI_API_KEY/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Bearer/i)).not.toBeInTheDocument();
@@ -133,23 +131,26 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: /Generate automation proposal/i }));
 
     expect(screen.getByRole("heading", { name: /Is the automation safe to approve and run\?/i })).toBeInTheDocument();
+    openTechnicalDetails();
     expect(screen.getByRole("heading", { name: /Governed automation proposal/i })).toBeInTheDocument();
     expect(screen.getByText(/Write immutable audit event/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Review before execution/i })).toBeInTheDocument();
     openView("Review & Run");
-    await screen.findByRole("button", { name: /Run mock simulation/i });
-    expect(screen.getByRole("button", { name: /Run mock simulation/i })).toBeDisabled();
+    await screen.findByRole("button", { name: /Execute workflow/i });
+    expect(screen.getByRole("button", { name: /Execute workflow/i })).toBeDisabled();
 
     fireEvent.click(screen.getAllByRole("button", { name: /Approve/i })[0]);
 
     expect(screen.getAllByText("Available").length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: /Run mock simulation/i })).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: /Execute workflow/i })).not.toBeDisabled();
 
-    fireEvent.click(screen.getByRole("button", { name: /Run mock simulation/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Execute workflow/i }));
 
+    openTechnicalDetails();
     expect(screen.getByRole("heading", { name: /Workflow runner/i })).toBeInTheDocument();
     expect(screen.getByText(/simulated task IT-2001 created/i)).toBeInTheDocument();
     expect(screen.getAllByText(/human-review lane/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Workflow executed successfully/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Execution audit trail/i })).toBeInTheDocument();
 
     openView("Audit");
@@ -179,7 +180,7 @@ describe("App", () => {
     fireEvent.click(screen.getAllByRole("button", { name: /Reject/i })[0]);
 
     expect(screen.getAllByText(/Rejected/i).length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: /Run mock simulation/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Execute workflow/i })).toBeDisabled();
     expect(screen.getAllByText(/Blocked/i).length).toBeGreaterThan(0);
   });
 
@@ -221,6 +222,7 @@ describe("App", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Generate automation proposal/i }));
 
+    openTechnicalDetails();
     expect(screen.getByRole("heading", { name: /Governed automation proposal/i })).toBeInTheDocument();
     expect(screen.getByText(/Write immutable audit event/i)).toBeInTheDocument();
   });
@@ -277,7 +279,7 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: /Import Summary/i }));
 
     expect(screen.getByRole("alert")).toHaveTextContent(/Import failed: the provided execution summary is not valid JSON\./i);
-    expect(screen.getByRole("heading", { name: /Work Graph Foundry/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Audit" })).toBeInTheDocument();
   });
 });
 
@@ -288,4 +290,13 @@ async function launchDemo() {
 
 function openView(name: string) {
   fireEvent.click(screen.getByRole("button", { name }));
+}
+
+function openTechnicalDetails() {
+  const summary = screen.getByText("Technical details");
+  const details = summary.closest("details");
+
+  if (!details?.hasAttribute("open")) {
+    fireEvent.click(summary);
+  }
 }

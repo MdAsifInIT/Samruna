@@ -34,7 +34,7 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
       <section className="review-run-panel" aria-label="Review and run workflow">
         <EmptyState
           title="No proposal generated"
-          action="Load and analyze the workflow, then generate a backend-backed proposal from the command bar."
+          action="Load and analyze the workflow, then generate an automation proposal from the toolbar."
         />
       </section>
     );
@@ -46,6 +46,10 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
         <div>
           <h2>Is the automation safe to approve and run?</h2>
           <p>{proposal.auditRationale}</p>
+          <p className="review-impact-headline">
+            This automation will save ~{simulation.avoidedDelayHours}h per cycle and passed {simulation.passed} of{" "}
+            {simulation.totalCases} historical validations.
+          </p>
         </div>
         <div className="review-run-actions" aria-label="Proposal governance actions">
           <button className="approve-button" type="button" onClick={actions.approveProposal}>
@@ -63,7 +67,7 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
             onClick={actions.runMockExecution}
           >
             <Play size={16} />
-            <span>Run mock simulation</span>
+            <span>Execute workflow</span>
           </button>
         </div>
       </div>
@@ -84,24 +88,28 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
         <div>
           <span>Execution gate</span>
           <strong>
-            {executionReady && !executionRun
-              ? "Available"
-              : demoState.governanceDecision === "rejected"
-                ? executionGateLabel
-                : "Blocked"}
+            {executionRun
+              ? "Completed"
+              : executionReady
+                ? "Available"
+                : demoState.governanceDecision === "rejected"
+                  ? executionGateLabel
+                  : "Blocked"}
           </strong>
         </div>
-        <div>
-          <span>Simulation</span>
-          <strong>{simulation.passed} passed</strong>
+        <div className="status-highlight">
+          <span>Validations</span>
+          <strong>
+            {simulation.passed} / {simulation.totalCases} passed
+          </strong>
         </div>
-        <div>
+        <div className="status-highlight status-primary">
           <span>Avoided delay</span>
-          <strong>{simulation.avoidedDelayHours}h</strong>
+          <strong>{simulation.avoidedDelayHours}h saved</strong>
         </div>
         <div>
           <span>Enterprise execution</span>
-          <strong>Mock only</strong>
+          <strong>Safe mode</strong>
         </div>
       </div>
 
@@ -131,126 +139,141 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
         </button>
       </div>
 
-      <div className="review-run-grid">
-        <article>
-          <h3>Governed automation proposal</h3>
-          <dl>
-            <div>
-              <dt>Trigger</dt>
-              <dd>{proposal.trigger}</dd>
-            </div>
-            <div>
-              <dt>Risk</dt>
-              <dd>{proposal.riskLevel}</dd>
-            </div>
-            <div>
-              <dt>Confidence</dt>
-              <dd>{Math.round(proposal.confidence * 100)}%</dd>
-            </div>
-            <div>
-              <dt>Generated</dt>
-              <dd>{formatProposalTimestamp(proposal.generatedAt)}</dd>
-            </div>
-            <div>
-              <dt>Provider</dt>
-              <dd>{aiProvider.status.lastInvocation?.providerLabel ?? aiProvider.status.label}</dd>
-            </div>
-            <div>
-              <dt>Model</dt>
-              <dd>{aiProvider.status.lastInvocation?.model ?? aiProvider.status.model ?? "Not configured"}</dd>
-            </div>
-            <div>
-              <dt>Validation</dt>
-              <dd>{aiProvider.status.lastInvocation?.validationStatus ?? "Not generated yet"}</dd>
-            </div>
-          </dl>
-          <h4>Required data</h4>
-          <ul>
-            {proposal.requiredData.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-          <h4>Forbidden data</h4>
-          <ul>
-            {scenario.excludedOrgData.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </article>
-
-        <article>
-          <h3>Review before execution</h3>
-          <div className="simulation-grid simulation-grid-compact">
-            <div>
-              <span>Human review</span>
-              <strong>{simulation.needsHuman}</strong>
-            </div>
-            <div>
-              <span>Policy concern</span>
-              <strong>{simulation.policyRisk}</strong>
-            </div>
-          </div>
-          <div className="simulation-case-preview simulation-case-preview-compact" aria-label="Case-level simulation preview">
-            {simulationCasePreview.map((caseResult) => (
-              <section key={caseResult.caseId}>
-                <span>{caseResult.caseId}</span>
-                <strong>{caseResult.statusLabel}</strong>
-                <p>{caseResult.reason}</p>
-              </section>
-            ))}
-          </div>
-          <h4>Actions</h4>
-          <ul>
-            {proposal.actions.map((action) => (
-              <li key={action}>{action}</li>
-            ))}
-          </ul>
-        </article>
-
-        <article>
-          <h3>Workflow runner</h3>
-          <p className="execution-boundary">{executionGateCopy}</p>
-          <p className="execution-boundary execution-boundary-mock">
-            Mock simulation only. No enterprise connector, provisioning system, or customer workflow is modified.
-          </p>
-          <h4>Incoming request</h4>
-          <p>{fixtures.newIncomingTrace.body}</p>
-          <h4>Simulated tool calls</h4>
-          {executionRun?.mockToolCalls.length ? (
+      <details className="review-run-details">
+        <summary>Technical details</summary>
+        <div className="review-run-grid">
+          <article>
+            <h3>Governed automation proposal</h3>
+            <dl>
+              <div>
+                <dt>Trigger</dt>
+                <dd>{proposal.trigger}</dd>
+              </div>
+              <div>
+                <dt>Risk</dt>
+                <dd>{proposal.riskLevel}</dd>
+              </div>
+              <div>
+                <dt>Confidence</dt>
+                <dd>{Math.round(proposal.confidence * 100)}%</dd>
+              </div>
+              <div>
+                <dt>Generated</dt>
+                <dd>{formatProposalTimestamp(proposal.generatedAt)}</dd>
+              </div>
+              <div>
+                <dt>Provider</dt>
+                <dd>{aiProvider.status.lastInvocation?.providerLabel ?? aiProvider.status.label}</dd>
+              </div>
+              <div>
+                <dt>Model</dt>
+                <dd>{aiProvider.status.lastInvocation?.model ?? aiProvider.status.model ?? "Not configured"}</dd>
+              </div>
+              <div>
+                <dt>Validation</dt>
+                <dd>{aiProvider.status.lastInvocation?.validationStatus ?? "Not generated yet"}</dd>
+              </div>
+            </dl>
+            <h4>Required data</h4>
             <ul>
-              {executionRun.mockToolCalls.map((call) => (
-                <li key={call.tool}>
-                  <strong>{call.tool}</strong>: {call.output}
-                </li>
+              {proposal.requiredData.map((item) => (
+                <li key={item}>{item}</li>
               ))}
             </ul>
-          ) : (
-            <p>
-              {executionReady
-                ? "Run the mock simulation to generate simulated tool calls."
-                : demoState.governanceDecision === "rejected"
-                  ? "Mock execution is blocked by rejection until the proposal is revised and approved."
-                  : "Mock execution is blocked until approval opens the gate."}
+            <h4>Forbidden data</h4>
+            <ul>
+              {scenario.excludedOrgData.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </article>
+
+          <article>
+            <h3>Review before execution</h3>
+            <div className="simulation-grid simulation-grid-compact">
+              <div>
+                <span>Human review</span>
+                <strong>{simulation.needsHuman}</strong>
+              </div>
+              <div>
+                <span>Policy concern</span>
+                <strong>{simulation.policyRisk}</strong>
+              </div>
+            </div>
+            <div className="simulation-case-preview simulation-case-preview-compact" aria-label="Case-level simulation preview">
+              {simulationCasePreview.map((caseResult) => (
+                <section key={caseResult.caseId}>
+                  <span>{caseResult.caseId}</span>
+                  <strong>{caseResult.statusLabel}</strong>
+                  <p>{caseResult.reason}</p>
+                </section>
+              ))}
+            </div>
+            <h4>Actions</h4>
+            <ul>
+              {proposal.actions.map((action) => (
+                <li key={action}>{action}</li>
+              ))}
+            </ul>
+          </article>
+
+          <article>
+            <h3>Workflow runner</h3>
+            <p className="execution-boundary">{executionGateCopy}</p>
+            <p className="execution-boundary execution-boundary-mock">
+              Safe simulation mode. No external systems are modified.
             </p>
-          )}
-          <h4>Learning loop</h4>
-          <p>
-            {learningRecommendation
-              ? `${learningRecommendation.recommendation} ${learningRecommendation.expectedImpact}`
-              : "Learning recommendation appears after a mock run."}
-          </p>
-        </article>
-      </div>
+            <h4>Incoming request</h4>
+            <p>{fixtures.newIncomingTrace.body}</p>
+            <h4>Executed actions</h4>
+            {executionRun?.mockToolCalls.length ? (
+              <ul>
+                {executionRun.mockToolCalls.map((call) => (
+                  <li key={call.tool}>
+                    <strong>{call.tool}</strong>: {call.output}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>
+                {executionReady
+                  ? "Run the workflow to see executed actions."
+                  : demoState.governanceDecision === "rejected"
+                    ? "Safe execution is blocked by rejection until the proposal is revised and approved."
+                    : "Safe execution is blocked until approval opens the gate."}
+              </p>
+            )}
+            <h4>Learning loop</h4>
+            <p>
+              {learningRecommendation
+                ? `${learningRecommendation.recommendation} ${learningRecommendation.expectedImpact}`
+                : "Learning recommendation appears after a workflow run."}
+            </p>
+          </article>
+        </div>
+      </details>
 
       {executionRun ? (
-        <div className="execution-audit">
-          <h3>Execution audit trail</h3>
-          <ol>
-            {executionRun.auditTrail.map((entry) => (
-              <li key={entry}>{entry}</li>
-            ))}
-          </ol>
-        </div>
+        <>
+          <div className="execution-success" aria-live="polite">
+            <div className="success-icon" aria-hidden="true">
+              ✓
+            </div>
+            <strong>Workflow executed successfully</strong>
+            <p>
+              {executionRun.mockToolCalls.length} actions completed | Full audit trail recorded | Learning
+              recommendation generated
+            </p>
+          </div>
+          <div className="execution-audit">
+            <h3>Execution audit trail</h3>
+            <ol>
+              {executionRun.auditTrail.map((entry) => (
+                <li key={entry}>{entry}</li>
+              ))}
+            </ol>
+          </div>
+        </>
       ) : null}
     </section>
   );

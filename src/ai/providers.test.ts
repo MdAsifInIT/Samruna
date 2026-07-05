@@ -36,7 +36,7 @@ function makeContext() {
 }
 
 describe("AI providers", () => {
-  it("uses the deterministic mock provider by default", async () => {
+  it("uses the historical validation provider by default", async () => {
     const { context } = makeContext();
     const provider = createAiProvider();
     const proposal = await provider.generateProposal(context);

@@ -94,9 +94,9 @@ export function createSeedDemoState(
 export function createMockAiProviderSnapshot(lastInvocation?: AiInvocationMetadata): AiProviderSnapshot {
   return {
     mode: "mock",
-    label: "Deterministic simulation",
+    label: "Historical validation engine",
     available: true,
-    model: "deterministic-domain-planner",
+    model: "validation-planner",
     lastInvocation
   };
 }

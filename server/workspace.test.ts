@@ -78,7 +78,7 @@ describe("WorkspaceService", () => {
       organizationId: "synthetic-foundry-org",
       aiProvider: {
         mode: "mock",
-        label: "Deterministic simulation"
+        label: "Historical validation engine"
       }
     });
   });

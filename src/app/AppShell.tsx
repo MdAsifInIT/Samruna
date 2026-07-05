@@ -25,7 +25,6 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
     backendSyncError,
     backendSyncStatus,
     demoState,
-    executionReady,
     proposalGenerationReady,
     providerFallbackMessage,
     providerStatusDetail,
@@ -68,30 +67,19 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
       <main className="main-shell">
         <section className="topbar" aria-label="Workflow controls">
           <div className="topbar-title">
-            <p className="eyebrow">{activeNavigationItem.label}</p>
-            <h1>Work Graph Foundry</h1>
+            <p className="eyebrow">Work Graph Foundry</p>
+            <h1>{activeNavigationItem.label}</h1>
             <p className="topbar-summary">{activeNavigationItem.purpose}</p>
-            <p className="topbar-meta" aria-label="Workflow context">
-              Scenario: {scenario.label} · Step: {activeNavigationItem.label} · Gate:{" "}
-              {executionReady ? "Ready to run" : "Approval needed"}
-            </p>
-            <div className="confidence-strip" aria-label="Backend and provider status">
-              <span>
+            <div className="confidence-strip" aria-label="System status">
+              <span title={providerStatusDetail}>
                 <strong>AI provider</strong>
                 <StatusPill tone={providerTone}>{providerStatusLabel}</StatusPill>
               </span>
               <span>
-                <strong>Source of truth</strong>
+                <strong>Backend</strong>
                 <StatusPill tone={syncTone}>{backendSyncStatusToLabel(backendSyncStatus)}</StatusPill>
               </span>
-              <span>
-                <strong>Execution</strong>
-                Mock simulation only
-              </span>
             </div>
-            <p className="provider-detail" aria-label="Provider detail">
-              {providerStatusDetail}
-            </p>
             {providerFallbackMessage ? (
               <p className="provider-fallback-alert" role="status">
                 {providerFallbackMessage}
@@ -187,6 +175,19 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
             </div>
           </div>
         </section>
+
+        <nav className="progress-stepper" aria-label="Demo progress">
+          {controller.workflowStages.map((stage) => (
+            <span
+              key={stage.id}
+              data-state={stage.state}
+              aria-current={stage.state === "current" ? "step" : undefined}
+            >
+              <i aria-hidden="true">{stage.state === "complete" ? "✓" : stage.index}</i>
+              <span>{stage.label}</span>
+            </span>
+          ))}
+        </nav>
 
         <div className="view-content">{children}</div>
       </main>

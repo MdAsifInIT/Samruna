@@ -34,10 +34,19 @@ export function AnalyzeView({ controller }: AnalyzeViewProps) {
               <p className="eyebrow">Work graph</p>
               <h2>{scenario.graphTitle}</h2>
             </div>
-            <div className="graph-metrics">
-              <span>{graph.metrics.approvalDelayHours}h approval delay</span>
-              <span>{Math.round(graph.metrics.exceptionRate * 100)}% exception rate</span>
-              <span>{graph.metrics.averageCycleTimeHours}h cycle time</span>
+          </div>
+          <div className="graph-hero-metrics" aria-label="Key workflow metrics">
+            <div data-severity="high">
+              <strong>{graph.metrics.approvalDelayHours}h</strong>
+              <span>Approval delay</span>
+            </div>
+            <div>
+              <strong>{Math.round(graph.metrics.exceptionRate * 100)}%</strong>
+              <span>Exception rate</span>
+            </div>
+            <div>
+              <strong>{graph.metrics.averageCycleTimeHours}h</strong>
+              <span>Avg cycle time</span>
             </div>
           </div>
           {visualGraph ? (
@@ -153,7 +162,7 @@ export function AnalyzeView({ controller }: AnalyzeViewProps) {
           </div>
         </section>
       ) : (
-        <EmptyState title="No graph generated" action="Load Workflow, then Analyze to build the backend-backed work graph." />
+        <EmptyState title="No graph generated" action="Load Workflow, then Analyze to build the work graph." />
       )}
 
       {patternDetection ? (

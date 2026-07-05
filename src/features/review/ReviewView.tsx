@@ -20,7 +20,7 @@ export function ReviewView({ controller }: ReviewViewProps) {
         ariaLabel="Audit trail and execution summary"
         className="audit-panel"
         eyebrow="Audit trail"
-        title="Persisted workflow state"
+        title="Persisted run summary"
         actions={
           <div className="governance-actions">
             <button className="export-button" type="button" onClick={actions.exportSummary}>
@@ -48,25 +48,25 @@ export function ReviewView({ controller }: ReviewViewProps) {
                 </p>
               ))
             ) : (
-              <p>No backend audit events yet. Load a workflow to start the synthetic audit trail.</p>
+              <p>No audit events yet. Load a workflow to begin.</p>
             )}
           </article>
           <article>
-            <h3>Execution summary export</h3>
+            <h3>Run summary export</h3>
             <textarea
               aria-label="Execution summary JSON"
               value={exportText}
               onChange={(event) => actions.setExportText(event.target.value)}
-              placeholder="Export summary JSON appears here."
+              placeholder="Exported run summary appears here."
             />
           </article>
           <article>
-            <h3>Import summary</h3>
+            <h3>Import run summary</h3>
             <textarea
               aria-label="Import execution summary JSON"
               value={importText}
               onChange={(event) => actions.setImportText(event.target.value)}
-              placeholder="Paste summary JSON to restore state."
+              placeholder="Paste a run summary to restore state."
             />
             {importError ? (
               <p className="import-error" role="alert">

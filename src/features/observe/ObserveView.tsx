@@ -13,7 +13,7 @@ export function ObserveView({ controller }: ObserveViewProps) {
     <>
       <section className="view-heading">
         <p className="eyebrow">Observe</p>
-        <h2>What source proof supports it?</h2>
+        <h2>What data proof supports it?</h2>
       </section>
 
       {demoState.sampleLoaded ? (
@@ -46,7 +46,7 @@ export function ObserveView({ controller }: ObserveViewProps) {
           </section>
         </>
       ) : (
-        <EmptyState title="No workflow loaded" action="Load Workflow to inspect source channels and fixture validation." />
+        <EmptyState title="No workflow loaded" action="Load a workflow to inspect source channels and data validation." />
       )}
 
       {ingestion ? (
