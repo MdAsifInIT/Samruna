@@ -14,5 +14,7 @@ Read these guides in order if you are new to the repository. They are numbered s
 10. [Demo Operations](10-demo-operations.md)
 11. [Hackathon Demo](11-hackathon-demo.md)
 12. [Backend Implementation Plan](12-backend-implementation-plan.md)
+13. [Backend Planning Loop Prompt](13-backend-planning-loop-prompt.md)
+14. [Full-Stack Demo Plan](12-fullstack-demo-plan.md)
 
 The canonical run path is in [Demo Operations](10-demo-operations.md). Historical implementation plans, prompts, and phase notes are kept in [archive](archive/). They are not required for normal development.

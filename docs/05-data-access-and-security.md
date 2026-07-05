@@ -15,7 +15,7 @@ It does not connect to:
 - document repositories
 - databases
 
-All demo data is seeded locally in `src/fixtures/demoData.ts`. Browser-local demo run state is stored in localStorage so operators can reload, reset, export, or import a run summary.
+All demo data is seeded locally in `src/fixtures/demoData.ts`. Mutable demo run state is stored by the local backend in SQLite, while the browser keeps a small `localStorage` mirror for reload resilience and backend-unavailable fallback.
 
 ## 5.2 What Data The Solution Needs In A Real Deployment
 
@@ -82,7 +82,8 @@ Current safety controls:
 - no live enterprise connectors
 - no real write actions
 - no browser-side secret usage
-- browser-local persistence only
+- local SQLite persistence only
+- browser fallback mirror only
 - deterministic mock AI provider by default
 - typed proposal contract
 - simulation before execution
@@ -94,14 +95,17 @@ Current safety controls:
 
 The browser demo does not send data to OpenAI.
 
-`OpenAiResponsesProvider` exists as an integration boundary for trusted runtimes. A production integration should:
+`OpenAiResponsesProvider` is available only through the trusted backend runtime. The backend integration:
 
 1. run server-side
-2. own `OPENAI_API_KEY` securely
-3. send only necessary fields
-4. validate model output
-5. log model-influenced decisions
-6. fall back safely if the model call fails
+2. owns `OPENAI_API_KEY` through server environment variables
+3. sends only synthetic demo fields in this repository
+4. sets Responses API storage to `false`
+5. validates model output before persistence
+6. logs non-secret model metadata and fallback reason codes
+7. falls back safely if the model call fails
+
+The API and UI may show provider mode, model name, validation status, and sanitized fallback codes. They must not show API keys, request headers, raw prompts, raw model errors, or secret-bearing configuration.
 
 ## 5.7 Governance Controls
 
@@ -123,11 +127,11 @@ No. It uses local fixture data only.
 
 ### 5.8.2 Does the MVP require an OpenAI API key?
 
-No. The default provider is deterministic mock behavior.
+No. The default provider is deterministic mock behavior. If `OPENAI_API_KEY` is set for the backend process, proposal generation can use live OpenAI while execution remains mock-only.
 
 ### 5.8.3 Does the browser app expose secrets?
 
-No. The docs explicitly prohibit exposing `OPENAI_API_KEY` in browser code.
+No. The browser reads provider status from backend snapshots and does not receive `OPENAI_API_KEY`, authorization headers, raw prompts, or raw provider errors.
 
 ### 5.8.4 Does the app perform real provisioning?
 
@@ -159,11 +163,11 @@ Retention should be configurable by source and policy. Store enough provenance f
 
 ### 5.8.11 What is stored by the local demo?
 
-The local demo stores selected scenario, staged workflow flags, generated graph, proposals, governance decisions, simulation result, mock execution result, learning recommendation, and audit events in browser localStorage.
+The local demo stores selected scenario, staged workflow flags, generated graph, proposals, governance decisions, simulation result, mock execution result, learning recommendation, non-secret provider metadata, and audit events in local SQLite. The browser mirrors the same state in `localStorage` for fallback recovery.
 
 ### 5.8.12 Does reset delete production data?
 
-No. Reset only restores the local browser demo state for the selected synthetic scenario. There is no production connector or write path.
+No. Reset only restores the local backend demo state and browser mirror for the selected synthetic scenario. There is no production connector or write path.
 
 ### 5.8.13 Can run summaries contain real customer data?
 

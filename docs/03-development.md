@@ -16,11 +16,18 @@ npm run demo:dev
 
 Open the URL printed by Vite.
 
+For the API-backed local demo, run:
+
+```powershell
+npm run backend:seed
+npm run dev:fullstack
+```
+
 If dev mode fails in a restricted environment:
 
 ```powershell
 npm run build
-npm run preview
+npm run preview:fullstack -- --port 4174
 ```
 
 ## 3.2 Build
@@ -59,6 +66,7 @@ Run the full non-browser local POC verification gate:
 
 ```powershell
 npm run verify:demo
+npm run verify:fullstack
 ```
 
 ## 3.4 Extend
@@ -99,7 +107,7 @@ Implementation steps:
 
 ## 3.6 Local Persistence
 
-Browser-local demo state lives in `src/domain/persistence.ts` and uses `localStorage`.
+Backend demo state is owned by `server/workspace.ts` and persisted to SQLite at `.wgf/work-graph-foundry.sqlite` by default. Set `WGF_DB_PATH` to use a different local database path. The browser writes a `localStorage` mirror through `src/domain/persistence.ts` for reload resilience and backend-unavailable fallback.
 
 It persists:
 
@@ -113,20 +121,29 @@ It persists:
 - recommendations
 - audit events
 
-Reset returns the selected scenario to a deterministic seeded baseline. Do not commit exported run summaries unless they are intentionally added as documentation examples.
+Reset returns the selected scenario to a deterministic seeded baseline. Do not commit generated SQLite databases, browser mirror exports, or run summaries unless they are intentionally added as synthetic documentation examples.
 
 ## 3.7 Adding Live OpenAI Calls
 
-The current browser app must not read `OPENAI_API_KEY`.
+The current browser app must not read `OPENAI_API_KEY` or import OpenAI-capable provider code.
 
-Recommended path:
+Implemented local path:
 
-1. Add a small server-side route.
-2. Store `OPENAI_API_KEY` only on the server.
-3. Call `OpenAiResponsesProvider` from the server.
-4. Validate structured output.
-5. Return only validated proposal data to the browser.
-6. Fall back to `MockAiProvider` if the live call fails.
+1. `server/ai.ts` reads `OPENAI_API_KEY`, optional `OPENAI_MODEL`, and optional `OPENAI_TIMEOUT_MS`.
+2. `WorkspaceService` receives an injected provider and routes proposal generation through it.
+3. `OpenAiResponsesProvider` uses structured JSON output and `store: false`.
+4. The service normalizes proposal identity and validates provider output before persistence.
+5. Failed provider calls fall back to deterministic mock proposal generation.
+6. Health/workspace responses return only non-secret provider metadata.
+7. The browser displays provider metadata from the backend snapshot and keeps local fallback mock-only.
+
+Run live proposal generation locally only from the backend process:
+
+```powershell
+$env:OPENAI_API_KEY="sk-..."
+$env:OPENAI_MODEL="gpt-5.5"
+npm run dev:fullstack
+```
 
 ## 3.8 Adding Enterprise Connectors
 
@@ -165,14 +182,18 @@ Ignored files:
 - `.env.local`
 - `.vite/`
 - `.vitest-attachments/`
+- `.wgf/`
 - `.codex/`
+- `*.sqlite`
+- `*.sqlite-shm`
+- `*.sqlite-wal`
 - `*.log`
 
 Before commit:
 
 ```powershell
 git status --short
-npm run verify:demo
+npm run verify:fullstack
 ```
 
 ## 3.11 Common Development Mistakes
@@ -186,4 +207,4 @@ Avoid:
 - replacing the dashboard with a chatbot-first UI
 - adding broad dependencies for simple deterministic logic
 - changing fixture data without updating tests
-- committing localStorage exports or real customer data
+- committing generated SQLite files, browser mirror exports, or real customer data

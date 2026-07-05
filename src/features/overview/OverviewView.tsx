@@ -8,12 +8,17 @@ interface OverviewViewProps {
 export function OverviewView({ controller }: OverviewViewProps) {
   const {
     aiProvider,
+    backendSyncStatus,
     currentStage,
     demoState,
     executionReady,
     governanceDecisionLabel,
+    providerFallbackMessage,
+    providerStatusDetail,
+    providerStatusLabel,
     scenario,
-    validation
+    validation,
+    workflowStages
   } = controller;
   const stateItems = [
     ["Workflow", demoState.sampleLoaded ? "Loaded" : "Baseline"],
@@ -75,7 +80,18 @@ export function OverviewView({ controller }: OverviewViewProps) {
           <dl>
             <div>
               <dt>Provider</dt>
-              <dd>{aiProvider.status.label}</dd>
+              <dd>{providerStatusLabel}</dd>
+            </div>
+            <div>
+              <dt>Model mode</dt>
+              <dd>
+                {aiProvider.status.mode === "openai" ? "Live OpenAI proposal generation" : "Deterministic mock proposal generation"}
+                {aiProvider.status.model ? ` (${aiProvider.status.model})` : ""}
+              </dd>
+            </div>
+            <div>
+              <dt>Last generation</dt>
+              <dd>{providerFallbackMessage || providerStatusDetail}</dd>
             </div>
             <div>
               <dt>Validation</dt>
@@ -83,10 +99,23 @@ export function OverviewView({ controller }: OverviewViewProps) {
             </div>
             <div>
               <dt>Persistence</dt>
-              <dd>Local browser state with export and import.</dd>
+              <dd>
+                {backendSyncStatus === "synced"
+                  ? "Backend SQLite state is authoritative; browser mirror is for reload recovery."
+                  : "Browser fallback mirror is active until the backend reconnects."}
+              </dd>
             </div>
           </dl>
         </article>
+      </section>
+
+      <section className="workflow-stage-panel" aria-label="Workflow stage state">
+        {workflowStages.map((stage) => (
+          <span key={stage.id} data-state={stage.state}>
+            <strong>{stage.index}. {stage.label}</strong>
+            {stage.state}
+          </span>
+        ))}
       </section>
 
       {!validation.valid && (

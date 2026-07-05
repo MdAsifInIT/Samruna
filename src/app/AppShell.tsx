@@ -1,9 +1,12 @@
 import {
   Brain,
   Database,
-  Network
+  Network,
+  RefreshCw,
+  RotateCcw
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { StatusPill } from "../components/shared/StatusPill";
 import { ToolbarButton } from "../components/shared/ToolbarButton";
 import type { ScenarioId } from "../domain/types";
 import { navigationItems, type ViewId } from "./navigation";
@@ -17,8 +20,24 @@ interface AppShellProps {
 }
 
 export function AppShell({ activeView, children, controller, onViewChange }: AppShellProps) {
-  const { actions, demoState, executionReady, proposalGenerationReady, scenario, scenarioOptions } = controller;
+  const {
+    actions,
+    backendSyncError,
+    backendSyncStatus,
+    demoState,
+    executionReady,
+    proposalGenerationReady,
+    providerFallbackMessage,
+    providerStatusDetail,
+    providerStatusLabel,
+    scenario,
+    scenarioOptions
+  } = controller;
   const activeNavigationItem = navigationItems.find((item) => item.id === activeView) ?? navigationItems[0];
+  const providerTone: "good" | "warn" =
+    providerStatusLabel === "Fallback used" ? "warn" : providerStatusLabel === "Live OpenAI" ? "good" : "warn";
+  const syncTone: "good" | "warn" | "blocked" =
+    backendSyncStatus === "synced" ? "good" : backendSyncStatus === "error" ? "blocked" : "warn";
 
   return (
     <div className="app-shell">
@@ -56,6 +75,41 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
               Scenario: {scenario.label} · Step: {activeNavigationItem.label} · Gate:{" "}
               {executionReady ? "Ready to run" : "Approval needed"}
             </p>
+            <div className="confidence-strip" aria-label="Backend and provider status">
+              <span>
+                <strong>AI provider</strong>
+                <StatusPill tone={providerTone}>{providerStatusLabel}</StatusPill>
+              </span>
+              <span>
+                <strong>Source of truth</strong>
+                <StatusPill tone={syncTone}>{backendSyncStatusToLabel(backendSyncStatus)}</StatusPill>
+              </span>
+              <span>
+                <strong>Execution</strong>
+                Mock simulation only
+              </span>
+            </div>
+            <p className="provider-detail" aria-label="Provider detail">
+              {providerStatusDetail}
+            </p>
+            {providerFallbackMessage ? (
+              <p className="provider-fallback-alert" role="status">
+                {providerFallbackMessage}
+              </p>
+            ) : null}
+            {backendSyncError && (
+              <div className="backend-sync-alert" role="status">
+                <span>{backendSyncError}</span>
+                <button type="button" onClick={actions.retryBackendSync}>
+                  <RefreshCw size={14} />
+                  Retry backend
+                </button>
+                <button type="button" onClick={actions.resetDemo}>
+                  <RotateCcw size={14} />
+                  Reset workflow
+                </button>
+              </div>
+            )}
           </div>
           <div className="mobile-view-picker">
             <label>
@@ -138,4 +192,20 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
       </main>
     </div>
   );
+}
+
+function backendSyncStatusToLabel(status: WorkGraphDemoController["backendSyncStatus"]): string {
+  switch (status) {
+    case "synced":
+      return "Backend connected";
+    case "syncing":
+      return "Syncing";
+    case "error":
+      return "Backend action failed";
+    case "fallback":
+      return "Browser fallback mirror";
+    case "connecting":
+    default:
+      return "Connecting";
+  }
 }

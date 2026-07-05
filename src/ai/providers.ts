@@ -7,8 +7,10 @@ import type {
   WorkPattern
 } from "../domain/types";
 import { generateAutomationProposal } from "../domain/planner";
+import type { AiProviderMode } from "../domain/persistence";
 
-export type AiProviderMode = "mock" | "openai";
+export const DEFAULT_OPENAI_MODEL = "gpt-5.5";
+const DEFAULT_OPENAI_TIMEOUT_MS = 20_000;
 
 export interface ProposalContext {
   pattern: WorkPattern;
@@ -22,6 +24,7 @@ export interface AiProviderStatus {
   mode: AiProviderMode;
   label: string;
   available: boolean;
+  model?: string;
 }
 
 export interface AiProvider {
@@ -33,7 +36,8 @@ export class MockAiProvider implements AiProvider {
   status: AiProviderStatus = {
     mode: "mock",
     label: "Deterministic simulation",
-    available: true
+    available: true,
+    model: "deterministic-domain-planner"
   };
 
   async generateProposal(context: ProposalContext): Promise<AutomationProposal> {
@@ -42,22 +46,29 @@ export class MockAiProvider implements AiProvider {
 }
 
 export class OpenAiResponsesProvider implements AiProvider {
-  status: AiProviderStatus = {
-    mode: "openai",
-    label: "OpenAI Responses API",
-    available: true
-  };
+  readonly status: AiProviderStatus;
 
   constructor(
     private readonly apiKey: string,
     private readonly options: {
       model?: string;
       fetcher?: typeof fetch;
+      timeoutMs?: number;
     } = {}
-  ) {}
+  ) {
+    this.status = {
+      mode: "openai",
+      label: "OpenAI Responses API",
+      available: true,
+      model: this.options.model ?? DEFAULT_OPENAI_MODEL
+    };
+  }
 
   async generateProposal(context: ProposalContext): Promise<AutomationProposal> {
     const fetcher = this.options.fetcher ?? fetch;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), this.options.timeoutMs ?? DEFAULT_OPENAI_TIMEOUT_MS);
+
     const response = await fetcher("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
@@ -65,7 +76,8 @@ export class OpenAiResponsesProvider implements AiProvider {
         Authorization: `Bearer ${this.apiKey}`
       },
       body: JSON.stringify({
-        model: this.options.model ?? "gpt-5.5",
+        model: this.options.model ?? DEFAULT_OPENAI_MODEL,
+        store: false,
         input: [
           {
             role: "system",
@@ -91,27 +103,49 @@ export class OpenAiResponsesProvider implements AiProvider {
             schema: automationProposalSchema
           }
         }
-      })
-    });
+      }),
+      signal: controller.signal
+    }).finally(() => clearTimeout(timeout));
 
     if (!response.ok) {
-      throw new Error(`OpenAI proposal request failed with ${response.status}`);
+      throw new AiProviderError(`openai_http_${response.status}`, `OpenAI proposal request failed with ${response.status}`);
     }
 
     const payload = (await response.json()) as OpenAiResponsePayload;
-    const parsed = parseOutputJson(payload);
+    let parsed: unknown;
+
+    try {
+      parsed = parseOutputJson(payload);
+    } catch (error) {
+      throw new AiProviderError("openai_parse_failed", error instanceof Error ? error.message : "OpenAI response parse failed");
+    }
 
     if (!isAutomationProposal(parsed)) {
-      throw new Error("OpenAI proposal response did not match AutomationProposal contract");
+      throw new AiProviderError("openai_contract_mismatch", "OpenAI proposal response did not match AutomationProposal contract");
     }
 
     return parsed;
   }
 }
 
-export function createAiProvider(config: { openAiApiKey?: string; model?: string } = {}): AiProvider {
+export class AiProviderError extends Error {
+  constructor(
+    public readonly code: string,
+    message: string
+  ) {
+    super(message);
+  }
+}
+
+export function createAiProvider(
+  config: { openAiApiKey?: string; model?: string; fetcher?: typeof fetch; timeoutMs?: number } = {}
+): AiProvider {
   if (config.openAiApiKey) {
-    return new OpenAiResponsesProvider(config.openAiApiKey, { model: config.model });
+    return new OpenAiResponsesProvider(config.openAiApiKey, {
+      model: config.model,
+      fetcher: config.fetcher,
+      timeoutMs: config.timeoutMs
+    });
   }
 
   return new MockAiProvider();

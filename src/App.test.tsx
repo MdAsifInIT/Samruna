@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { App } from "./App";
-import { DEMO_STORAGE_KEY } from "./domain/persistence";
+import { createSeedDemoState, DEMO_STORAGE_KEY, saveDemoState } from "./domain/persistence";
 
 describe("App", () => {
   beforeEach(() => {
@@ -37,11 +37,55 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Review & Run" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Audit" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Load workflow/i })).toBeInTheDocument();
+    expect(screen.getByLabelText("Backend and provider status")).toHaveTextContent("AI provider");
+    expect(screen.getByLabelText("Backend and provider status")).toHaveTextContent("Deterministic mock");
+    expect(screen.getByLabelText("Backend and provider status")).toHaveTextContent("Mock simulation only");
 
     const summary = screen.getByRole("region", { name: /Operational summary/i });
 
     expect(within(summary).getByRole("heading", { name: /Access request operations/i })).toBeInTheDocument();
     expect(screen.getByLabelText("Data boundary")).toBeInTheDocument();
+  });
+
+  it("shows backend fallback recovery controls when the API is unavailable", async () => {
+    render(<App />);
+    await launchDemo();
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/browser fallback mirror/i).length).toBeGreaterThan(0);
+    });
+    expect(screen.getByRole("button", { name: /Retry backend/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Reset workflow/i })).toBeInTheDocument();
+  });
+
+  it("shows sanitized provider fallback metadata from the browser mirror", async () => {
+    const fallbackState = createSeedDemoState();
+    fallbackState.aiProvider = {
+      mode: "openai",
+      label: "OpenAI Responses API",
+      available: true,
+      model: "gpt-test",
+      lastInvocation: {
+        providerMode: "openai",
+        providerLabel: "OpenAI Responses API",
+        model: "gpt-test",
+        status: "fallback",
+        validationStatus: "failed",
+        requestedAt: "2026-05-16T09:40:00Z",
+        completedAt: "2026-05-16T09:40:04Z",
+        fallbackReason: "Deterministic mock proposal used after provider failure.",
+        errorCode: "provider_error"
+      }
+    };
+    saveDemoState(fallbackState);
+
+    render(<App />);
+    await launchDemo();
+
+    expect(screen.getByLabelText("Backend and provider status")).toHaveTextContent("Fallback used");
+    expect(screen.getAllByText(/Reason code: provider_error/i).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/OPENAI_API_KEY/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Bearer/i)).not.toBeInTheDocument();
   });
 
   it("recovers from malformed persisted localStorage state", async () => {
@@ -93,15 +137,15 @@ describe("App", () => {
     expect(screen.getByText(/Write immutable audit event/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Review before execution/i })).toBeInTheDocument();
     openView("Review & Run");
-    await screen.findByRole("button", { name: /Run approved workflow/i });
-    expect(screen.getByRole("button", { name: /Run approved workflow/i })).toBeDisabled();
+    await screen.findByRole("button", { name: /Run mock simulation/i });
+    expect(screen.getByRole("button", { name: /Run mock simulation/i })).toBeDisabled();
 
     fireEvent.click(screen.getAllByRole("button", { name: /Approve/i })[0]);
 
     expect(screen.getAllByText("Available").length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: /Run approved workflow/i })).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: /Run mock simulation/i })).not.toBeDisabled();
 
-    fireEvent.click(screen.getByRole("button", { name: /Run approved workflow/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Run mock simulation/i }));
 
     expect(screen.getByRole("heading", { name: /Workflow runner/i })).toBeInTheDocument();
     expect(screen.getByText(/simulated task IT-2001 created/i)).toBeInTheDocument();
@@ -135,7 +179,7 @@ describe("App", () => {
     fireEvent.click(screen.getAllByRole("button", { name: /Reject/i })[0]);
 
     expect(screen.getAllByText(/Rejected/i).length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: /Run approved workflow/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Run mock simulation/i })).toBeDisabled();
     expect(screen.getAllByText(/Blocked/i).length).toBeGreaterThan(0);
   });
 

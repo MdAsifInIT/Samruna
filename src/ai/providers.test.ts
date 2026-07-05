@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createAiProvider, MockAiProvider, OpenAiResponsesProvider } from "./providers";
+import { AiProviderError, createAiProvider, MockAiProvider, OpenAiResponsesProvider } from "./providers";
 import { loadDemoFixtures } from "../domain/fixtures";
 import { buildWorkGraph } from "../domain/graph";
 import { ingestWorkTraces } from "../domain/ingestion";
@@ -49,8 +49,11 @@ describe("AI providers", () => {
   it("parses structured proposal output from the OpenAI provider", async () => {
     const { context } = makeContext();
     const expectedProposal = generateAutomationProposal(context);
-    const fetcher: typeof fetch = async () =>
-      new Response(
+    let requestBody: Record<string, unknown> | undefined;
+    const fetcher: typeof fetch = async (_input, init) => {
+      requestBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+
+      return new Response(
         JSON.stringify({
           output: [
             {
@@ -66,10 +69,42 @@ describe("AI providers", () => {
         }),
         { status: 200 }
       );
+    };
     const provider = new OpenAiResponsesProvider("test-key", { fetcher, model: "gpt-5.5" });
     const proposal = await provider.generateProposal(context);
 
     expect(provider.status.mode).toBe("openai");
+    expect(provider.status.model).toBe("gpt-5.5");
+    expect(requestBody).toMatchObject({
+      model: "gpt-5.5",
+      store: false
+    });
     expect(proposal).toEqual(expectedProposal);
+  });
+
+  it("rejects invalid structured output from the OpenAI provider", async () => {
+    const { context } = makeContext();
+    const fetcher: typeof fetch = async () =>
+      new Response(
+        JSON.stringify({
+          output: [
+            {
+              type: "message",
+              content: [
+                {
+                  type: "output_text",
+                  text: JSON.stringify({ id: "missing-required-fields" })
+                }
+              ]
+            }
+          ]
+        }),
+        { status: 200 }
+      );
+    const provider = new OpenAiResponsesProvider("test-key", { fetcher, model: "gpt-5.5" });
+
+    await expect(provider.generateProposal(context)).rejects.toMatchObject({
+      code: "openai_contract_mismatch"
+    } satisfies Partial<AiProviderError>);
   });
 });

@@ -44,9 +44,11 @@ The default scenario is IT access requests:
 - React
 - Vite 6
 - Vitest
+- Local TypeScript backend for the full-stack branch
+- Node 24 built-in `node:sqlite`
 - Local JSON-like fixture data in TypeScript
 - Deterministic mock AI provider by default
-- Optional OpenAI Responses API provider boundary for trusted runtimes
+- Optional server-side OpenAI Responses API proposal generation for trusted runtimes
 
 ## Run Locally
 
@@ -64,6 +66,22 @@ npm run build
 npm run preview
 ```
 
+To run the API-backed full-stack demo:
+
+```powershell
+npm run backend:seed
+npm run dev:fullstack
+```
+
+The local backend listens on `127.0.0.1:8787` by default, and the Vite app proxies `/api` to it. The generated SQLite database is stored at `.wgf/work-graph-foundry.sqlite` unless `WGF_DB_PATH` is set.
+
+If Vite dev dependency optimization is blocked by a local sandbox, use the built full-stack server:
+
+```powershell
+npm run build
+npm run preview:fullstack -- --port 4174
+```
+
 ## Demo Path
 
 1. Click `Launch` from the product page.
@@ -74,7 +92,7 @@ npm run preview
 6. Click `Generate Proposal`.
 7. Review required data, forbidden data, assumptions, policy checks, escalations, simulation results, and governance notes in `Review & Run`.
 8. Use the `Approve` and `Reject` actions in `Review & Run`.
-9. Click `Run approved workflow` after approval in `Review & Run`.
+9. Click `Run mock simulation` after approval in `Review & Run`.
 10. Open `Audit` to review export/import controls and persisted audit state.
 11. Use `Export Summary` in `Audit` for a portable run summary or `Reset` in `Audit` to restore seeded state.
 
@@ -84,9 +102,14 @@ npm run preview
 npm run dev         # Start local development server
 npm run demo:dev    # Start local demo server
 npm run demo:seed   # Print deterministic seed state JSON
-npm run demo:reset  # Print browser localStorage reset snippet
+npm run demo:reset  # Print browser fallback mirror reset snippet
+npm run backend:dev  # Start the local backend API
+npm run backend:seed # Seed or reset the local SQLite demo state
+npm run dev:fullstack # Start backend and Vite with the /api proxy
+npm run preview:fullstack # Serve the built app and API from one backend origin
 npm run build       # Typecheck and build production artifact
 npm run verify:demo # Run typecheck, tests, build, and audit
+npm run verify:fullstack # Run typecheck, app tests, backend tests, build, and audit
 npm run test:e2e    # Run Playwright Chromium e2e tests
 npm run preview     # Preview production build
 npm run typecheck   # Run TypeScript checks
@@ -97,7 +120,7 @@ npm test            # Run Vitest suite
 
 ```text
 src/
-  ai/          # AI provider abstraction, mock provider, optional OpenAI provider
+  ai/          # AI provider abstraction, mock provider, optional OpenAI provider implementation
   domain/      # Scenarios, persistence, ingestion, graph, patterns, planner, simulation, governance, execution
   fixtures/    # Seeded synthetic scenario traces and policy data
   test/        # Test setup
@@ -135,15 +158,36 @@ Historical planning prompts and phase notes are archived under `docs/archive/`.
 
 ## AI Provider Behavior
 
-The app runs without live OpenAI credentials. The browser demo uses deterministic mock agents so it is reliable in local and judging environments.
+The app runs without live OpenAI credentials. The browser demo uses backend-supplied provider metadata, a visible backend/source-of-truth strip, and deterministic fallback behavior so it is reliable in local and judging environments.
 
-The provider boundary lives in `src/ai/providers.ts`:
+The provider boundary is owned by the backend:
 
 - `MockAiProvider` is the default.
 - `OpenAiResponsesProvider` targets the Responses API with structured JSON output.
-- Live API keys should only be injected from a trusted server-side runtime.
+- `server/ai.ts` reads `OPENAI_API_KEY`, optional `OPENAI_MODEL`, and optional `OPENAI_TIMEOUT_MS`.
+- The backend sets Responses API storage to `false` for proposal generation.
+- Provider mode, model, validation status, and fallback reason codes are persisted as non-secret metadata.
 
-Do not expose `OPENAI_API_KEY` directly in browser code.
+Do not expose `OPENAI_API_KEY` directly in browser code. The browser must not import OpenAI-capable provider code or receive keys, request headers, prompts, or raw provider errors.
+
+To try live proposal generation locally, set the key only for the backend process:
+
+```powershell
+$env:OPENAI_API_KEY="sk-..."
+$env:OPENAI_MODEL="gpt-5.5"
+npm run backend:seed
+npm run dev:fullstack
+```
+
+Leave `OPENAI_API_KEY` unset to use deterministic mock proposal generation.
+
+## Full-Stack Backend Behavior
+
+The full-stack branch adds a local backend under `server/` with `/api` routes for health, scenarios, workspace state, workflow actions, governance, execution, reset, export, import, and audit retrieval.
+
+The backend is the primary source of truth for demo state and persists it to SQLite, while the browser keeps a small mirror for reload resilience and local test fallback. It reuses the existing deterministic domain modules for ingestion, graphing, pattern detection, simulation, governance, mock execution, and learning recommendations. Proposal generation routes through the backend AI provider with deterministic fallback. Seeded organization records remain synthetic. Enterprise connectors, production auth/RBAC, real provisioning, live customer data, and browser-side secrets remain out of scope.
+
+See [12. Full-Stack Demo Plan](docs/12-fullstack-demo-plan.md) for API routes, DB path, commands, and verification.
 
 ## Verification
 
@@ -151,6 +195,7 @@ Before handoff or push, run:
 
 ```powershell
 npm run verify:demo
+npm run verify:fullstack
 ```
 
 For browser coverage, install Chromium if needed and then run the Playwright suite:
@@ -178,6 +223,7 @@ Current browser baseline:
 ## Troubleshooting
 
 - If `npm run dev` fails during dependency optimization in a restricted sandbox, run `npm run build` followed by `npm run preview`.
+- If `npm run dev:fullstack` hits the same dependency optimization issue, run `npm run build` followed by `npm run preview:fullstack -- --port 4174`.
 - If live OpenAI calls fail, leave `OPENAI_API_KEY` unset and use the deterministic mock provider.
 - If the UI appears stale after changes, rebuild or reload the preview server.
 - If Playwright binaries are missing, run `npm run test:e2e:install` before retrying browser tests.

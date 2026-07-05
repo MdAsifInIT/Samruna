@@ -101,7 +101,7 @@ When an agent validates this repo, it should perform these steps:
 26. Repeat load, analyze, generate proposal.
 27. Check mobile width for horizontal overflow and mobile view selection.
 
-The Playwright e2e suite is the preferred browser verification path. It serves Vite locally, runs deterministic Chromium tests, and validates the two golden scenarios plus localStorage reload and reset recovery.
+The Playwright e2e suite is the preferred browser verification path. It serves Vite locally, runs deterministic Chromium tests, and validates the two golden scenarios plus backend workspace persistence, browser mirror recovery, reload, and reset recovery.
 
 ## 6.5 Playwright E2E Tests
 
@@ -120,7 +120,7 @@ Expected behavior:
 - Tests run in local Chromium against deterministic demo data.
 - Both golden scenarios complete load, analyze, proposal generation, governance approval, mock execution, export, and reset checks.
 - Menu navigation is exercised for generated analysis, governance, execution, review, import, reload recovery, reset recovery, and mobile overflow.
-- Rejection, export/import round trip, malformed localStorage recovery, and mobile horizontal overflow are covered in Chromium.
+- Rejection, export/import round trip, backend workspace readback, malformed persistence recovery, and mobile horizontal overflow are covered in Chromium.
 - Preview-backed e2e validates the production build path.
 - Successful runs leave no browser artifacts that need to be committed.
 - Failed runs capture screenshots, videos, and traces for debugging.
@@ -154,7 +154,7 @@ Expected current baseline for `npm run test:e2e`:
 - deterministic Chromium browser tests pass
 - golden paths pass for `IT access requests` and `Procurement intake`
 - landing screen checks the three workflow blocks, connected automation path, proof band, and single visible `Launch` CTA
-- rejection, export/import, localStorage recovery, mobile overflow, and preview-backed checks pass
+- rejection, export/import, backend persistence readback, mirror recovery, mobile overflow, and preview-backed checks pass
 
 ## 6.7 Test Map
 
@@ -162,7 +162,7 @@ Expected current baseline for `npm run test:e2e`:
 | --- | --- |
 | Dashboard golden path | `src/App.test.tsx` |
 | Browser golden paths | Playwright e2e suite via `npm run test:e2e` |
-| Browser localStorage recovery | Playwright e2e suite via `npm run test:e2e` |
+| Browser workspace/API recovery | Playwright e2e suite via `npm run test:e2e` |
 | Provider behavior | `src/ai/providers.test.ts` |
 | Fixture validation | `src/domain/fixtures.test.ts` |
 | Scenario loading | `src/domain/fixtures.test.ts` |
@@ -195,7 +195,7 @@ Manual smoke path:
 15. Confirm learning recommendation mentions human-review lane.
 16. Open Audit and click `Export Summary`.
 17. Confirm summary JSON appears.
-18. Refresh the browser and confirm the selected scenario and generated state recover from localStorage by opening Graph and Review & Run.
+18. Refresh the browser and confirm the selected scenario and generated state recover from the backend workspace state and browser mirror by opening Graph and Review & Run.
 19. Click `Reset`.
 20. Confirm generated output disappears from Graph, Review & Run, and Audit.
 21. Refresh again and confirm reset state persists.

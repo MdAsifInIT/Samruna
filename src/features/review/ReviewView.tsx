@@ -48,7 +48,7 @@ export function ReviewView({ controller }: ReviewViewProps) {
                 </p>
               ))
             ) : (
-              <p>No events yet. Load a workflow to start the audit trail.</p>
+              <p>No backend audit events yet. Load a workflow to start the synthetic audit trail.</p>
             )}
           </article>
           <article>
