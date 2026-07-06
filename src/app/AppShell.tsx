@@ -1,12 +1,14 @@
 import {
   Brain,
   Database,
+  Lock,
   Network,
   RefreshCw,
-  RotateCcw
+  RotateCcw,
+  CheckCircle2,
+  Circle
 } from "lucide-react";
 import type { ReactNode } from "react";
-import { StatusPill } from "../components/shared/StatusPill";
 import { ToolbarButton } from "../components/shared/ToolbarButton";
 import type { ScenarioId } from "../domain/types";
 import { navigationItems, type ViewId } from "./navigation";
@@ -32,93 +34,93 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
     scenario,
     scenarioOptions
   } = controller;
+  
   const activeNavigationItem = navigationItems.find((item) => item.id === activeView) ?? navigationItems[0];
+  
   const providerTone: "good" | "warn" =
     providerStatusLabel === "Fallback used" ? "warn" : providerStatusLabel === "Live OpenAI" ? "good" : "warn";
+    
   const syncTone: "good" | "warn" | "blocked" =
     backendSyncStatus === "synced" ? "good" : backendSyncStatus === "error" ? "blocked" : "warn";
+
+  const getNavState = (viewId: ViewId) => {
+    if (viewId === "overview") return "complete";
+    if (viewId === "evidence") return demoState.sampleLoaded ? "complete" : "available";
+    if (viewId === "graph") return demoState.analysisRequested ? "complete" : (demoState.sampleLoaded ? "available" : "locked");
+    if (viewId === "review-run") return demoState.proposalRequested ? "complete" : (proposalGenerationReady ? "available" : "locked");
+    if (viewId === "audit") return demoState.runRequested ? "complete" : (controller.executionReady ? "available" : "locked");
+    return "locked";
+  };
+
+  const getNavIcon = (state: string) => {
+    if (state === "complete") return <CheckCircle2 size={16} className="nav-icon-complete" />;
+    if (state === "locked") return <Lock size={14} className="nav-icon-locked" />;
+    return <Circle size={14} className="nav-icon-pending" />;
+  };
 
   return (
     <div className="app-shell">
       <aside className="sidebar" aria-label="Primary navigation">
         <div className="brand-block">
-          <p className="eyebrow">Work Graph Foundry</p>
-          <strong>Workspace</strong>
+          <strong>Work Graph Foundry</strong>
         </div>
         <nav className="menu-list">
           {navigationItems.map((item) => {
             const Icon = item.icon;
+            const state = getNavState(item.id);
+            const isLocked = state === "locked";
 
             return (
               <button
                 key={item.id}
                 type="button"
                 aria-current={activeView === item.id ? "page" : undefined}
+                disabled={isLocked}
                 onClick={() => onViewChange(item.id)}
+                className={isLocked ? "nav-locked" : ""}
               >
-                <Icon size={18} />
-                <span>{item.label}</span>
+                <div className="nav-item-content">
+                  <Icon size={18} />
+                  <span>{item.label}</span>
+                </div>
+                {getNavIcon(state)}
               </button>
             );
           })}
         </nav>
+        
+        <div className="sidebar-footer">
+          <p className="sidebar-footer-scenario" title={scenario.workflowName}>{scenario.workflowName}</p>
+          <div className="sidebar-footer-status">
+            <span className={`status-dot ${providerTone}`} title={providerStatusDetail} /> AI
+            <span className={`status-dot ${syncTone}`} title={backendSyncStatusToLabel(backendSyncStatus)} /> Sync
+          </div>
+        </div>
       </aside>
 
       <main className="main-shell">
-        <section className="topbar" aria-label="Workflow controls">
-          <div className="topbar-title">
-            <p className="eyebrow">Work Graph Foundry</p>
-            <h1>{activeNavigationItem.label}</h1>
-            <p className="topbar-summary">{activeNavigationItem.purpose}</p>
-            <div className="confidence-strip" aria-label="System status">
-              <span title={providerStatusDetail}>
-                <strong>AI provider</strong>
-                <StatusPill tone={providerTone}>{providerStatusLabel}</StatusPill>
-              </span>
-              <span>
-                <strong>Backend</strong>
-                <StatusPill tone={syncTone}>{backendSyncStatusToLabel(backendSyncStatus)}</StatusPill>
-              </span>
+        {backendSyncError && (
+          <div className="toast-banner error-toast" role="status">
+            <span>{backendSyncError}</span>
+            <div className="toast-actions">
+              <button type="button" onClick={actions.retryBackendSync}>
+                <RefreshCw size={14} /> Retry
+              </button>
+              <button type="button" onClick={actions.resetDemo}>
+                <RotateCcw size={14} /> Reset
+              </button>
             </div>
-            {providerFallbackMessage ? (
-              <p className="provider-fallback-alert" role="status">
-                {providerFallbackMessage}
-              </p>
-            ) : null}
-            {backendSyncError && (
-              <div className="backend-sync-alert" role="status">
-                <span>{backendSyncError}</span>
-                <button type="button" onClick={actions.retryBackendSync}>
-                  <RefreshCw size={14} />
-                  Retry backend
-                </button>
-                <button type="button" onClick={actions.resetDemo}>
-                  <RotateCcw size={14} />
-                  Reset workflow
-                </button>
-              </div>
-            )}
           </div>
-          <div className="mobile-view-picker">
-            <label>
-              <span>View</span>
-              <select
-                aria-label="Select app view"
-                value={activeView}
-                onChange={(event) => onViewChange(event.target.value as ViewId)}
-              >
-                {navigationItems.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+        )}
+
+        <header className="compact-header" aria-label="Workflow controls">
+          <div className="header-left">
+            <h1>{activeNavigationItem.label}</h1>
           </div>
-          <div className="toolbar">
-            <div className="toolbar-row toolbar-row-primary" aria-label="Primary workflow controls">
-              <label className="scenario-picker">
-                <span>Workflow</span>
+          
+          <div className="header-center">
+            <div className="toolbar-inline">
+              <label className="scenario-picker-inline">
                 <select
                   aria-label="Select workflow"
                   value={demoState.selectedScenarioId}
@@ -144,7 +146,7 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
                   onViewChange("evidence");
                 }}
               >
-                Load Workflow
+                Load
               </ToolbarButton>
               <ToolbarButton
                 icon={Network}
@@ -170,24 +172,17 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
                   onViewChange("review-run");
                 }}
               >
-                Generate Proposal
+                Generate
               </ToolbarButton>
             </div>
           </div>
-        </section>
 
-        <nav className="progress-stepper" aria-label="Demo progress">
-          {controller.workflowStages.map((stage) => (
-            <span
-              key={stage.id}
-              data-state={stage.state}
-              aria-current={stage.state === "current" ? "step" : undefined}
-            >
-              <i aria-hidden="true">{stage.state === "complete" ? "✓" : stage.index}</i>
-              <span>{stage.label}</span>
-            </span>
-          ))}
-        </nav>
+          <div className="header-right">
+             <div className="compact-status" title={providerFallbackMessage || providerStatusDetail}>
+               <span className={`status-indicator ${providerTone}`} />
+             </div>
+          </div>
+        </header>
 
         <div className="view-content">{children}</div>
       </main>

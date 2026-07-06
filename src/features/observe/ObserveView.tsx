@@ -11,63 +11,48 @@ export function ObserveView({ controller }: ObserveViewProps) {
 
   return (
     <>
-      <section className="view-heading">
-        <p className="eyebrow">Observe</p>
-        <h2>What data proof supports it?</h2>
-      </section>
 
       {demoState.sampleLoaded ? (
         <>
-          <section className="ingestion-summary" aria-label="Loaded workflow summary">
-            <div>
-              <span>Raw traces</span>
-              <strong>{validation.summary.rawTraceCount}</strong>
-            </div>
-            <div>
-              <span>Cases</span>
-              <strong>{validation.summary.caseCount}</strong>
-            </div>
-            <div>
-              <span>Policies</span>
-              <strong>{validation.summary.policyRuleCount}</strong>
-            </div>
-            <div>
-              <span>Approval records</span>
-              <strong>{validation.summary.approvalRecordCount}</strong>
-            </div>
-          </section>
+          <div className="dashboard-bento">
+            <section className="bento-card metrics-card" aria-label="Loaded workflow summary">
+              <h2 style={{ marginBottom: 0, fontSize: 'var(--text-title)' }}>Source Evidence</h2>
+              <div className="overview-facts">
+                <span><strong>Raw traces</strong>{validation.summary.rawTraceCount}</span>
+                <span><strong>Cases</strong>{validation.summary.caseCount}</span>
+                <span><strong>Policies</strong>{validation.summary.policyRuleCount}</span>
+                <span><strong>Approval records</strong>{validation.summary.approvalRecordCount}</span>
+              </div>
+            </section>
 
-          <section className="channel-strip" aria-label="Sample source channels">
-            {Object.entries(validation.summary.channelCounts).map(([channel, count]) => (
-              <span key={channel}>
-                {channelLabels[channel as SourceChannel]}: <strong>{count}</strong>
-              </span>
-            ))}
-          </section>
+            <section className="bento-card metrics-card" aria-label="Sample source channels">
+              <h2 style={{ marginBottom: 0, fontSize: 'var(--text-title)' }}>Channels</h2>
+              <div className="overview-facts">
+                {Object.entries(validation.summary.channelCounts).map(([channel, count]) => (
+                  <span key={channel}>
+                    <strong>{channelLabels[channel as SourceChannel]}</strong>
+                    {count}
+                  </span>
+                ))}
+              </div>
+            </section>
+          </div>
         </>
       ) : (
         <EmptyState title="No workflow loaded" action="Load a workflow to inspect source channels and data validation." />
       )}
 
       {ingestion ? (
-        <section className="ingestion-summary" aria-label="Ingestion summary">
-          <div>
-            <span>Normalized items</span>
-            <strong>{ingestion.summary.normalizedItemCount}</strong>
-          </div>
-          <div>
-            <span>Warnings</span>
-            <strong>{ingestion.summary.issueCount}</strong>
-          </div>
-          <div>
-            <span>{scenario.topSystemLabel}</span>
-            <strong>{topSystem?.[0] ?? "None"}</strong>
-          </div>
-          <div>
-            <span>Top system cases</span>
-            <strong>{topSystem?.[1] ?? 0}</strong>
-          </div>
-        </section>
+        <div className="dashboard-bento" style={{ marginTop: '0' }}>
+          <section className="bento-card quick-action-card" aria-label="Ingestion summary">
+            <div className="overview-facts" style={{ marginTop: '0', width: '100%', display: 'flex', gap: 'var(--gap-sm)' }}>
+              <span style={{ flex: 1 }}><strong>Normalized items</strong>{ingestion.summary.normalizedItemCount}</span>
+              <span style={{ flex: 1 }}><strong>Warnings</strong>{ingestion.summary.issueCount}</span>
+              <span style={{ flex: 1 }}><strong>{scenario.topSystemLabel}</strong>{topSystem?.[0] ?? "None"}</span>
+              <span style={{ flex: 1 }}><strong>Top system cases</strong>{topSystem?.[1] ?? 0}</span>
+            </div>
+          </section>
+        </div>
       ) : demoState.sampleLoaded ? (
         <EmptyState title="Evidence available" action="Analyze the workflow to normalize source traces into work items." />
       ) : null}

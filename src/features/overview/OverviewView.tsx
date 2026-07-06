@@ -31,7 +31,8 @@ export function OverviewView({ controller }: OverviewViewProps) {
 
   return (
     <>
-      <section className="overview-hero" aria-label="Operational summary">
+    <div className="dashboard-bento">
+      <section className="bento-card hero-card" aria-label="Operational summary">
         <div className="overview-summary">
           <h2>{scenario.workflowName}</h2>
           <p>{scenario.operatorGoal}</p>
@@ -45,8 +46,10 @@ export function OverviewView({ controller }: OverviewViewProps) {
             ))}
           </div>
         </div>
+      </section>
 
-        <div className="overview-next" aria-label="Next best action">
+      <section className="bento-card action-card" aria-label="Next best action">
+        <div className="overview-next">
           <div>
             <h2>Next best action</h2>
             <p>{currentStage?.detail ?? "Load the selected workflow to begin."}</p>
@@ -57,126 +60,112 @@ export function OverviewView({ controller }: OverviewViewProps) {
         </div>
       </section>
 
-      <section className="before-after-panel" aria-label="Impact comparison">
-        <article className="before-panel">
-          <h2>Before - Manual Process</h2>
-          <dl>
-            <div>
-              <dt>Cycle time</dt>
-              <dd><strong className="metric-before">{graph?.metrics.averageCycleTimeHours ?? 137}h</strong></dd>
-            </div>
-            <div>
-              <dt>Approval delay</dt>
-              <dd><strong className="metric-before">{graph?.metrics.approvalDelayHours ?? 62}h</strong></dd>
-            </div>
-            <div>
-              <dt>Exception rate</dt>
-              <dd><strong className="metric-before">{graph ? `${Math.round(graph.metrics.exceptionRate * 100)}%` : "12%"}</strong></dd>
-            </div>
-            <div>
-              <dt>Manual steps</dt>
-              <dd><strong className="metric-before">6</strong></dd>
-            </div>
-            <div>
-              <dt>Audit trail</dt>
-              <dd><strong className="metric-before">None</strong></dd>
-            </div>
-          </dl>
-        </article>
-        <article className="after-panel">
-          <h2>After - Governed Automation</h2>
-          <dl>
-            <div>
-              <dt>Cycle time</dt>
-              <dd><strong className="metric-after">{graph ? `${Math.round(graph.metrics.averageCycleTimeHours * 0.56)}h` : "77h"}</strong></dd>
-            </div>
-            <div>
-              <dt>Approval delay</dt>
-              <dd><strong className="metric-after">2h</strong> <span className="metric-delta">auto-routed</span></dd>
-            </div>
-            <div>
-              <dt>Exception rate</dt>
-              <dd><strong className="metric-after">0%</strong> <span className="metric-delta">policy-gated</span></dd>
-            </div>
-            <div>
-              <dt>Manual steps</dt>
-              <dd><strong className="metric-after">1</strong> <span className="metric-delta">approve only</span></dd>
-            </div>
-            <div>
-              <dt>Audit trail</dt>
-              <dd><strong className="metric-after">Full</strong> <span className="metric-delta">every step logged</span></dd>
-            </div>
-          </dl>
-        </article>
+      <section className="bento-card metrics-card before-panel">
+        <h2>Before - Manual Process</h2>
+        <dl>
+          <div>
+            <dt>Cycle time</dt>
+            <dd><strong className="metric-before">{graph?.metrics.averageCycleTimeHours ?? 137}h</strong></dd>
+          </div>
+          <div>
+            <dt>Approval delay</dt>
+            <dd><strong className="metric-before">{graph?.metrics.approvalDelayHours ?? 62}h</strong></dd>
+          </div>
+          <div>
+            <dt>Exception rate</dt>
+            <dd><strong className="metric-before">{graph ? `${Math.round(graph.metrics.exceptionRate * 100)}%` : "12%"}</strong></dd>
+          </div>
+          <div>
+            <dt>Manual steps</dt>
+            <dd><strong className="metric-before">6</strong></dd>
+          </div>
+          <div>
+            <dt>Audit trail</dt>
+            <dd><strong className="metric-before">None</strong></dd>
+          </div>
+        </dl>
       </section>
 
-      <details className="system-details-toggle">
-        <summary>System details</summary>
-        <section className="overview-boundary" aria-label="Data boundary">
-        <article>
-          <h2>Review boundary</h2>
-          <p>{scenario.syntheticDataNotice}</p>
-          <dl>
-            <div>
-              <dt>Needs</dt>
-              <dd>{scenario.requiredOrgData.slice(0, 4).join(", ")}</dd>
-            </div>
-            <div>
-              <dt>Never needs</dt>
-              <dd>{scenario.excludedOrgData.slice(0, 4).join(", ")}</dd>
-            </div>
-            <div>
-              <dt>Safety</dt>
-              <dd>Simulated tools only, approval gated, no external writes.</dd>
-            </div>
-          </dl>
-        </article>
-        <article>
-          <h2>System status</h2>
-          <dl>
-            <div>
-              <dt>Provider</dt>
-              <dd>{providerStatusLabel}</dd>
-            </div>
-            <div>
-              <dt>Model mode</dt>
-              <dd>
-                {aiProvider.status.mode === "openai" ? "Live OpenAI proposal generation" : "Validation engine proposal generation"}
-                {aiProvider.status.model ? ` (${aiProvider.status.model})` : ""}
-              </dd>
-            </div>
-            <div>
-              <dt>Last generation</dt>
-              <dd>{providerFallbackMessage || providerStatusDetail}</dd>
-            </div>
-            <div>
-              <dt>Validation</dt>
-              <dd>{validation.valid ? "Data validation passed" : "Needs review"}</dd>
-            </div>
-            <div>
-              <dt>Persistence</dt>
-              <dd>
-                {backendSyncStatus === "synced"
-                  ? "Backend SQLite state is authoritative; browser mirror is for reload recovery."
-                  : "Browser fallback mirror is active until the backend reconnects."}
-              </dd>
-            </div>
-          </dl>
-        </article>
-        </section>
-      </details>
+      <section className="bento-card metrics-card after-panel">
+        <h2>After - Governed Automation</h2>
+        <dl>
+          <div>
+            <dt>Cycle time</dt>
+            <dd><strong className="metric-after">{graph ? `${Math.round(graph.metrics.averageCycleTimeHours * 0.56)}h` : "77h"}</strong></dd>
+          </div>
+          <div>
+            <dt>Approval delay</dt>
+            <dd><strong className="metric-after">2h</strong> <span className="metric-delta">auto-routed</span></dd>
+          </div>
+          <div>
+            <dt>Exception rate</dt>
+            <dd><strong className="metric-after">0%</strong> <span className="metric-delta">policy-gated</span></dd>
+          </div>
+          <div>
+            <dt>Manual steps</dt>
+            <dd><strong className="metric-after">1</strong> <span className="metric-delta">approve only</span></dd>
+          </div>
+          <div>
+            <dt>Audit trail</dt>
+            <dd><strong className="metric-after">Full</strong> <span className="metric-delta">every step logged</span></dd>
+          </div>
+        </dl>
+      </section>
 
-      <section className="workflow-stage-panel" aria-label="Workflow stage state">
-        {workflowStages.map((stage) => (
-          <span key={stage.id} data-state={stage.state}>
-            <strong>{stage.index}. {stage.label}</strong>
-            {stage.state}
-          </span>
-        ))}
+      <section className="bento-card boundary-card">
+        <h2>Review boundary</h2>
+        <p>{scenario.syntheticDataNotice}</p>
+        <dl>
+          <div>
+            <dt>Needs</dt>
+            <dd>{scenario.requiredOrgData.slice(0, 4).join(", ")}</dd>
+          </div>
+          <div>
+            <dt>Never needs</dt>
+            <dd>{scenario.excludedOrgData.slice(0, 4).join(", ")}</dd>
+          </div>
+          <div>
+            <dt>Safety</dt>
+            <dd>Simulated tools only, approval gated, no external writes.</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section className="bento-card status-card">
+        <h2>System status</h2>
+        <dl>
+          <div>
+            <dt>Provider</dt>
+            <dd>{providerStatusLabel}</dd>
+          </div>
+          <div>
+            <dt>Model mode</dt>
+            <dd>
+              {aiProvider.status.mode === "openai" ? "Live OpenAI proposal generation" : "Validation engine proposal generation"}
+              {aiProvider.status.model ? ` (${aiProvider.status.model})` : ""}
+            </dd>
+          </div>
+          <div>
+            <dt>Last generation</dt>
+            <dd>{providerFallbackMessage || providerStatusDetail}</dd>
+          </div>
+          <div>
+            <dt>Validation</dt>
+            <dd>{validation.valid ? "Data validation passed" : "Needs review"}</dd>
+          </div>
+          <div>
+            <dt>Persistence</dt>
+            <dd>
+              {backendSyncStatus === "synced"
+                ? "Backend SQLite state is authoritative; browser mirror is for reload recovery."
+                : "Browser fallback mirror is active until the backend reconnects."}
+            </dd>
+          </div>
+        </dl>
       </section>
 
       {!validation.valid && (
-        <section className="quick-action-panel" aria-label="Data validation">
+        <section className="bento-card quick-action-card error-card" aria-label="Data validation">
           <div>
             <p className="eyebrow">Validation</p>
             <h2>Needs review</h2>
@@ -185,6 +174,7 @@ export function OverviewView({ controller }: OverviewViewProps) {
           <StatusPill tone="blocked">Needs review</StatusPill>
         </section>
       )}
+    </div>
     </>
   );
 }

@@ -45,11 +45,16 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
       <div className="review-run-header">
         <div>
           <h2>Is the automation safe to approve and run?</h2>
-          <p>{proposal.auditRationale}</p>
-          <p className="review-impact-headline">
-            This automation will save ~{simulation.avoidedDelayHours}h per cycle and passed {simulation.passed} of{" "}
-            {simulation.totalCases} historical validations.
+          <p className="review-impact-headline" style={{ marginTop: '12px', fontSize: 'var(--text-body)', color: 'var(--ink)' }}>
+            This automation will save ~<strong>{simulation.avoidedDelayHours}h</strong> per cycle and passed <strong>{simulation.passed}</strong> of{" "}
+            <strong>{simulation.totalCases}</strong> historical validations.
           </p>
+          <details className="system-details-toggle" style={{ marginTop: '16px' }}>
+            <summary style={{ padding: '8px 12px', fontSize: 'var(--text-caption)' }}>View audit rationale</summary>
+            <div style={{ padding: '16px', background: 'var(--surface-subtle)', borderRadius: 'var(--radius-md)', marginTop: '8px' }}>
+              <p style={{ margin: 0, fontSize: 'var(--text-caption)', color: 'var(--ink-secondary)' }}>{proposal.auditRationale}</p>
+            </div>
+          </details>
         </div>
         <div className="review-run-actions" aria-label="Proposal governance actions">
           <button className="approve-button" type="button" onClick={actions.approveProposal}>

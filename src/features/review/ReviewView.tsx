@@ -11,11 +11,6 @@ export function ReviewView({ controller }: ReviewViewProps) {
 
   return (
     <>
-      <section className="view-heading">
-        <p className="eyebrow">Review</p>
-        <h2>What happened, and can I export or recover it?</h2>
-      </section>
-
       <SectionPanel
         ariaLabel="Audit trail and execution summary"
         className="audit-panel"
