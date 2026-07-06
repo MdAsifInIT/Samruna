@@ -1,49 +1,11 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "default_agent": "build",
-  "agent": {
-    "build": {
-      "mode": "primary",
-      "model": "openai/gpt-5.5",
-      "description": "Orchestrator for this repository. Plans work and routes bounded tasks to subagents.",
-      "permission": {
-        "edit": "deny",
-        "bash": "ask"
-      },
-      "prompt": "You are the orchestrator for this repository. Start by planning the work and deciding which agent should own each bounded task. Coordinate work through subagents instead of doing everything in one pass. Use worker_major ONLY for highly complex, abstract implementation work that requires deep conceptual reasoning. Use worker_nano for routine implementation edits, refactoring, and bounded coding tasks. Use worker_test for test runs, verification, and failure triage. Keep changes minimal, review subagent output carefully, and run final verification before finishing."
-    },
-    "worker_major": {
-      "mode": "subagent",
-      "model": "openai/gpt-5.5",
-      "description": "Higher-capacity implementation worker for complex bounded tasks.",
-      "steps": 8,
-      "permission": {
-        "edit": "allow",
-        "bash": "allow"
-      },
-      "prompt": "Handle one complex bounded task. Make minimal changes. Prefer correctness and careful validation. Return summary, files changed, tests run, and blockers. Do not spawn more agents."
-    },
-    "worker_nano": {
-      "mode": "subagent",
-      "model": "openai/gpt-5.4-nano",
-      "description": "Fast precision implementation worker for standard bounded coding tasks.",
-      "steps": 5,
-      "permission": {
-        "edit": "allow",
-        "bash": "allow"
-      },
-      "prompt": "Handle one bounded task. Make minimal changes efficiently. Focus on execution with only the reasoning needed for the task. Return summary, files changed, tests run, and blockers. Do not spawn more agents."
-    },
-    "worker_test": {
-      "mode": "subagent",
-      "model": "openai/gpt-5.4-mini",
-      "description": "High-speed verification worker for running tests and reporting results.",
-      "steps": 5,
-      "permission": {
-        "edit": "deny",
-        "bash": "allow"
-      },
-      "prompt": "Handle one verification task. Run the requested tests and checks rapidly. Report exact commands, pass or fail status, and blockers. Do not modify files. If verification is blocked, report exact blockers and suggested next steps. Do not spawn more agents."
-    }
+  "default_agent": "orchestrator",
+  "share": "disabled",
+  "autoupdate": "notify",
+  "snapshot": true,
+  "tool_output": {
+    "max_lines": 1000,
+    "max_bytes": 30000
   }
 }
