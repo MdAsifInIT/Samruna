@@ -25,7 +25,7 @@ flowchart LR
   H --> I["Historical simulation"]
   I --> J["Governance and audit"]
   J --> K["Execution gate"]
-  K --> L["Safe mock tool calls"]
+  K --> L["Safe simulated actions"]
   L --> M["Learning recommendation"]
   M --> P
   N["AI provider boundary"] --> H
@@ -51,11 +51,11 @@ The frontend is split into:
 - `src/app/useWorkGraphDemoController.ts`: demo state, derived workflow data, persistence snapshot, and workflow actions.
 - `src/app/navigation.ts`: menu metadata and the `ViewId` union.
 - `src/App.tsx`: landing page, `#demo` workspace entry, and workspace view composition.
-- `src/app/AppShell.tsx`: sidebar navigation, mobile view selector, top command bar, scenario selector, workflow controls, and main content region.
-- `src/features/overview/OverviewView.tsx`: compact workspace overview, next action, state summary, and data boundary.
+- `src/app/AppShell.tsx`: sidebar navigation, mobile view selector, compact topbar status, progress stepper, scenario selector, workflow controls, and main content region.
+- `src/features/overview/OverviewView.tsx`: compact workspace overview, next action, state summary, before/after impact comparison, and collapsible system details.
 - `src/features/observe/ObserveView.tsx`: evidence intake, source channels, validation, ingestion, and normalized evidence.
-- `src/features/analyze/AnalyzeView.tsx`: graph visualization, graph details, patterns, bottlenecks, and opportunity signals.
-- `src/features/review-run/ReviewRunView.tsx`: governed proposal, versions, simulation, approval or rejection, execution gate, mock tool calls, and learning loop.
+- `src/features/analyze/AnalyzeView.tsx`: graph visualization, elevated graph metrics, graph details, patterns, bottlenecks, and opportunity signals.
+- `src/features/review-run/ReviewRunView.tsx`: governed proposal, versions, simulation proof, approval or rejection, execution gate, safe simulated actions, collapsible technical details, success banner, and learning loop.
 - `src/features/review/ReviewView.tsx`: audit events, export, import, and recovery controls.
 
 Current React state:
@@ -65,7 +65,7 @@ Current React state:
 - `analysisRequested`: whether ingestion, graphing, and pattern detection have run.
 - `proposalRequested`: whether a governed proposal has been generated.
 - `governanceDecision`: pending, approved, rejected, or changes requested.
-- `runRequested`: whether the user has attempted safe mock execution.
+- `runRequested`: whether the user has attempted safe simulated execution.
 
 Derived data is calculated from these states and persisted by the local backend with generated graph, proposal, simulation, governance, execution, recommendation, and audit snapshots. The browser keeps a small local mirror for reload resilience and backend-unavailable fallback. The workspace shell keeps the flow visible without turning the product into a single overloaded dashboard.
 
@@ -158,9 +158,9 @@ Execution only opens when an approval exists for the proposal id and version.
 
 ### 2.3.9 Execution And Learning
 
-`src/domain/execution.ts` runs approved workflows through mock tools and creates learning recommendations.
+`src/domain/execution.ts` runs approved workflows through safe simulated tool calls and creates learning recommendations.
 
-Mock tools:
+Simulated tools:
 
 - `employee-directory.validate`
 - `policy-catalog.evaluate`
@@ -177,7 +177,7 @@ No real enterprise system is called.
 - `MockAiProvider`
 - `OpenAiResponsesProvider`
 
-The mock provider is the default. The OpenAI provider is activated only by trusted backend configuration through `server/ai.ts`; browser code reads provider status from backend snapshots and does not import the OpenAI-capable provider path.
+The mock provider implements the default Historical validation engine. The OpenAI provider is activated only by trusted backend configuration through `server/ai.ts`; browser code reads provider status from backend snapshots and does not import the OpenAI-capable provider path.
 
 ### 2.3.11 Scenario And Persistence
 
@@ -233,7 +233,7 @@ The MVP models agents as deterministic modules:
 - Planner agent: proposal generation.
 - Simulator agent: historical replay.
 - Governance agent: approval and audit gate.
-- Executor agent: safe mock tool calls.
+- Executor agent: safe simulated tool calls.
 - Learner agent: improvement recommendation.
 
 This approach keeps behavior deterministic for demos and tests while preserving the agentic product shape.
@@ -242,14 +242,15 @@ This approach keeps behavior deterministic for demos and tests while preserving 
 
 The menu-based console includes:
 
-- global demo controls and scenario selector in the shell command bar
-  - landing page with a code-native product preview and `Launch` CTA
-- Overview view for workspace orientation, next action, state summary, and data boundary
+- landing page with a code-native product preview, `Launch` CTA, and impact metrics band
+- global demo controls and scenario selector in the shell toolbar
+- progress stepper for the staged demo path
+- Overview view for workspace orientation, next action, state summary, before/after impact, and system details
 - Evidence view for scenario evidence, channel counts, fixture validation, ingestion summary, and normalized work item details
-- Graph view for the work graph, node inspection, patterns, bottlenecks, and opportunity/risk signals
-- Review & Run view for proposal generation, proposal versions, rules, assumptions, actions, simulation, and approval/rejection
+- Graph view for hero workflow metrics, the work graph, node inspection, patterns, bottlenecks, and opportunity/risk signals
+- Review & Run view for proposal generation, proposal versions, decision proof, approval/rejection, execution, success state, and collapsible technical details
 - Audit view for audit trail, run summary export/import, backend state recovery, browser fallback mirror recovery, and reset verification
-- Compact top-bar workflow context for scenario, step, and execution gate state
+- Compact topbar status for AI provider and backend sync state
 
 The layout is responsive, landing-first, and avoids cluttered dashboard chrome.
 
@@ -258,7 +259,7 @@ The layout is responsive, landing-first, and avoids cluttered dashboard chrome.
 The local backend is intentionally demo-grade:
 
 - data remains synthetic and local
-- execution remains mocked
+- execution remains safe and simulated
 - there is no authentication or RBAC
 - state persists to local SQLite
 - live OpenAI proposal generation is optional, server-side only, and not used by default

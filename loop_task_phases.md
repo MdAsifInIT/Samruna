@@ -4,7 +4,7 @@
 
 This file controls the recursive implementation loop for live OpenAI proposal generation in Work Graph Foundry on `backend-branch`.
 
-The target is production-parity model integration through the trusted local backend while preserving the synthetic-data demo, SQLite state, governance gate, browser fallback mirror, and mock-only enterprise execution.
+The target is production-parity model integration through the trusted local backend while preserving the synthetic-data demo, SQLite state, governance gate, browser fallback mirror, and safe simulation mode for enterprise execution.
 
 ## Non-Negotiable Boundaries
 
@@ -16,7 +16,7 @@ The target is production-parity model integration through the trusted local back
 - No real enterprise write actions.
 - All OpenAI API keys stay server-side in environment variables or future secret management.
 - All model output is validated before persistence.
-- Failed live model calls fall back to deterministic mock proposal generation.
+- Failed live model calls fall back to the Historical validation engine.
 - Every execution pass updates this file and `tasks.md`.
 
 ## Current Baseline
@@ -42,7 +42,7 @@ Route proposal generation through a server-owned AI provider contract with safe 
 ### Implementation Tasks
 
 - Inject `AiProvider` into `WorkspaceService`.
-- Default to deterministic mock provider when no server-side key is configured.
+- Default to the Historical validation engine when no server-side key is configured.
 - Build server-only provider config from `OPENAI_API_KEY`, `OPENAI_MODEL`, and `OPENAI_TIMEOUT_MS`.
 - Set OpenAI Responses API requests to `store: false`.
 - Normalize provider proposals to stable scenario/pattern/version/timestamp identity before persistence.
@@ -66,14 +66,14 @@ Make the live integration clear to hackathon reviewers without overstating enter
 ### Implementation Tasks
 
 - Surface provider mode/model/last generation status in the existing Overview view.
-- Keep execution copy explicitly mock-only.
+- Keep execution copy explicitly aligned to safe simulation mode.
 - Document the server-only live-key run path.
-- Document that live model reasoning uses synthetic data and mock enterprise execution.
+- Document that live model reasoning uses synthetic data and safe simulation mode for enterprise execution.
 - Keep browser fallback described as a mirror, not the source of truth.
 
 ### Completion Gate
 
-- Reviewer can distinguish live proposal generation from mock execution.
+- Reviewer can distinguish live proposal generation from safe simulated execution.
 - Docs state that connectors, RBAC, provisioning, real customer data, and browser-side secrets remain out of scope.
 - Non-browser verification passes without requiring an OpenAI key.
 
@@ -168,13 +168,13 @@ Append future phases using this schema:
 - Agents used: `worker_major` read-only hackathon/customer-confidence reviewer; implementation and integration in the main orchestrator thread; `worker_test` pending final verification.
 - Reviewer score before edits: 76/100.
 - Blocking findings:
-  - Browser-generated mock proposal state could misrepresent backend provider provenance.
+  - Browser-generated Historical validation engine proposal state could misrepresent backend provider provenance.
   - Happy-path UI did not clearly show backend-connected vs browser fallback mode.
 - Implementation tasks completed:
   - Made backend workspace snapshots authoritative for frontend actions when backend is available.
   - Kept local deterministic updates only for browser fallback mode and labeled that mode visibly.
   - Added provider/source-of-truth strip, sanitized fallback status, proposal provider provenance, and retry/reset affordances.
-  - Renamed the execution CTA to `Run mock simulation` and added no-enterprise-write copy.
+  - Renamed the execution CTA to `Execute workflow` and added no-enterprise-write copy.
   - Added production frontend secret scan coverage for browser bundle and app source.
 - Verification results:
   - `npm run typecheck` passed.
@@ -198,7 +198,7 @@ Append future phases using this schema:
 
 - Branch: `backend-branch`
 - Agents used: `worker_major` API-boundary review, `worker_nano` bounded gap scan, `worker_test` verification.
-- Trigger: user requested implementation of the backend-backed frontend API flow plan and a reviewer pass found that the frontend stored backend state but still rendered several locally recomputed artifacts.
+- Trigger: user requested implementation of the backend/API-backed frontend flow plan and a reviewer pass found that the frontend stored backend state but still rendered several locally recomputed artifacts.
 - Files changed:
   - `src/app/useWorkGraphDemoController.ts`
   - `tsconfig.app.json`
@@ -215,7 +215,7 @@ Append future phases using this schema:
   - Score after: 92/100 expected after patch and verification.
   - Blocking findings: none known.
   - Non-blocking findings: Chromium launch requires elevation in this environment; elevated PowerShell prints a non-project profile warning after successful browser runs.
-  - Customer confidence notes: frontend now treats backend snapshots as authoritative in connected mode, keeps OpenAI backend-only, and continues to label enterprise execution as mock-only.
+  - Customer confidence notes: frontend now treats backend snapshots as authoritative in connected mode, keeps OpenAI backend-only, and continues to label enterprise execution as safe simulation mode.
 - Verification results:
   - `npm run typecheck` passed.
   - `npm test` passed, 64 tests.

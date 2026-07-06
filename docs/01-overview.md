@@ -2,9 +2,9 @@
 
 ## 1.1 Purpose
 
-Work Graph Foundry is a local-first enterprise work intelligence and governed automation demo. It shows how an AI-native operating layer can observe messy work traces, infer the real process, identify repeated work patterns, generate governed automation, simulate that automation, execute approved work safely, and recommend improvements.
+Work Graph Foundry is a local-first enterprise work intelligence and governed automation demo. It shows how an AI-native operating layer can observe messy work traces, infer the real process, identify repeated work patterns, generate governed automation, validate that automation against history, execute approved work in safe simulation mode, and recommend improvements.
 
-The current demo opens with a customer-facing landing page rather than a chatbot. The first screen introduces the product and then moves into a `#demo` workspace with five primary views: Overview, Evidence, Graph, Review & Run, and Audit. The landing preview is intentionally explicit: three workflow blocks, a connected automation path, and a final proof band lead into the workspace. The UI pass keeps the top-bar workflow context compact and pushes approval, execution, export, import, and reset into the relevant review and audit surfaces. The product is meant to feel like a real enterprise tool for process owners, IT operators, compliance reviewers, and automation teams. The landing story is reviewer-first and hackathon-friendly: it gives a fast path from claim to evidence to governed automation.
+The current demo opens with a customer-facing landing page rather than a chatbot. The first screen introduces the product and then moves into a `#demo` workspace with five primary views: Overview, Evidence, Graph, Review & Run, and Audit. The landing preview is intentionally explicit: three workflow blocks, a connected automation path, and an impact metrics band lead into the workspace. The workspace uses a compact topbar status strip, a progress stepper, before/after impact comparison, elevated graph metrics, collapsible technical details in Review & Run, and an execution success moment after safe execution completes. The product is meant to feel like a real enterprise tool for process owners, IT operators, compliance reviewers, and automation teams.
 
 ## 1.2 Product Problem
 
@@ -34,10 +34,10 @@ The repository currently contains a complete local MVP:
 - governed automation proposal generation
 - historical simulation
 - governance approval and audit state
-- safe mock execution
+- safe simulation mode
 - learning-loop recommendation
 - run summary export/import
-- deterministic mock AI provider
+- Historical validation engine as the default AI provider behavior
 - optional OpenAI Responses API provider boundary
 - unit and component tests
 
@@ -55,8 +55,8 @@ The golden path is:
 6. App normalizes traces, builds a work graph, and detects repeated patterns.
 7. User clicks `Generate Proposal` and reviews the governed automation proposal in `Review & Run`.
 8. User approves or rejects the proposal.
-9. User runs the simulation after approval.
-10. App executes a new request through safe mock tools only when governance allows it.
+9. User clicks `Execute workflow` after approval.
+10. App executes a new request in safe simulation mode only when governance allows it.
 11. User opens `Audit` to review audit events and the learning-loop improvement.
 12. User exports a run summary or clicks `Reset` to restore seeded state.
 
@@ -71,7 +71,7 @@ The product demonstrates these agentic behaviors:
 - Plan: generate a structured automation proposal.
 - Simulate: replay historical cases before execution.
 - Govern: require approval in `Review & Run` and create audit events.
-- Execute: run only approved workflows through mock tools from the demoted review surface.
+- Execute: run only approved workflows through safe simulated actions from Review & Run.
 - Improve: recommend a future proposal update.
 
 ## 1.6 What The Solution Is Not
@@ -115,7 +115,7 @@ The default story centers on IT access requests:
 - The process usually requires manager approval.
 - Standard requests are repeatable.
 - Privileged, contractor, finance, or exception cases need human review.
-- The system discovers this pattern, proposes an automation, tests it, and executes only after governance approval.
+- The system discovers this pattern, proposes an automation, validates it against historical cases, and executes only after governance approval.
 
 The strongest demo moment is that the workflow is discovered from traces rather than predefined by the user.
 

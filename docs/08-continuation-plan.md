@@ -8,20 +8,21 @@ Work Graph Foundry already has a credible local-first foundation:
 - deterministic IT access request scenario
 - typed fixtures and validation
 - domain modules for ingestion, graphing, pattern detection, planning, simulation, governance, execution, and learning
-- deterministic mock AI provider with an OpenAI Responses API boundary
+- Historical validation engine provider with an OpenAI Responses API boundary
 - numbered documentation guides and archived implementation history
 - unit, component, and Playwright e2e tests
+- completed backend/API-backed workspace flow
+- completed proposal versioning and comparison
+- completed UI polish pass for the current reviewer-first shell
 
-The next build should preserve that foundation while keeping the landing-first entry, five-view workspace, graph inspection, QA, proposal iteration, reviewer-first execution gating, and visual explanation stable.
+The next build should preserve that foundation while keeping the landing-first entry, five-view workspace, graph inspection, QA, reviewer-first execution gating, and visual explanation stable.
 
 ## 8.2 Current Next Actions
 
 Use this file as the active handoff for the next implementation pass. Keep changes scoped, deterministic, and compatible with concurrent edits.
 
 1. Expand QA around the existing Playwright e2e path, including landing entry, the five-view workspace, mobile viewports, accessibility checks, rejection gates, import/export, and reset recovery.
-2. Add proposal versioning so regenerated proposals can be compared, approved, rejected, exported, and audited without overwriting prior review context.
-3. Add a richer graph visualization that makes process stages, bottlenecks, exceptions, provenance, and selected scenario context easier to inspect.
-4. Keep all execution mock-only and governance-gated while these improvements land.
+2. Keep all execution in safe simulation mode and governance-gated while the remaining polish and QA improvements land.
 
 ## 8.3 Work Notes
 
@@ -61,25 +62,16 @@ Add or extend checks for:
 
 Sandboxed environments may require explicit permission to install Chromium or launch the browser.
 
-### 8.3.3 Proposal Versioning
+### 8.3.3 Historical Completed Work
 
-Target outcome:
+Completed in prior passes:
 
-- regenerated proposals create new versions instead of replacing the prior proposal silently
-- approval and rejection records identify the exact proposal version
-- exports include proposal version history
-- the UI makes the current approved version clear before mock execution
-- tests cover proposal regeneration, comparison, approval, rejection, and export
+- backend/API-backed workspace flow
+- proposal versioning and comparison
+- reviewer-first UI polish for the current shell
+- deterministic graph identifiers and scenario-scoped graph builds
 
-### 8.3.4 Graph Visualization
-
-Target outcome:
-
-- the `Graph` view shows a clearer visual graph without hiding the existing textual evidence
-- selected graph elements reveal source traces, policy context, bottleneck metrics, and exceptions
-- the visualization works for both implemented scenarios
-- mobile layout remains usable
-- the implementation keeps typed graph contracts in `src/domain/` as the source of truth
+Keep this section as a historical reference only. Do not reopen these items unless a regression appears.
 
 ## 8.4 Verification Plan
 

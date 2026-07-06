@@ -1,12 +1,14 @@
-# 14. Full-Stack Demo Plan
+# 12. Full-Stack Demo Plan
 
-## 12.1 Purpose
+Current reference: this plan documents the demo-grade full-stack backend implementation and the resulting local runtime.
 
-This branch adds a demo-grade local backend to Work Graph Foundry while preserving the existing deterministic product demo.
+## Purpose
+
+The current full-stack demo adds a demo-grade local backend to Work Graph Foundry while preserving the existing reproducible product demo.
 
 The backend is local-only. It is meant for reviewers and developers who want to evaluate an API-backed flow with durable local state, not for production use.
 
-## 12.2 Runtime
+## Runtime
 
 - Frontend: React, Vite, TypeScript.
 - Backend: TypeScript on Node 24.
@@ -22,7 +24,7 @@ $env:WGF_DB_PATH="C:\tmp\work-graph-foundry.sqlite"
 
 Generated databases and SQLite sidecar files are ignored by git.
 
-## 12.3 Architecture
+## Architecture
 
 The backend owns the demo workspace state. It is the primary persistence layer, and the browser keeps a mirror for reload recovery and local fallback. It persists the same typed state shape the browser demo already used:
 
@@ -40,7 +42,7 @@ Immutable synthetic scenario data still comes from `src/fixtures/demoData.ts`. M
 
 The frontend calls `/api/workspace` routes when the backend is available. It keeps a local browser mirror as a fallback for unit tests and backend-unavailable development, but the full-stack path treats the backend as authoritative and the browser state as a mirror only.
 
-## 12.4 API Routes
+## API Routes
 
 Routes are exposed under `/api` and use this response envelope:
 
@@ -71,7 +73,7 @@ Implemented routes:
 - `POST /api/workspace/import`
 - `GET /api/workspace/audit`
 
-## 12.5 Commands
+## Commands
 
 Install dependencies:
 
@@ -112,7 +114,7 @@ npm run build
 npm run preview:fullstack -- --port 4174
 ```
 
-## 12.6 Verification
+## Verification
 
 Required checks:
 
@@ -132,7 +134,7 @@ npm run test:e2e
 npm run test:e2e:preview
 ```
 
-## 12.7 What Is Real vs Mocked
+## What Is Real vs Simulated
 
 Real in this branch:
 
@@ -142,7 +144,7 @@ Real in this branch:
 - persisted proposals, simulations, governance records, executions, recommendations, and audit events
 - API-backed frontend workflow when the backend is available
 
-Still mocked or out of scope:
+Still simulated or out of scope:
 
 - enterprise connectors
 - production authentication or RBAC
@@ -152,4 +154,4 @@ Still mocked or out of scope:
 - browser-side secrets
 - production-hosted OpenAI deployment and live-key CI
 
-Optional live OpenAI proposal generation is backend-only. Execution remains mock-only and approval-gated.
+Optional live OpenAI proposal generation is backend-only. Execution remains in safe simulation mode and approval-gated.

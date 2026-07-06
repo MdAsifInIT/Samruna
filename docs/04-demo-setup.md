@@ -58,14 +58,17 @@ Start with the landing page. Explain that Work Graph Foundry begins from traces,
 Point out:
 
 - scenario selector
+- landing impact metrics band
+- compact topbar status
 - `Load workflow`
 - `Analyze workflow`
 - `Generate automation proposal`
 - `Approve` and `Reject` in `Review & Run`
-- `Run mock simulation`
+- `Execute workflow`
 - `Export Summary` in `Audit`
 - `Reset workflow state` in `Audit`
-- deterministic mock AI mode
+- Historical validation engine and validation fallback status
+- safe simulation mode
 - governed execution state
 - five workspace views: `Overview`, `Evidence`, `Graph`, `Review & Run`, and `Audit`
 - compact workflow context in the top bar instead of a shell-level action strip
@@ -128,9 +131,9 @@ This is the plan step.
 
 Explain:
 
-"The proposal is replayed against historical cases before it can run."
+"The historical validation engine replays the proposal against prior cases before it can run."
 
-Point out pass, needs-human, policy-risk, avoided delay, governance/security notes, and blocked execution gate.
+Point out pass, needs-human, policy-risk, avoided delay, governance/security notes, and the validation fallback wording shown to the user when historical evidence is incomplete.
 
 This is the simulate step.
 
@@ -146,13 +149,13 @@ Optional branch: click `Reject` to show that the execution gate remains blocked.
 
 This is the govern step.
 
-### 4.3.10 Run Mock Simulation
+### 4.3.10 Execute Workflow
 
-Click `Run mock simulation`.
+Click `Execute workflow`.
 
 Explain:
 
-"The new request runs through safe mock tools. No real enterprise system is changed."
+"The request runs through safe simulation mode. No real enterprise system is changed."
 
 This is the execute step.
 
@@ -193,13 +196,13 @@ If the app appears stale:
 
 If live AI is unavailable:
 
-Use the default mock mode. The demo is designed for this.
+Use the Historical validation engine. The demo is designed for this safe fallback path.
 
 ## 4.5 Presenter Talk Track
 
 Short version:
 
-"Work Graph Foundry observes how work actually moves, builds a live graph, finds repeated patterns and bottlenecks, proposes governed automation, simulates it against history, requires human approval, executes safely through mock tools, persists the audit trail locally, and learns from exceptions."
+"Work Graph Foundry observes how work actually moves, builds a live graph, finds repeated patterns and bottlenecks, proposes governed automation, validates it against history, requires human approval, executes safely in simulation mode, persists the audit trail locally, and learns from exceptions."
 
 For a shorter hackathon talk track and the exact browser fallback path, see [Hackathon Demo](11-hackathon-demo.md).
 
@@ -217,7 +220,7 @@ Before presenting:
 - `Generate automation proposal` renders proposal, simulation, and governance notes.
 - `Approve` opens the execution gate in `Review & Run`.
 - `Reject` keeps the execution gate blocked in `Review & Run`.
-- `Run mock simulation` shows mock tool calls.
+- `Execute workflow` shows the execution success banner and `Completed` execution gate after execution.
 - Learning recommendation appears.
 - `Export Summary` produces JSON in `Audit`.
 - `Reset` restores seeded demo state in `Audit`.

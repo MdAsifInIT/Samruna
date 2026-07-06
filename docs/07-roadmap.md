@@ -23,16 +23,15 @@ Recommended local POC improvements:
 2. Add mobile viewport e2e coverage for the full demo path.
 3. Add accessibility checks for keyboard navigation, labels, focus order, and contrast.
 4. Add CI coverage for typecheck, unit tests, build, audit, and Playwright.
-5. Add richer proposal versioning and comparison.
-6. Add a richer visual graph canvas.
-7. Add more workflow templates.
-8. Add dataset import beyond the current run-summary import/export.
+5. Add a richer visual graph canvas.
+6. Add more workflow templates.
+7. Add dataset import beyond the current run-summary import/export.
 
 ## 7.3 Production-Only Roadmap
 
 Production-ready next steps:
 
-1. Harden the local backend OpenAI path with evals, red-team fixtures, and production deployment controls.
+1. Harden the server-side OpenAI path with evals, red-team fixtures, and production deployment controls.
 2. Add production-grade durable storage for traces, proposals, simulations, governance records, execution runs, and audit events.
 3. Add authentication and role-based access control.
 4. Add connector framework for enterprise systems.
@@ -40,16 +39,16 @@ Production-ready next steps:
 
 ## 7.4 Server-Side OpenAI Integration
 
-A production-ready OpenAI integration should:
+A production-ready OpenAI integration should extend the existing backend-only proposal route and:
 
 - live outside browser code
 - own `OPENAI_API_KEY` securely
 - call the Responses API
 - validate structured output
 - log model-influenced decisions
-- fall back to mock output on failure
+- fall back to the Historical validation engine on failure
 
-This can start with a small API route for proposal generation.
+The current local backend already owns proposal generation. Production work should focus on deployment controls, evals, observability, and live-key CI rather than moving model calls into the browser.
 
 ## 7.5 Enterprise Connector Roadmap
 
@@ -134,17 +133,15 @@ Why it fits:
 Suggested order:
 
 1. Harden the local demo with expanded e2e, mobile, accessibility, and CI checks.
-2. Add proposal versions; graph identifiers are already deterministic and scenario-scoped.
-3. Add a richer graph visualization that preserves provenance and bottleneck inspection.
-4. Add server-side API.
-5. Add database.
-6. Add authentication.
-7. Add RBAC.
-8. Add OpenAI server route.
-9. Add connector ingestion.
-10. Add persisted audit events.
-11. Add tool execution allowlists.
-12. Add deployment configuration.
+2. Add a richer graph visualization that preserves provenance and bottleneck inspection.
+3. Harden the existing backend API contracts for authenticated multi-user use.
+4. Replace local SQLite with production-grade durable storage and immutable audit retention.
+5. Add authentication.
+6. Add RBAC.
+7. Add OpenAI evals, red-team fixtures, and production live-key deployment controls.
+8. Add connector ingestion.
+9. Add tool execution allowlists.
+10. Add deployment configuration.
 
 ## 7.8 Security Roadmap
 

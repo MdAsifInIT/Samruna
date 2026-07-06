@@ -133,9 +133,9 @@ Implemented local path:
 2. `WorkspaceService` receives an injected provider and routes proposal generation through it.
 3. `OpenAiResponsesProvider` uses structured JSON output and `store: false`.
 4. The service normalizes proposal identity and validates provider output before persistence.
-5. Failed provider calls fall back to deterministic mock proposal generation.
+5. Failed provider calls fall back to the Historical validation engine.
 6. Health/workspace responses return only non-secret provider metadata.
-7. The browser displays provider metadata from the backend snapshot and keeps local fallback mock-only.
+7. The browser displays provider metadata from the backend snapshot and keeps local fallback execution in safe simulation mode.
 
 Run live proposal generation locally only from the backend process:
 

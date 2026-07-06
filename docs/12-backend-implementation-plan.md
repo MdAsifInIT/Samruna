@@ -1,10 +1,10 @@
-# 12. Backend Implementation Plan
+# 12b. Backend Implementation Plan
 
 ## 12.1 Purpose
 
-This plan captures the autonomous build instructions for a demo-grade full-stack version of Work Graph Foundry.
+Historical reference: this plan captured the autonomous build instructions for the now-completed demo-grade full-stack version of Work Graph Foundry.
 
-The target outcome is a local backend, local database, seeded synthetic organization records, persisted workflow artifacts, and a frontend flow backed by API calls. The implementation must preserve the existing local-first demo behavior, deterministic mock AI behavior, governance gate, and mock execution boundary.
+The target outcome was a local backend, local database, seeded synthetic organization records, persisted workflow artifacts, and a frontend flow backed by API calls. The implementation preserved the existing local-first demo behavior, Historical validation engine, governance gate, and safe simulation boundary.
 
 ## 12.2 Recommended Tool
 
@@ -36,7 +36,7 @@ Recommended worker split:
 
 ## 12.4 Fresh Codex Prompt
 
-Paste this into a new Codex App worktree thread from the repository:
+Historical execution prompt, retained for reference:
 
 ```text
 You are the orchestrator/project manager for Work Graph Foundry.
@@ -95,7 +95,7 @@ Use TypeScript. Prefer a lightweight Node backend. Use Node 24 and built-in node
 Required implementation sequence:
 1. Ask worker_major to design the minimal backend API contract, DB schema, and frontend/backend state boundary.
 2. Ask worker_nano to implement backend server, DB bootstrap, seed, reset, and route tests.
-3. Ask worker_nano to implement frontend API client and update the controller to use backend-backed state.
+3. Ask worker_nano to implement frontend API client and update the controller to use backend/API-backed state.
 4. Ask worker_nano to update scripts, docs, and gitignore rules for generated DB files.
 5. Ask worker_test to run verification and triage failures.
 
@@ -105,9 +105,9 @@ Backend requirements:
 - Provide seed/reset behavior.
 - Add /api/health.
 - Add organization/scenario loading routes.
-- Add workflow action routes for load, analyze, generate proposal, governance decision, run approved workflow, reset, export, and import.
+- Add workflow action routes for load, analyze, generate proposal, governance decision, execute workflow, reset, export, and import.
 - Persist server-side state for the demo run.
-- Keep execution mock-only.
+- Keep execution in safe simulation mode.
 
 Frontend requirements:
 - Preserve existing landing-first UI.
@@ -143,7 +143,7 @@ Update README or demo docs with:
 - backend architecture
 - DB seed/reset behavior
 - API-backed flow
-- what is real vs mocked
+- what is real vs safely simulated
 - verification commands
 
 Final requirements:
@@ -156,7 +156,7 @@ Final requirements:
   - summary of changed files
   - exact verification commands and results
   - blockers, if any
-  - explicit note that enterprise connectors and real execution remain mocked
+  - explicit note that enterprise connectors and real execution remain safely simulated
 ```
 
 ## 12.5 Backend Requirements
@@ -194,10 +194,10 @@ Preserve:
 - proposal generation
 - simulation
 - governance approval and rejection
-- approval-gated mock execution
+- approval-gated safe simulated execution
 - audit export/import/reset behavior
 
-Add only the loading and error states required for the backend-backed flow.
+Add only the loading and error states required for the backend/API-backed flow.
 
 ## 12.7 Data Requirements
 

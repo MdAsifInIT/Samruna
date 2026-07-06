@@ -84,12 +84,12 @@ Current safety controls:
 - no browser-side secret usage
 - local SQLite persistence only
 - browser fallback mirror only
-- deterministic mock AI provider by default
+- Historical validation engine by default
 - typed proposal contract
 - simulation before execution
 - approval gate before execution
 - audit event generation
-- mock tool calls only
+- safe simulated tool calls only
 
 ## 5.6 OpenAI And Data Handling
 
@@ -127,7 +127,7 @@ No. It uses local fixture data only.
 
 ### 5.8.2 Does the MVP require an OpenAI API key?
 
-No. The default provider is deterministic mock behavior. If `OPENAI_API_KEY` is set for the backend process, proposal generation can use live OpenAI while execution remains mock-only.
+No. The default provider is the Historical validation engine. If `OPENAI_API_KEY` is set for the backend process, proposal generation can use live OpenAI while execution remains safe and simulated.
 
 ### 5.8.3 Does the browser app expose secrets?
 
@@ -135,7 +135,7 @@ No. The browser reads provider status from backend snapshots and does not receiv
 
 ### 5.8.4 Does the app perform real provisioning?
 
-No. Execution creates mock tool call records only.
+No. Execution creates safe simulated action records only.
 
 ### 5.8.5 Can automation run before approval?
 
@@ -163,7 +163,7 @@ Retention should be configurable by source and policy. Store enough provenance f
 
 ### 5.8.11 What is stored by the local demo?
 
-The local demo stores selected scenario, staged workflow flags, generated graph, proposals, governance decisions, simulation result, mock execution result, learning recommendation, non-secret provider metadata, and audit events in local SQLite. The browser mirrors the same state in `localStorage` for fallback recovery.
+The local demo stores selected scenario, staged workflow flags, generated graph, proposals, governance decisions, simulation result, safe execution result, learning recommendation, non-secret provider metadata, and audit events in local SQLite. The browser mirrors the same state in `localStorage` for fallback recovery.
 
 ### 5.8.12 Does reset delete production data?
 

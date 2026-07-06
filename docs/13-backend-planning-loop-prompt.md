@@ -1,5 +1,7 @@
 # 13. Backend Planning Loop Prompt
 
+Historical reference: this planning prompt was used for the completed backend implementation loop.
+
 ## 13.1 Purpose
 
 Use this prompt to start a fresh Codex chat for planning the backend implementation before any code is changed.

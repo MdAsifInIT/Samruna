@@ -1,8 +1,8 @@
 # Work Graph Foundry
 
-Work Graph Foundry is a local-first enterprise automation demo that finds repeated organizational patterns in messy work traces and turns them into governed AI automation. It builds a work graph, surfaces process intelligence, proposes workflow automation, simulates changes against historical cases, and runs approved actions through safe mock tools.
+Work Graph Foundry is a local-first enterprise automation demo that finds repeated organizational patterns in messy work traces and turns them into governed AI automation. It builds a work graph, surfaces process intelligence, proposes workflow automation, validates changes against historical cases, and executes approved work in safe simulation mode.
 
-The product is designed to be easy to evaluate in a hackathon setting. Reviewers get a polished landing page, a direct path into the demo, and a clear before-and-after story: observe work, understand the pattern, govern the proposal, and execute only what is approved. The language and flows are intentionally customer-facing, but the behavior remains deterministic and local-first for reliable judging.
+The product is designed to be easy to evaluate in a hackathon setting. Reviewers get a polished landing page, a direct path into the demo, and a clear before-and-after story: observe work, understand the pattern, govern the proposal, and execute only what is approved. The language and flows are intentionally customer-facing, while the seeded data and local validation behavior stay reproducible for reliable judging.
 
 ## Demo Value
 
@@ -14,7 +14,7 @@ It highlights:
 - work graph modeling across people, systems, approvals, and outcomes
 - process intelligence that identifies bottlenecks and recurring patterns
 - governed AI automation with explicit review, simulation, and audit steps
-- workflow automation that stays safe by using deterministic mock execution by default
+- workflow automation that stays safe through approval-gated execution and safe simulation mode
 
 ## What The Demo Shows
 
@@ -34,7 +34,7 @@ The default scenario is IT access requests:
 7. It generates a governed automation proposal.
 8. It simulates that proposal against historical cases.
 9. A human reviewer approves the proposal.
-10. A new request runs through safe mock tools.
+10. A new request runs through safe simulated actions.
 11. State persists locally for replay, export, import, and reset.
 12. The learning loop recommends a future improvement.
 
@@ -44,10 +44,10 @@ The default scenario is IT access requests:
 - React
 - Vite 6
 - Vitest
-- Local TypeScript backend for the full-stack branch
+- Local TypeScript backend for the full-stack demo
 - Node 24 built-in `node:sqlite`
 - Local JSON-like fixture data in TypeScript
-- Deterministic mock AI provider by default
+- Historical validation engine by default
 - Optional server-side OpenAI Responses API proposal generation for trusted runtimes
 
 ## Run Locally
@@ -92,7 +92,7 @@ npm run preview:fullstack -- --port 4174
 6. Click `Generate Proposal`.
 7. Review required data, forbidden data, assumptions, policy checks, escalations, simulation results, and governance notes in `Review & Run`.
 8. Use the `Approve` and `Reject` actions in `Review & Run`.
-9. Click `Run mock simulation` after approval in `Review & Run`.
+9. Click `Execute workflow` after approval in `Review & Run`.
 10. Open `Audit` to review export/import controls and persisted audit state.
 11. Use `Export Summary` in `Audit` for a portable run summary or `Reset` in `Audit` to restore seeded state.
 
@@ -136,6 +136,10 @@ docs/
   08-continuation-plan.md
   09-agentic-build-guide.md
   10-demo-operations.md
+  11-hackathon-demo.md
+  12-fullstack-demo-plan.md
+  12-backend-implementation-plan.md
+  13-backend-planning-loop-prompt.md
   archive/
 ```
 
@@ -149,20 +153,23 @@ docs/
 - [5. Data Access And Security](docs/05-data-access-and-security.md): organization access, data needs, non-needs, governance, and compliance FAQ.
 - [6. Testing And Validation](docs/06-testing-and-validation.md): unit tests, integration checks, UI smoke tests, and agentic verification steps.
 - [7. Roadmap](docs/07-roadmap.md): current limitations, future improvements, productionization, and testing roadmap.
-- [8. Continuation Plan](docs/08-continuation-plan.md): current implementation plan and guardrails.
+- [8. Continuation Plan](docs/08-continuation-plan.md): current handoff, guardrails, and next useful work.
 - [9. Agentic Build Guide](docs/09-agentic-build-guide.md): safe continuation checklist for future agents.
 - [10. Demo Operations](docs/10-demo-operations.md): operator runbook, reset, import/export, and recovery.
 - [11. Hackathon Demo](docs/11-hackathon-demo.md): concise hackathon talk track, safety framing, and verification commands.
+- [12. Full-Stack Demo Plan](docs/12-fullstack-demo-plan.md): current backend/API demo reference.
+- [12b. Backend Implementation Plan](docs/12-backend-implementation-plan.md): completed backend build plan, kept as a reference.
+- [13. Backend Planning Loop Prompt](docs/13-backend-planning-loop-prompt.md): completed planning prompt, kept as a reference.
 
-Historical planning prompts and phase notes are archived under `docs/archive/`.
+Historical planning prompts and phase notes are archived under `docs/archive/`. Archive files may use older product language and are not canonical run instructions.
 
 ## AI Provider Behavior
 
-The app runs without live OpenAI credentials. The browser demo uses backend-supplied provider metadata, a visible backend/source-of-truth strip, and deterministic fallback behavior so it is reliable in local and judging environments.
+The app runs without live OpenAI credentials. The browser demo uses backend-supplied provider metadata, a compact backend status strip, and a historical validation engine fallback so it is reliable in local and judging environments.
 
 The provider boundary is owned by the backend:
 
-- `MockAiProvider` is the default.
+- `MockAiProvider` implements the default historical validation engine.
 - `OpenAiResponsesProvider` targets the Responses API with structured JSON output.
 - `server/ai.ts` reads `OPENAI_API_KEY`, optional `OPENAI_MODEL`, and optional `OPENAI_TIMEOUT_MS`.
 - The backend sets Responses API storage to `false` for proposal generation.
@@ -179,13 +186,13 @@ npm run backend:seed
 npm run dev:fullstack
 ```
 
-Leave `OPENAI_API_KEY` unset to use deterministic mock proposal generation.
+Leave `OPENAI_API_KEY` unset to use the historical validation engine for proposal generation.
 
 ## Full-Stack Backend Behavior
 
-The full-stack branch adds a local backend under `server/` with `/api` routes for health, scenarios, workspace state, workflow actions, governance, execution, reset, export, import, and audit retrieval.
+The full-stack demo includes a local backend under `server/` with `/api` routes for health, scenarios, workspace state, workflow actions, governance, execution, reset, export, import, and audit retrieval.
 
-The backend is the primary source of truth for demo state and persists it to SQLite, while the browser keeps a small mirror for reload resilience and local test fallback. It reuses the existing deterministic domain modules for ingestion, graphing, pattern detection, simulation, governance, mock execution, and learning recommendations. Proposal generation routes through the backend AI provider with deterministic fallback. Seeded organization records remain synthetic. Enterprise connectors, production auth/RBAC, real provisioning, live customer data, and browser-side secrets remain out of scope.
+The backend is the primary source of truth for demo state and persists it to SQLite, while the browser keeps a small mirror for reload resilience and local test fallback. It reuses the existing deterministic domain modules for ingestion, graphing, pattern detection, simulation, governance, safe simulated execution, and learning recommendations. Proposal generation routes through the backend AI provider with historical validation fallback. Seeded organization records remain synthetic. Enterprise connectors, production auth/RBAC, real provisioning, live customer data, and browser-side secrets remain out of scope.
 
 See [12. Full-Stack Demo Plan](docs/12-fullstack-demo-plan.md) for API routes, DB path, commands, and verification.
 
@@ -224,10 +231,10 @@ Current browser baseline:
 
 - If `npm run dev` fails during dependency optimization in a restricted sandbox, run `npm run build` followed by `npm run preview`.
 - If `npm run dev:fullstack` hits the same dependency optimization issue, run `npm run build` followed by `npm run preview:fullstack -- --port 4174`.
-- If live OpenAI calls fail, leave `OPENAI_API_KEY` unset and use the deterministic mock provider.
+- If live OpenAI calls fail, leave `OPENAI_API_KEY` unset and use the historical validation engine.
 - If the UI appears stale after changes, rebuild or reload the preview server.
 - If Playwright binaries are missing, run `npm run test:e2e:install` before retrying browser tests.
 
 ## Contributing
 
-Keep the product landing-first and reviewer-focused. Avoid turning the app into a generic chatbot or generic marketing page. New features should preserve typed contracts, deterministic demo behavior, governance visibility, and safe mock execution by default.
+Keep the product landing-first and reviewer-focused. Avoid turning the app into a generic chatbot or generic marketing page. New features should preserve typed contracts, reproducible demo behavior, governance visibility, and safe simulation mode by default.

@@ -47,7 +47,7 @@ For the compact hackathon talk track, safe/local scope, and browser fallback ste
 
 Available scenarios:
 
-- `IT access requests`: default access-request workflow with manager approval bottleneck, policy checks, provisioning mock, and audit logging.
+- `IT access requests`: default access-request workflow with manager approval bottleneck, policy checks, safe simulated provisioning, and audit logging.
 - `Procurement intake`: software procurement, vendor onboarding, and invoice exception workflow with procurement, finance, legal, and policy review paths.
 
 All scenario data is synthetic and stored in `src/fixtures/demoData.ts`.
@@ -62,12 +62,12 @@ All scenario data is synthetic and stored in `src/fixtures/demoData.ts`.
 6. Inspect Graph for graph nodes, patterns, bottlenecks, and opportunity/risk signals.
 7. Open Evidence if normalized evidence needs to be shown.
 8. Click `Generate Proposal`.
-9. Review Review & Run for required data, forbidden data, assumptions, eligibility rules, policy checks, escalations, actions, proposal status, and versions.
-10. Open Review & Run to review simulation, governance notes, approval state, policy context, and execution gate state.
+9. Review Review & Run for required data, forbidden data, assumptions, eligibility rules, policy checks, escalations, actions, proposal status, versions, and the technical details disclosure.
+10. Confirm the shell progress stepper shows staged progress and Overview shows the before/after impact panel.
 11. Click `Approve` or `Reject` in `Review & Run`.
 12. Confirm the approval gate state changes.
-13. Click `Run approved workflow` after approval.
-14. Confirm Review & Run shows the incoming request, mock tool calls, execution audit trail, and learning recommendation.
+13. Click `Execute workflow` after approval.
+14. Confirm Review & Run shows the execution success banner, incoming request, safe simulated actions, execution audit trail, learning recommendation, and `Completed` execution gate after execution.
 15. Open Audit and click `Export Summary`.
 16. Confirm the exported run summary JSON appears.
 17. Click `Reset` in `Audit`.
@@ -76,7 +76,7 @@ All scenario data is synthetic and stored in `src/fixtures/demoData.ts`.
 
 The Playwright e2e suite exercises this path for both scenarios with deterministic demo data and the menu-based shell. On failure, Playwright captures screenshots, videos, and traces for debugging; do not commit those artifacts unless they are intentionally attached to an investigation.
 
-The landing page that starts this path should show one visible `Launch` CTA, three workflow blocks, a connected automation path, and a proof band action that also enters `#demo`.
+The landing page that starts this path should show one visible `Launch` CTA, the landing impact metrics band, three workflow blocks, a connected automation path, and a proof band action that also enters `#demo`.
 
 ## 10.4 Reset And Seed
 
@@ -124,10 +124,10 @@ Do not commit exported run summaries unless they are intentionally added as synt
 
 ## 10.6 Safety Notes
 
-- The default AI provider is deterministic mock behavior.
+- The default AI provider is the Historical validation engine.
 - The browser demo does not need `OPENAI_API_KEY`.
 - Live OpenAI calls, if added later, must be server-side only.
-- Mock execution never mutates external systems and remains locked until governance approval.
+- Execution uses safe simulation mode and never mutates external systems.
 - The demo does not need passwords, raw secrets, private message bodies, production write access, or unrestricted admin access.
 
 ## 10.7 Recovery

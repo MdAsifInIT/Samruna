@@ -30,7 +30,7 @@ Important examples:
 - building a proposal from fixtures, ingestion, graph, patterns, and policies
 - simulating that proposal against historical work items
 - verifying governance blocks execution until approval
-- verifying execution emits mock tool calls after approval
+- verifying execution emits safe simulated tool calls after approval
 
 Future integration tests should cover:
 
@@ -51,8 +51,8 @@ It checks:
 - landing page exposes exactly one visible `Launch` button
 - landing workflow blocks, connected automation path, and proof band render
 - sidebar navigation exposes Overview, Evidence, Graph, Review & Run, and Audit with active state
-- operational summary shows scenario, demo path, current stage, AI mode, governance state, and mock safety boundary
-- workflow context stays compact in the top bar and replaces the old shell-level action strip
+- operational summary shows scenario, demo path, current stage, provider state, governance state, and safe execution boundary
+- topbar status stays compact, while the progress stepper keeps the staged path visible
 - scenario selector renders
 - `Launch` opens the workspace and `Load Workflow` opens Evidence with source counts
 - `Analyze` opens Graph and reveals graph and pattern discovery
@@ -61,9 +61,9 @@ It checks:
 - proposal, governance, execution, and audit panels render from their dedicated menu views
 - approval and rejection actions live in `Review & Run`
 - export/import and reset actions live in `Audit`
-- approval opens the execution gate and enables `Run approved workflow`
+- approval opens the execution gate and enables `Execute workflow`
 - rejection keeps execution blocked
-- `Run approved workflow` keeps the user in Review & Run and shows mock tool output
+- `Execute workflow` keeps the user in Review & Run, shows safe simulated actions, marks the execution gate `Completed`, and displays the success banner
 - Audit shows audit trail and export/import controls
 - learning recommendation appears
 - `Export Summary` produces run JSON
@@ -90,8 +90,8 @@ When an agent validates this repo, it should perform these steps:
 15. Open Review & Run and confirm simulation, policy context, and approval controls render.
 16. Click `Approve`.
 17. Confirm execution gate is open.
-18. Click `Run approved workflow`.
-19. Confirm Review & Run shows mock tool calls and learning recommendation.
+18. Click `Execute workflow`.
+19. Confirm Review & Run shows safe simulated actions, the success banner, `Completed` execution gate state, and learning recommendation.
 20. Open Audit.
 21. Click `Export Summary`.
 22. Confirm JSON includes the selected scenario id.
@@ -118,7 +118,7 @@ Expected behavior:
 
 - Playwright starts the Vite app with a local web server.
 - Tests run in local Chromium against deterministic demo data.
-- Both golden scenarios complete load, analyze, proposal generation, governance approval, mock execution, export, and reset checks.
+- Both golden scenarios complete load, analyze, proposal generation, governance approval, safe execution, export, and reset checks.
 - Menu navigation is exercised for generated analysis, governance, execution, review, import, reload recovery, reset recovery, and mobile overflow.
 - Rejection, export/import round trip, backend workspace readback, malformed persistence recovery, and mobile horizontal overflow are covered in Chromium.
 - Preview-backed e2e validates the production build path.
@@ -143,8 +143,7 @@ npm run test:e2e:preview
 Expected current baseline for `npm run verify:demo`:
 
 - typecheck passes
-- 10 test files pass
-- 41 tests pass
+- Vitest app/domain/backend suites pass
 - build passes
 - audit reports 0 vulnerabilities
 
@@ -153,7 +152,7 @@ Expected current baseline for `npm run test:e2e`:
 - local Vite server starts
 - deterministic Chromium browser tests pass
 - golden paths pass for `IT access requests` and `Procurement intake`
-- landing screen checks the three workflow blocks, connected automation path, proof band, and single visible `Launch` CTA
+- landing screen checks the three workflow blocks, connected automation path, impact proof band, and single visible `Launch` CTA
 - rejection, export/import, backend persistence readback, mirror recovery, mobile overflow, and preview-backed checks pass
 
 ## 6.7 Test Map
@@ -189,9 +188,9 @@ Manual smoke path:
 9. Confirm Review & Run shows the governed proposal.
 10. Open Review & Run and confirm simulation plus governance controls render.
 11. Click `Approve`.
-12. Confirm execution gate changes from `Blocked` to `Open`.
-13. Click `Run approved workflow`.
-14. Confirm Review & Run shows `mock task IT-2001 created`.
+12. Confirm execution gate changes from `Blocked` to `Available`.
+13. Click `Execute workflow`.
+14. Confirm Review & Run shows executed actions, a success banner, and `Completed` execution gate state.
 15. Confirm learning recommendation mentions human-review lane.
 16. Open Audit and click `Export Summary`.
 17. Confirm summary JSON appears.

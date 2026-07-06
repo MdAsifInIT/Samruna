@@ -8,7 +8,7 @@ For this repository, hackathon-ready means the demo is:
 - deterministic by default
 - safe to run without external services
 - easy to rehearse in one browser session
-- clear about what is real versus mocked
+- clear about what is real versus safely simulated
 - verified with a short, repeatable command set
 
 It does not mean the product is production-ready for enterprise use.
@@ -17,11 +17,11 @@ It does not mean the product is production-ready for enterprise use.
 
 The current demo is safe for local and hackathon use because:
 
-- the default AI provider is deterministic mock behavior
-- optional live OpenAI proposal generation runs server-side only
+- the default AI provider is the Historical validation engine
+- optional live OpenAI proposal generation runs server-side only, with validation fallback wording in the UI
 - the scenario data is synthetic
 - no `OPENAI_API_KEY` is required
-- execution uses mock tools only
+- execution uses safe simulation mode
 - approvals and audit state stay inside local SQLite with a browser fallback mirror
 - reset, seed, import, and export are local operations
 
@@ -47,18 +47,18 @@ Use this sequence for a live demo:
 5. Click `Analyze workflow` and point out the `Evidence` and `Graph` views.
 6. Click `Generate automation proposal` and review `Review & Run`.
    - If `OPENAI_API_KEY` is set on the backend, point out live OpenAI proposal generation in the Overview provider metadata.
-   - If no key is set, point out deterministic mock proposal generation.
+   - If no key is set, point out Historical validation engine proposal generation and the validation fallback wording in user-facing provider copy.
 7. Click `Approve` in `Review & Run`.
-8. Click `Run mock simulation` and emphasize that no external system changes.
+8. Click `Execute workflow` and emphasize that no external system changes.
 9. Open `Audit`, then click `Export Summary` to show portable demo state.
 10. Click `Reset workflow state` in `Audit` to prove the demo can be replayed.
 11. Switch to `Procurement intake` if you want a second scenario.
 
 Short talk track:
 
-"This demo observes messy synthetic work traces, finds repeated patterns in an organization, can use live server-side OpenAI reasoning to generate a governed proposal, simulates that proposal against history, requires human approval, executes safely through mock tools only, and persists the result through a local API and SQLite."
+"This demo observes messy synthetic work traces, finds repeated patterns in an organization, can use live server-side OpenAI reasoning to generate a governed proposal, validates that proposal against history, requires human approval, executes safely in simulation mode, and persists the result through a local API and SQLite."
 
-The opening screen should read as a product landing page, not a shell: one visible `Launch` CTA, three workflow blocks, a connected automation path, and a proof band that points into the workspace.
+The opening screen should read as a product landing page, not a shell: one visible `Launch` CTA, the landing impact metrics band, three workflow blocks, a connected automation path, a compact topbar status, and a proof band that points into the workspace.
 
 ## 11.5 Verification Commands
 

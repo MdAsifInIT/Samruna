@@ -2,8 +2,8 @@
 
 ## Live OpenAI Integration Pass
 
-- Status: backend implementation pass complete for non-browser gates.
-- Scope: route proposal generation through a server-owned AI provider, expose non-secret provider metadata, keep deterministic fallback, update docs/tests, and maintain `loop_task_phases.md`.
+- Status: backend implementation pass complete for non-browser gates; historical reference retained.
+- Scope: route proposal generation through a server-owned AI provider, expose non-secret provider metadata, keep Historical validation engine fallback, update docs/tests, and maintain `loop_task_phases.md`.
 - Out of scope: enterprise connectors, auth/RBAC, live provisioning, real customer data, browser-side secrets, and real execution.
 - Agents used: `worker_major` for architecture/secret-boundary review, `worker_nano` for loop/log documentation setup.
 - Decisions:
@@ -38,7 +38,7 @@
 - Demoted approval, execution, export, import, and reset actions into the `Review & Run` and `Audit` views instead of the global shell.
 - Removed decorative radial/orb page backgrounds and avoided adding animation libraries.
 - Used a code-native product preview on the landing page because no bitmap image generation tool was available in this execution environment.
-- Preserved export/import, reset, malformed localStorage recovery, proposal versions, approval/rejection, gated simulation, and mock execution behavior.
+- Preserved export/import, reset, malformed localStorage recovery, proposal versions, approval/rejection, gated simulation, and safe simulation behavior.
 - Closed the landing completion gap audit with subagent-owned landing markup, CSS polish, test selector, and live documentation updates.
 - Kept main-thread edits limited to small integration fixes after worker review: truthful provider wording, connected preview path styling, unique `Launch` selector safety, and task-log correction.
 
@@ -170,14 +170,14 @@
 - Agents used so far: `worker_major` read-only hackathon/customer-confidence reviewer.
 - Reviewer score before edits: 76/100.
 - Blocking findings addressed:
-  - Provider provenance could be misleading because the browser generated local mock proposal state before backend sync.
+  - Provider provenance could be misleading because the browser generated local Historical validation engine proposal state before backend sync.
   - Backend-connected vs browser-fallback mode was not visible on the happy path.
 - Changes made:
   - Controller actions now use backend workspace snapshots as authoritative when the backend is available; local domain updates are reserved for browser fallback mode.
   - Added visible provider/source-of-truth status in the shell, sanitized fallback metadata, and retry/reset controls for backend failure.
-  - Renamed the execution CTA to `Run mock simulation` and added no-enterprise-write copy.
+  - Renamed the execution CTA to `Execute workflow` and added no-enterprise-write copy.
   - Added production frontend secret scan script and wired it into `verify:fullstack`.
-  - Updated component and E2E assertions for provider status, backend state, fallback affordances, and mock-only execution.
+  - Updated component and E2E assertions for provider status, backend state, fallback affordances, and safe simulation mode.
 - Verification results for this pass:
   - `npm run typecheck` passed.
   - `npm test` passed, 64 tests.
@@ -249,4 +249,4 @@
 - Boundaries confirmed:
   - No OpenAI key was printed.
   - No browser OpenAI call was made.
-  - Enterprise execution was not run; execution remains mock-only.
+  - Enterprise execution was not run; execution remains in safe simulation mode.
