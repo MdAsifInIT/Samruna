@@ -4,10 +4,15 @@ import type { WorkGraphDemoController } from "../../app/useWorkGraphDemoControll
 
 interface ReviewViewProps {
   controller: WorkGraphDemoController;
+  onReset: () => void;
 }
 
-export function ReviewView({ controller }: ReviewViewProps) {
+export function ReviewView({ controller, onReset }: ReviewViewProps) {
   const { actions, auditEvents, exportText, importError, importText } = controller;
+  const resetWorkflow = () => {
+    actions.resetDemo();
+    onReset();
+  };
 
   return (
     <>
@@ -26,7 +31,7 @@ export function ReviewView({ controller }: ReviewViewProps) {
               <Upload size={16} />
               <span>Import Summary</span>
             </button>
-            <button className="export-button" type="button" onClick={actions.resetDemo}>
+            <button className="export-button" type="button" onClick={resetWorkflow}>
               <RotateCcw size={16} />
               <span>Reset workflow state</span>
             </button>

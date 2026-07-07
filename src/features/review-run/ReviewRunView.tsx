@@ -100,7 +100,9 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
           <span>Proposal source</span>
           <strong>{providerStatusLabel}</strong>
         </div>
-        <p>{providerFallbackMessage || providerStatusDetail}</p>
+        <p>
+          {validationDisplay}. {providerFallbackMessage || providerStatusDetail}
+        </p>
       </div>
 
       <div

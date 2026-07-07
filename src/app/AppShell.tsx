@@ -117,6 +117,11 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
     return <Circle size={14} className="nav-icon-pending" />;
   };
 
+  const resetWorkflow = () => {
+    actions.resetDemo();
+    onViewChange("overview");
+  };
+
   return (
     <div className={shellClassName} style={shellStyle}>
       <aside className="sidebar" aria-label="Primary navigation" aria-expanded={!sidebarCollapsed}>
@@ -169,7 +174,7 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
         </nav>
         
         <div className="sidebar-footer">
-          <button type="button" className="sidebar-reset-button" aria-label="Reset workflow" onClick={actions.resetDemo}>
+          <button type="button" className="sidebar-reset-button" aria-label="Reset workflow" onClick={resetWorkflow}>
             <RotateCcw size={16} />
             <span className="sidebar-label">Reset workflow</span>
           </button>

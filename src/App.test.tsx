@@ -16,8 +16,7 @@ describe("App", () => {
     expect(screen.getByRole("img", { name: "Samruna" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Launch" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Launch" })).toHaveLength(1);
-    expect(screen.getByLabelText("Samruna product preview")).toBeInTheDocument();
-    expect(screen.getByLabelText("Connected automation path")).toBeInTheDocument();
+    expect(screen.getByLabelText("Workflow visualization")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Landing workflow blocks" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Impact evidence" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Overview" })).not.toBeInTheDocument();

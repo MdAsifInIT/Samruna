@@ -1,16 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
-  --canvas: #F5F5F7;
+  --canvas: #F8FAFC;
   --surface: #FFFFFF;
-  --surface-hover: #FAFAFA;
-  --surface-subtle: #F5F5F7;
+  --surface-hover: #F1F5F9;
+  --surface-subtle: #F8FAFC;
   --elevated: rgba(255, 255, 255, 0.72);
   
-  --ink: #1D1D1F;
-  --ink-secondary: #86868B;
-  --ink-tertiary: #AEAEB2;
+  --ink: #020617;
+  --ink-secondary: #334155;
+  --ink-tertiary: #94A3B8;
   
-  --accent: #0071E3;
-  --accent-hover: #0077ED;
+  --accent: #0369A1;
+  --accent-hover: #075985;
   --success: #34C759;
   --success-soft: #F0FFF4;
   --success-subtle: var(--success-soft);
@@ -222,10 +227,23 @@ button:focus-visible, select:focus-visible, textarea:focus-visible {
 .brand-logo-landing .brand-logo-mark {
   height: 46px;
   width: 46px;
+  filter: drop-shadow(0 12px 22px rgba(3, 105, 161, 0.25));
+}
+
+.brand-logo-landing .brand-logo-tile {
+  fill: #0369A1;
+  stroke: rgba(255, 255, 255, 0.4);
+}
+
+.brand-logo-landing .brand-logo-glyph {
+  fill: #FFFFFF;
 }
 
 .brand-logo-landing .brand-logo-wordmark {
-  font-size: 1.05rem;
+  font-family: 'Lexend', sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: -0.04em;
+  color: #020617;
 }
 
 .brand-logo-compact .brand-logo-mark {
