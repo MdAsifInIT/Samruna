@@ -1835,7 +1835,7 @@ h2 {
 .graph-split-view {
   display: grid;
   gap: var(--gap-md);
-  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.45fr);
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.45fr);
   align-items: start;
   margin-bottom: 24px;
 }
@@ -1859,7 +1859,7 @@ h2 {
   box-shadow: inset 0 0 0 1px var(--border);
   min-height: clamp(360px, 48vw, 560px);
   max-width: none;
-  min-width: 700px;
+  min-width: 1100px;
   padding: 4px;
   overflow: hidden;
   position: relative;
@@ -1893,7 +1893,7 @@ h2 {
   font-size: 10px;
   font-weight: var(--weight-medium);
   letter-spacing: 0.02em;
-  max-width: clamp(80px, 10vw, 130px);
+  max-width: clamp(90px, 11vw, 140px);
   min-width: 0;
   overflow: hidden;
   padding: 3px 6px;
@@ -1917,9 +1917,9 @@ h2 {
   cursor: pointer;
   display: grid;
   gap: 2px;
-  inline-size: clamp(100px, 12vw, 140px);
-  max-width: 140px;
-  min-height: 70px;
+  inline-size: clamp(110px, 13vw, 160px);
+  max-width: 160px;
+  min-height: 76px;
   min-width: 0;
   overflow: hidden;
   padding: 8px;
@@ -3439,7 +3439,7 @@ h2 {
     aspect-ratio: auto;
     height: 360px;
     min-height: 0;
-    min-width: 600px;
+    min-width: 800px;
   }
 
   .graph-visual-node {

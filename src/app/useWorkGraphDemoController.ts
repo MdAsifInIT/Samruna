@@ -968,12 +968,12 @@ function buildVisualGraph(nodes: GraphNode[], edges: GraphEdge[]): { nodes: Visu
   const activeKinds = kindOrder.filter((kind) => nodesByKind.has(kind));
   const visualNodes = activeKinds.flatMap((kind, columnIndex) => {
     const group = nodesByKind.get(kind) ?? [];
-    const x = activeKinds.length === 1 ? 50 : 4 + (columnIndex / (activeKinds.length - 1)) * 92;
+    const x = activeKinds.length === 1 ? 50 : 8 + (columnIndex / (activeKinds.length - 1)) * 84;
 
     return group.map((node, rowIndex) => ({
       node,
       x,
-      y: group.length === 1 ? 50 : 12 + (rowIndex / (group.length - 1)) * 76
+      y: group.length === 1 ? 50 : 15 + (rowIndex / (group.length - 1)) * 70
     }));
   });
   const nodeLookup = new Map(visualNodes.map((visualNode) => [visualNode.node.id, visualNode]));

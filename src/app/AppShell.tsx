@@ -62,7 +62,17 @@ export function AppShell({ activeView, children, controller, onViewChange }: App
     <div className="app-shell">
       <aside className="sidebar" aria-label="Primary navigation">
         <div className="brand-block">
-          <strong>Samruna</strong>
+          <a
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
+              window.history.pushState(window.history.state, "", "/");
+              window.dispatchEvent(new PopStateEvent("popstate"));
+            }}
+            style={{ color: "inherit", textDecoration: "none" }}
+          >
+            <strong>Samruna</strong>
+          </a>
         </div>
         <nav className="menu-list">
           {navigationItems.map((item) => {
