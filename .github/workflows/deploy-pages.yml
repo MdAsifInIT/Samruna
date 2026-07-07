@@ -19,8 +19,6 @@ jobs:
   build:
     name: Build demo
     runs-on: ubuntu-latest
-    env:
-      VITE_BASE_PATH: /${{ github.event.repository.name }}/
     steps:
       - name: Checkout
         uses: actions/checkout@v4
