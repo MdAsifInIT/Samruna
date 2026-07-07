@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AppShell } from "./app/AppShell";
 import { type ViewId } from "./app/navigation";
 import { useWorkGraphDemoController } from "./app/useWorkGraphDemoController";
+import { BrandLogo } from "./components/shared/BrandLogo";
 import { AnalyzeView } from "./features/analyze/AnalyzeView";
 import { ObserveView } from "./features/observe/ObserveView";
 import { OverviewView } from "./features/overview/OverviewView";
@@ -62,7 +63,7 @@ function LandingPage({
   return (
     <main className="landing-page">
       <header className="landing-nav" aria-label="Landing navigation">
-        <strong>Samruna</strong>
+        <BrandLogo variant="landing" />
       </header>
 
       <section className="landing-hero" aria-label="Product landing page">

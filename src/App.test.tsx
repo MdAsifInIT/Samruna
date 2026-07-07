@@ -13,6 +13,7 @@ describe("App", () => {
     render(<App />);
 
     expect(screen.getByRole("heading", { name: "Samruna" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Samruna" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Launch" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Launch" })).toHaveLength(1);
     expect(screen.getByLabelText("Samruna product preview")).toBeInTheDocument();
@@ -28,6 +29,7 @@ describe("App", () => {
 
     expect(window.location.pathname).toBe("/dashboard");
     expect(screen.getByRole("button", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getAllByRole("img", { name: "Samruna" }).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: "Overview" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Access request operations" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Evidence" })).toBeInTheDocument();
@@ -45,6 +47,39 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: "After - Governed Automation" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Review boundary" })).toBeInTheDocument();
     expect(screen.getByLabelText("Select app view")).toHaveValue("overview");
+  });
+
+  it("collapses the sidebar while keeping navigation icons and reset available", async () => {
+    render(<App />);
+    await launchDemo();
+
+    const appShell = screen.getByLabelText("Primary navigation").closest(".app-shell") as HTMLElement;
+    const resizeHandle = screen.getByRole("separator", { name: "Resize sidebar" });
+
+    expect(screen.getByRole("button", { name: "Collapse sidebar" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reset workflow" })).toBeInTheDocument();
+    expect(resizeHandle).toBeInTheDocument();
+
+    fireEvent.pointerDown(resizeHandle, { clientX: 240, pointerId: 1 });
+    fireEvent.pointerMove(window, { clientX: 320, pointerId: 1 });
+    fireEvent.pointerUp(window, { pointerId: 1 });
+
+    await waitFor(() => {
+      expect(appShell.style.getPropertyValue("--sidebar-width")).toBe("320px");
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }));
+
+    expect(appShell).toHaveClass("sidebar-collapsed");
+    expect(appShell.style.getPropertyValue("--sidebar-width")).toBe("72px");
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Overview" }).querySelector("svg")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reset workflow" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand sidebar" }));
+
+    expect(appShell).not.toHaveClass("sidebar-collapsed");
+    expect(appShell.style.getPropertyValue("--sidebar-width")).toBe("320px");
   });
 
   it("opens the workspace directly at /dashboard", () => {
