@@ -93,6 +93,40 @@
   
   --leading-tight: 1.2;
   --leading-snug: 1.35;
+  
+  /* Map old variables to new ones */
+  --app-bg: var(--canvas);
+  --text: var(--ink);
+  --muted: var(--ink-secondary);
+  --secondary: var(--ink-secondary);
+  --border: rgba(0,0,0,0.08);
+  --border-strong: rgba(0,0,0,0.12);
+  --blue: var(--accent);
+  --operational-blue: var(--accent);
+  --blue-dark: var(--accent-hover);
+  --blue-soft: #F0F7FF;
+  --teal: var(--success);
+  --teal-soft: var(--success-soft);
+  --amber: var(--warning);
+  --amber-soft: var(--warning-soft);
+  --red: var(--danger);
+  --red-soft: var(--danger-soft);
+  
+  --radius: var(--radius-sm);
+  --shell-radius: var(--radius-md);
+  
+  --text-2xs: var(--text-micro);
+  --text-xs: var(--text-caption);
+  --text-sm: var(--text-caption);
+  --text-base: var(--text-body);
+  --text-md: var(--text-body);
+  --text-lg: var(--text-title);
+  --text-xl: 1.5rem;
+  --text-2xl: 1.75rem;
+  --text-display: var(--text-display);
+  
+  --leading-tight: 1.2;
+  --leading-snug: 1.35;
   --leading-normal: 1.5;
   --weight-extrabold: 700;
   --brand-gradient: var(--accent);
@@ -105,6 +139,7 @@
 
 html {
   background: var(--canvas);
+  scroll-behavior: smooth;
 }
 
 body {
@@ -231,6 +266,33 @@ h2 {
   max-width: 1200px;
   min-height: 100vh;
   padding: 40px 24px 80px;
+  position: relative;
+}
+
+/* Subtle background gradient for Apple-like depth */
+.landing-page::before {
+  content: "";
+  position: absolute;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 1000px;
+  height: 600px;
+  background: radial-gradient(ellipse at top, rgba(0, 113, 227, 0.08) 0%, rgba(255, 255, 255, 0) 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .landing-nav {
@@ -239,6 +301,9 @@ h2 {
   gap: 16px;
   justify-content: space-between;
   min-height: 56px;
+  position: relative;
+  z-index: 10;
+  animation: fadeInUp 0.8s var(--motion-spring) both;
 }
 
 .landing-nav strong {
@@ -287,6 +352,10 @@ h2 {
   gap: var(--gap-xl);
   grid-template-columns: minmax(0, 1fr) minmax(360px, 1fr);
   min-height: min(720px, calc(100dvh - 120px));
+  position: relative;
+  z-index: 10;
+  animation: fadeInUp 0.8s var(--motion-spring) both;
+  animation-delay: 0.1s;
 }
 
 .landing-hero-copy {
@@ -320,13 +389,23 @@ h2 {
 }
 
 .product-preview {
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
   display: grid;
   gap: var(--gap-md);
   min-width: 0;
   padding: 24px;
+  transform: perspective(1000px) rotateY(-5deg) rotateX(2deg);
+  transition: transform 0.5s var(--motion-spring), box-shadow 0.5s var(--motion-spring);
+}
+
+.product-preview:hover {
+  transform: perspective(1000px) rotateY(0deg) rotateX(0deg) translateY(-8px);
+  box-shadow: 0 32px 72px rgba(0, 0, 0, 0.12), 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .preview-topbar,
@@ -438,6 +517,10 @@ h2 {
 
 .landing-section {
   padding-top: var(--gap-lg);
+  position: relative;
+  z-index: 10;
+  animation: fadeInUp 0.8s var(--motion-spring) both;
+  animation-delay: 0.2s;
 }
 
 .landing-section h2 {
@@ -501,13 +584,18 @@ h2 {
 
 .landing-proof {
   align-items: center;
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
   display: flex;
   gap: var(--gap-md);
   justify-content: space-between;
   padding: 32px 40px;
+  animation: fadeInUp 0.8s var(--motion-spring) both;
+  animation-delay: 0.3s;
 }
 
 .landing-proof > div {
@@ -586,9 +674,15 @@ h2 {
   transition: grid-template-columns var(--motion-ui) var(--motion-spring);
 }
 
+.app-shell.sidebar-resizing {
+  transition: none !important;
+}
+
 .sidebar {
   align-self: start;
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   border-right: 1px solid var(--border);
   color: var(--ink);
   display: flex;
@@ -601,6 +695,12 @@ h2 {
   transition:
     box-shadow var(--motion-ui) var(--ease-out),
     padding var(--motion-ui) var(--motion-spring);
+}
+
+.main-shell {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .brand-block {
