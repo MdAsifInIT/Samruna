@@ -2255,6 +2255,13 @@ h2 {
   overflow-wrap: anywhere;
 }
 
+.graph-detail-card {
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+  overflow-wrap: anywhere;
+}
+
 .evidence-grid p,
 .evidence-grid dl,
 .detail-card p,
@@ -2624,6 +2631,19 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.graph-workspace .graph-detail-card {
+  margin-top: 2px;
+  padding-inline: clamp(16px, 2vw, 24px);
+}
+
+.graph-workspace .graph-detail-card dl > div {
+  grid-template-columns: minmax(88px, 124px) minmax(0, 1fr);
+}
+
+.graph-workspace .graph-detail-card ul {
+  overflow-wrap: anywhere;
 }
 
 .graph-legend span::before {
@@ -4115,6 +4135,10 @@ h2 {
     grid-template-rows: none;
     min-height: 0;
     padding: 14px;
+  }
+
+  .graph-workspace .graph-detail-card {
+    padding: 16px;
   }
 
   .graph-visual-node {

@@ -520,10 +520,32 @@ test("keeps the mobile graph fit-to-width without floating edge labels", async (
   await assertGraphWorkspaceFits(page, "mobile graph");
 
   await page.getByLabel(/Select graph node Exception review/i).click();
-  const selectedDetail = page.locator(".detail-card").filter({ has: page.getByRole("heading", { name: "Exception review" }) });
+  const graphWorkspace = page.locator(".graph-workspace");
+  const graphLegend = graphWorkspace.locator(".graph-legend");
+  const selectedDetail = graphWorkspace
+    .locator(".graph-detail-card")
+    .filter({ has: page.getByRole("heading", { name: "Exception review" }) });
 
+  await expect(page.locator(".graph-sidebar .graph-detail-card")).toHaveCount(0);
   await expect(selectedDetail).toContainText("requires human review");
   await expect(selectedDetail).toContainText("manual decision");
+  await expect(selectedDetail).toBeVisible();
+
+  const detailBox = await selectedDetail.boundingBox();
+  const legendBox = await graphLegend.boundingBox();
+
+  expect(detailBox).not.toBeNull();
+  expect(legendBox).not.toBeNull();
+  expect(detailBox!.y).toBeGreaterThan(legendBox!.y + legendBox!.height - 1);
+
+  await page.getByLabel(/Select graph node Requester/i).click();
+  const requesterDetail = graphWorkspace
+    .locator(".graph-detail-card")
+    .filter({ has: page.getByRole("heading", { name: "Requester" }) });
+
+  await expect(requesterDetail).toBeVisible();
+  await expect(requesterDetail).toContainText("historical validation model");
+  await expect(selectedDetail).toHaveCount(0);
 });
 
 async function runGoldenPath(page: Page, request: APIRequestContext, scenario: ScenarioExpectation) {

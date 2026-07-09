@@ -83,28 +83,8 @@ export function AnalyzeView({ controller }: AnalyzeViewProps) {
                   <span data-risk="medium">Medium risk</span>
                   <span data-risk="high">High risk</span>
                 </div>
-              </div>
-            ) : null}
-            <div className="graph-sidebar">
-              <div className="inspection-grid">
-                <div className="graph-list" role="list" aria-label="Work graph nodes">
-                  {graph.nodes.map((node) => (
-                    <button
-                      key={node.id}
-                      type="button"
-                      className={node.id === selectedGraphNode?.id ? "selected" : undefined}
-                      aria-pressed={node.id === selectedGraphNode?.id}
-                      onClick={() => actions.selectGraphNode(node.id)}
-                    >
-                      <strong>{node.label}</strong>
-                      <span>
-                        {node.count} cases · {node.kind} · {node.riskLevel} risk
-                      </span>
-                    </button>
-                  ))}
-                </div>
                 {selectedGraphNode ? (
-                  <article className="detail-card">
+                  <article className="detail-card graph-detail-card">
                     <h3>{selectedGraphNode.label}</h3>
                     <p>{graphNodeAuditRelevance(selectedGraphNode.kind, scenario.label, topBottleneck?.evidence)}</p>
                     <dl>
@@ -144,6 +124,26 @@ export function AnalyzeView({ controller }: AnalyzeViewProps) {
                     </ul>
                   </article>
                 ) : null}
+              </div>
+            ) : null}
+            <div className="graph-sidebar">
+              <div className="inspection-grid">
+                <div className="graph-list" role="list" aria-label="Work graph nodes">
+                  {graph.nodes.map((node) => (
+                    <button
+                      key={node.id}
+                      type="button"
+                      className={node.id === selectedGraphNode?.id ? "selected" : undefined}
+                      aria-pressed={node.id === selectedGraphNode?.id}
+                      onClick={() => actions.selectGraphNode(node.id)}
+                    >
+                      <strong>{node.label}</strong>
+                      <span>
+                        {node.count} cases · {node.kind} · {node.riskLevel} risk
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
