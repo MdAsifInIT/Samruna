@@ -1,34 +1,48 @@
-# 11. Hackathon POC - Proof Of Concept
+# 11. Hackathon POC (HCLTech-OpenAI Agentic AI Hackathon)
 
 ## 11.1 What "Production-Ready For A Hackathon" Means
 
-For this repository, hackathon-ready means the POC - Proof Of Concept is:
+For this repository, hackathon-ready means the POC is:
+- **Hosted and Live:** Reviewers can click a link and immediately test the Agentic AI workflow without configuring a local environment.
+- **Deterministic and Safe:** Defaulting to a simulated environment to prove safety without external enterprise risks.
+- **Easy to Rehearse:** Clear start-to-finish flows for the pitch.
+- **Clear on AI Bounds:** Explicit about what the OpenAI model controls (proposals/planning) versus what is gated by humans (approval/execution).
 
-- local-first and self-contained
-- deterministic by default
-- safe to run without external services
-- easy to rehearse in one browser session
-- clear about what is real versus safely simulated
-- verified with a short, repeatable command set
+## 11.2 The Live Pitch Path
 
-It does not mean the product is production-ready for enterprise use.
+For the live pitch or for judges reviewing the project asynchronously, use the hosted Live Demo.
 
-## 11.2 Safe Local Behavior Today
+- **Frontend:** `https://mdasifinit.github.io/Samruna/`
+- **Backend:** `https://samruna-api.onrender.com`
 
-The current POC - Proof Of Concept is safe for local and hackathon use because:
+**Sequence for a Live POC Pitch:**
+1. Open the **Frontend URL** and click `Launch`.
+2. Select `IT access requests` for the default story (or highlight other seeded scenarios like `Procurement intake`).
+3. Click `Load workflow`.
+4. Click `Analyze workflow`. Point out the `Evidence` and `Graph` views—explain how this translates messy traces into a readable process.
+5. Click `Generate automation proposal` and review `Review & Run`.
+   - **Crucial Pitch Moment:** Explain that this is where the **Agentic AI** steps in. The OpenAI backend acts as a reasoning engine, planning the triggers, policies, and actions based on the graph.
+6. Emphasize **Governance** (HCLTech focus). Point out that the Agentic AI cannot act on its own. It requires the `Approve` button to be clicked.
+7. Click `Approve`.
+8. Click `Execute workflow`. Emphasize that execution happens in a **Safe Simulation** to avoid enterprise risks.
+9. Open `Audit`, then click `Export Summary` to show the transparent audit trail.
+10. Click `Reset workflow state` to prove the POC can be safely replayed.
 
-- the default AI provider is the Historical validation engine
-- optional live OpenAI proposal and synthetic execution generation runs server-side only, with validation fallback wording in the UI
-- the scenario data is synthetic
-- no `OPENAI_API_KEY` is required
-- execution uses safe simulation mode
-- approvals and audit state stay inside local SQLite with a browser fallback mirror
-- reset, seed, import, and export are local operations
+**Short Talk Track:**
+"Samruna solves enterprise workflow bottlenecks by observing messy operational traces and translating them into a clear graph. From there, we leverage OpenAI as an Agentic Reasoning Engine to automatically generate a governed automation proposal. Because HCLTech enterprise clients demand safety, our AI doesn't act blindly—it proposes a plan, requires human approval, and executes in a safe simulation environment that generates a perfect audit trail."
 
-## 11.3 Real Production Still Requires
+## 11.3 Safe Local Behavior Today
+
+If a judge chooses to evaluate the repository locally, the local POC is safe because:
+- The default AI provider is the deterministic Historical validation engine.
+- Optional live OpenAI proposal and synthetic execution runs server-side only.
+- The scenario data is synthetic.
+- No `OPENAI_API_KEY` is strictly required to test the core UX flow.
+- Reset, seed, import, and export are local operations.
+
+## 11.4 Real Production Still Requires
 
 Before real production use, the product still needs:
-
 - server-side secret handling
 - production-grade durable storage for traces, proposals, execution, and audit history
 - authentication and role-based access control
@@ -36,79 +50,37 @@ Before real production use, the product still needs:
 - production monitoring and rollback controls
 - validated model output and auditable decision logging
 
-## 11.4 Hackathon POC - Proof Of Concept Path
+## 11.5 Local Verification Commands (For Judges)
 
-Use this sequence for a live POC - Proof Of Concept:
-
-1. Start with `npm run backend:seed`, then `npm run dev:fullstack`.
-2. Open the printed local URL and click `Launch`.
-3. Select `IT access requests` for the default story. The seeded scenarios also include `Procurement intake`, `Vendor onboarding`, and `Invoice exceptions`.
-4. Click `Load workflow`.
-5. Click `Analyze workflow` and point out the `Evidence` and `Graph` views.
-6. Click `Generate automation proposal` and review `Review & Run`.
-   - If `OPENAI_API_KEY` is set on the backend, point out live OpenAI proposal generation in the Overview provider metadata.
-   - If no key is set, point out Historical validation engine proposal generation and the validation fallback wording in user-facing provider copy.
-7. Click `Approve` in `Review & Run`.
-8. Click `Execute workflow` and emphasize that no external system changes.
-9. Open `Audit`, then click `Export Summary` to show portable POC - Proof Of Concept state.
-10. Click `Reset workflow state` in `Audit` to prove the POC - Proof Of Concept can be replayed.
-11. Switch to `Procurement intake` or another seeded scenario if you want to show a second path.
-
-Short talk track:
-
-"This POC - Proof Of Concept observes messy synthetic work traces, finds repeated patterns in an organization, can use live server-side OpenAI reasoning to generate a governed proposal and synthetic execution run, validates that output against history, requires human approval, executes safely in simulation mode, and persists the result through a local API and SQLite."
-
-The opening screen should read as a product landing page, not a shell: one visible `Launch` CTA, the landing impact metrics band, three workflow blocks, a connected automation path, a compact topbar status, and a proof band that points into the workspace.
-
-## 11.5 Verification Commands
+If judges wish to build and verify locally:
 
 Install dependencies and seed the local backend:
-
 ```powershell
 npm install
 npm run backend:seed
 ```
 
 Start the full-stack app in one shell:
-
 ```powershell
 npm run dev:fullstack
 ```
 
 Run verification commands in a separate shell:
-
 ```powershell
 npm run verify:fullstack
 npm run test:e2e
-npm run test:e2e:preview
 npm run typecheck:e2e
 ```
 
-If Chromium is not installed:
+## 11.6 Optional Live OpenAI POC (Local Evaluation)
 
-```powershell
-npm run test:e2e:install
-```
-
-If browser launch is blocked in the environment, use the non-browser gate plus the preview fallback:
-
-```powershell
-npm run verify:fullstack
-npm run build
-npm run preview:fullstack -- --port 4174
-```
-
-If Playwright still cannot launch, treat the local full-stack POC - Proof Of Concept plus `verify:fullstack` as the fallback hackathon readiness check and record the browser blocker in the handoff.
-
-## 11.6 Optional Live OpenAI POC - Proof Of Concept
-
-For a local live-key POC - Proof Of Concept, set the key only in the backend shell:
+If you are running locally and wish to test the live OpenAI reasoning, set the key only in the backend shell:
 
 ```powershell
 $env:OPENAI_API_KEY="sk-..."
-$env:OPENAI_MODEL="gpt-5.5"
+$env:OPENAI_MODEL="gpt-4o"
 npm run backend:seed
 npm run dev:fullstack
 ```
 
-Do not paste keys into the browser, fixtures, docs, exported run summaries, or screenshots. Live OpenAI affects proposal and synthetic execution generation only; enterprise connectors, auth/RBAC, live provisioning, real customer data, browser-side secrets, and real execution remain out of scope.
+Do not paste keys into the browser, fixtures, docs, exported run summaries, or screenshots. Live OpenAI affects proposal and synthetic execution generation only.
