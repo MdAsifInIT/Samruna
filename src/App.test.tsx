@@ -219,7 +219,7 @@ describe("App", () => {
 
     openTechnicalDetails();
     expect(screen.getByRole("heading", { name: /Workflow runner/i })).toBeInTheDocument();
-    expect(screen.getByText(/simulated task IT-2001 created/i)).toBeInTheDocument();
+    expect(screen.getByText(/simulated .* task IT-2001 created/i)).toBeInTheDocument();
     expect(screen.getAllByText(/human-review lane/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Workflow executed successfully/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /Execution audit trail/i })).toBeInTheDocument();

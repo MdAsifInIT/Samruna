@@ -16,6 +16,8 @@ This repository ships a local, synthetic, hackathon-friendly experience. It is i
 
 ## Reviewer Quickstart
 
+Requirement: Node.js 24 or newer.
+
 Full-stack path first:
 
 ```powershell
@@ -122,10 +124,12 @@ npm run verify:fullstack  # Full verification path for frontend and backend
 ## Verification
 
 ```powershell
+npm run typecheck
+npm test
 npm run typecheck:server
 ```
 
-The full `npm run typecheck` path may currently be blocked by dependency resolution around `clsx` and `tailwind-merge`. The server typecheck remains the primary lightweight check for this repository state.
+Use `npm run typecheck` as the primary TypeScript check after a clean install. If you only need the lightest server-side pass, `npm run typecheck:server` is still available.
 
 ## Current Scope
 

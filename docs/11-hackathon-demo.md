@@ -62,12 +62,22 @@ The opening screen should read as a product landing page, not a shell: one visib
 
 ## 11.5 Verification Commands
 
-Use these exact commands:
+Install dependencies and seed the local backend:
 
 ```powershell
 npm install
 npm run backend:seed
+```
+
+Start the full-stack app in one shell:
+
+```powershell
 npm run dev:fullstack
+```
+
+Run verification commands in a separate shell:
+
+```powershell
 npm run verify:fullstack
 npm run test:e2e
 npm run test:e2e:preview

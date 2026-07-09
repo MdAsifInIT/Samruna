@@ -3,7 +3,7 @@ import { expect, type APIRequestContext, type ConsoleMessage, type Page, test as
 const DEMO_STORAGE_KEY = "samruna.demo-state.v1";
 
 type ScenarioExpectation = {
-  id: "it-access" | "procurement-intake";
+  id: "it-access" | "procurement-intake" | "vendor-onboarding" | "invoice-exceptions";
   label: string;
   graphTitle: string;
   patternLabel: string;
@@ -61,14 +61,28 @@ const scenarios: ScenarioExpectation[] = [
     label: "IT access requests",
     graphTitle: "IT access request flow",
     patternLabel: "Standard application access",
-    mockOutput: "simulated task IT-2001 created"
+    mockOutput: "simulated Access request operations task IT-2001 created"
   },
   {
     id: "procurement-intake",
     label: "Procurement intake",
     graphTitle: "Procurement intake flow",
     patternLabel: "Software procurement intake",
-    mockOutput: "simulated task PR-4001 created"
+    mockOutput: "simulated Procurement operations task PR-4001 created"
+  },
+  {
+    id: "vendor-onboarding",
+    label: "Vendor onboarding",
+    graphTitle: "Vendor onboarding flow",
+    patternLabel: "Vendor onboarding review",
+    mockOutput: "simulated Vendor risk onboarding task PR-7001 created"
+  },
+  {
+    id: "invoice-exceptions",
+    label: "Invoice exceptions",
+    graphTitle: "Invoice exception flow",
+    patternLabel: "Invoice exception review",
+    mockOutput: "simulated Finance exception handling task PR-8001 created"
   }
 ];
 

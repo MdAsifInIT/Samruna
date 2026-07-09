@@ -1,6 +1,6 @@
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { extname, join, normalize, resolve } from "node:path";
+import { extname, isAbsolute, join, normalize, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import type {
   ApiResponse,
@@ -307,7 +307,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function serveStaticAsset(pathname: string, response: ServerResponse): void {
   const requested = pathname === "/" ? "/index.html" : pathname;
   const resolved = resolve(staticRoot, `.${normalize(decodeURIComponent(requested))}`);
-  const target = resolved.startsWith(staticRoot) && existsSync(resolved) && statSync(resolved).isFile()
+  const target = isWithinStaticRoot(resolved) && existsSync(resolved) && statSync(resolved).isFile()
     ? resolved
     : join(staticRoot, "index.html");
 
@@ -319,6 +319,12 @@ function serveStaticAsset(pathname: string, response: ServerResponse): void {
 
   response.writeHead(200, { "Content-Type": contentTypeFor(target) });
   createReadStream(target).pipe(response);
+}
+
+function isWithinStaticRoot(pathname: string): boolean {
+  const child = relative(staticRoot, pathname);
+
+  return child === "" || (!child.startsWith("..") && !isAbsolute(child));
 }
 
 function contentTypeFor(pathname: string): string {

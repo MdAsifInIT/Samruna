@@ -171,10 +171,13 @@ export function useWorkGraphDemoController() {
         ? runApprovedWorkflow({
             proposal: localProposal,
             requestTrace: localFixtures.newIncomingTrace,
-            approved: localExecutionReady
+            approved: localExecutionReady,
+            scenario: localScenario,
+            policyRules: localScenario.fixtures.policyRules,
+            simulation: localSimulation
           })
         : undefined,
-    [demoState.runRequested, localExecutionReady, localFixtures.newIncomingTrace, localProposal]
+    [demoState.runRequested, localExecutionReady, localFixtures.newIncomingTrace, localProposal, localScenario, localSimulation]
   );
   const localExecutionGateLabel = localExecutionReady
     ? localExecutionRun?.status ?? "Governance approved"
