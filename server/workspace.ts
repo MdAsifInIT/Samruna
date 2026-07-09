@@ -26,21 +26,24 @@ import {
 } from "../src/domain/persistence";
 import { generateAutomationProposal } from "../src/domain/planner";
 import { simulateAutomation } from "../src/domain/simulation";
-import { AiProviderError, MockAiProvider, type AiProvider, type ProposalContext } from "../src/ai/providers";
+import { AiProviderError, MockAiProvider, type AiProvider, type ExecutionContext, type ProposalContext } from "../src/ai/providers";
 import type {
   AuditEvent,
   AutomationProposal,
   DemoScenario,
+  ExecutionRun,
   GovernanceDecision,
   GovernanceRecord,
   IngestionResult,
   LearningRecommendation,
+  RequestType,
   ScenarioId,
   SimulationResult
 } from "../src/domain/types";
 import { openWorkspaceDatabase, type WorkspaceDatabase } from "./db";
 
 const PROPOSAL_GENERATED_AT_BASE = Date.UTC(2026, 4, 16, 9, 40, 0);
+const EXECUTION_REQUESTED_AT = "2026-05-16T11:20:00.000Z";
 
 export const demoOrganization: DemoOrganization = {
   id: "synthetic-foundry-org",
@@ -243,8 +246,8 @@ export class WorkspaceService {
     });
   }
 
-  run(): WorkspaceSnapshot {
-    return this.update((state) => {
+  async run(): Promise<WorkspaceSnapshot> {
+    return this.updateAsync(async (state) => {
       const computation = this.compute(state);
 
       if (!computation.proposal) {
@@ -261,20 +264,93 @@ export class WorkspaceService {
         };
       }
 
-      const execution = runApprovedWorkflow({
+      if (!computation.simulation) {
+        throw new WorkspaceError("execution_not_ready", "Simulate the selected proposal before running execution.");
+      }
+
+      const executionContext: ExecutionContext = {
+        scenario: {
+          id: computation.scenario.id,
+          label: computation.scenario.label,
+          workflowName: computation.scenario.workflowName,
+          description: computation.scenario.description,
+          operatorGoal: computation.scenario.operatorGoal,
+          requiredOrgData: computation.scenario.requiredOrgData,
+          excludedOrgData: computation.scenario.excludedOrgData
+        },
         proposal: computation.proposal,
         requestTrace: computation.scenario.fixtures.newIncomingTrace,
-        approved
+        policyRules: relevantPolicyRules(computation.scenario, computation.proposal),
+        simulation: {
+          proposalId: computation.simulation.proposalId,
+          totalCases: computation.simulation.totalCases,
+          passed: computation.simulation.passed,
+          failed: computation.simulation.failed,
+          needsHuman: computation.simulation.needsHuman,
+          policyRisk: computation.simulation.policyRisk,
+          avoidedDelayHours: computation.simulation.avoidedDelayHours
+        }
+      };
+      const { execution, invocation } = await this.generateExecutionWithFallback({
+        context: executionContext,
+        requestedAt: EXECUTION_REQUESTED_AT
       });
-      const recommendation = computation.simulation ? recommendLearningUpdate({ simulation: computation.simulation, execution }) : undefined;
+      const recommendation = recommendLearningUpdate({ simulation: computation.simulation, execution });
 
       return {
         ...state,
         runRequested: true,
         executionRuns: [execution],
-        recommendations: recommendation ? [recommendation] : []
+        recommendations: [recommendation],
+        aiProvider: this.aiProviderSnapshot(invocation)
       };
     });
+  }
+
+  private async generateExecutionWithFallback(input: {
+    context: ExecutionContext;
+    requestedAt: string;
+  }): Promise<{ execution: ExecutionRun; invocation: AiInvocationMetadata }> {
+    const providerStatus = this.aiProvider.status;
+
+    try {
+      const generated = await this.aiProvider.generateExecutionRun(input.context);
+
+      return {
+        execution: normalizeProviderExecution(generated, input.context),
+        invocation: {
+          providerMode: providerStatus.mode,
+          providerLabel: providerStatus.label,
+          model: providerStatus.model,
+          status: "succeeded",
+          validationStatus: providerStatus.mode === "openai" ? "validated" : "not_applicable",
+          requestedAt: input.requestedAt,
+          completedAt: input.requestedAt
+        }
+      };
+    } catch (error) {
+      return {
+        execution: runApprovedWorkflow({
+          proposal: input.context.proposal,
+          requestTrace: input.context.requestTrace,
+          approved: true,
+          scenario: input.context.scenario,
+          policyRules: input.context.policyRules,
+          simulation: input.context.simulation
+        }),
+        invocation: {
+          providerMode: providerStatus.mode,
+          providerLabel: providerStatus.label,
+          model: providerStatus.model,
+          status: "fallback",
+          validationStatus: "failed",
+          requestedAt: input.requestedAt,
+          completedAt: input.requestedAt,
+          fallbackReason: "Deterministic mock execution used after provider failure.",
+          errorCode: providerErrorCode(error)
+        }
+      };
+    }
   }
 
   reset(input: WorkspaceResetRequest = {}): WorkspaceSnapshot {
@@ -494,6 +570,52 @@ function normalizeProviderProposal(
     changeSummary: input.changeSummary,
     generatedAt: input.generatedAt
   };
+}
+
+function normalizeProviderExecution(execution: ExecutionRun, context: ExecutionContext): ExecutionRun {
+  const auditTrail = execution.auditTrail.map((item) => item.trim()).filter(Boolean);
+
+  return {
+    ...execution,
+    id: `run-${context.requestTrace.caseId}`,
+    proposalId: context.proposal.id,
+    requestTraceId: context.requestTrace.id,
+    status: execution.status === "running" ? "completed" : execution.status,
+    mockToolCalls: execution.mockToolCalls.slice(0, 8).map((call, index) => ({
+      tool: call.tool.trim() || `synthetic-tool.${index + 1}`,
+      input: call.input.trim() || context.requestTrace.subject,
+      output: call.output.trim() || "simulated output recorded"
+    })),
+    auditTrail: auditTrail.length
+      ? auditTrail
+      : ["Confirmed proposal approval.", "Executed synthetic workflow run.", "Recorded execution audit event."]
+  };
+}
+
+function relevantPolicyRules(scenario: DemoScenario, proposal: AutomationProposal) {
+  const requestTypes = new Set(inferRequestTypesFromProposal(proposal));
+  const matchingRules = scenario.fixtures.policyRules.filter(
+    (policy) =>
+      policy.appliesTo.some((requestType) => requestTypes.has(requestType)) || proposal.policyChecks.includes(policy.label)
+  );
+
+  return matchingRules.length ? matchingRules : scenario.fixtures.policyRules.filter((policy) => proposal.policyChecks.includes(policy.label));
+}
+
+function inferRequestTypesFromProposal(proposal: AutomationProposal): RequestType[] {
+  const patternRequestType = proposal.patternId.replace(/^pattern-/, "");
+  const knownRequestTypes: RequestType[] = [
+    "standard_access",
+    "privileged_access",
+    "contractor_access",
+    "finance_system_access",
+    "analytics_access",
+    "software_procurement",
+    "vendor_onboarding",
+    "invoice_exception"
+  ];
+
+  return knownRequestTypes.filter((requestType) => requestType === patternRequestType);
 }
 
 function providerErrorCode(error: unknown): string {

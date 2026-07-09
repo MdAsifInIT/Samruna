@@ -2,11 +2,16 @@ import type {
   AutomationOpportunity,
   AutomationProposal,
   BottleneckInsight,
+  DemoScenario,
+  ExecutionRun,
   PolicyRule,
+  RawWorkTrace,
+  SimulationResult,
   WorkGraph,
   WorkPattern
 } from "../domain/types";
 import { generateAutomationProposal } from "../domain/planner";
+import { runApprovedWorkflow } from "../domain/execution";
 import type { AiProviderMode } from "../domain/persistence";
 
 export const DEFAULT_OPENAI_MODEL = "gpt-5.5";
@@ -20,6 +25,20 @@ export interface ProposalContext {
   opportunity: AutomationOpportunity;
 }
 
+export interface ExecutionContext {
+  scenario: Pick<
+    DemoScenario,
+    "id" | "label" | "workflowName" | "description" | "operatorGoal" | "requiredOrgData" | "excludedOrgData"
+  >;
+  proposal: AutomationProposal;
+  requestTrace: RawWorkTrace;
+  policyRules: PolicyRule[];
+  simulation: Pick<
+    SimulationResult,
+    "proposalId" | "totalCases" | "passed" | "failed" | "needsHuman" | "policyRisk" | "avoidedDelayHours"
+  >;
+}
+
 export interface AiProviderStatus {
   mode: AiProviderMode;
   label: string;
@@ -30,6 +49,7 @@ export interface AiProviderStatus {
 export interface AiProvider {
   status: AiProviderStatus;
   generateProposal(context: ProposalContext): Promise<AutomationProposal>;
+  generateExecutionRun(context: ExecutionContext): Promise<ExecutionRun>;
 }
 
 export class MockAiProvider implements AiProvider {
@@ -42,6 +62,17 @@ export class MockAiProvider implements AiProvider {
 
   async generateProposal(context: ProposalContext): Promise<AutomationProposal> {
     return generateAutomationProposal(context);
+  }
+
+  async generateExecutionRun(context: ExecutionContext): Promise<ExecutionRun> {
+    return runApprovedWorkflow({
+      proposal: context.proposal,
+      requestTrace: context.requestTrace,
+      approved: true,
+      scenario: context.scenario,
+      policyRules: context.policyRules,
+      simulation: context.simulation
+    });
   }
 }
 
@@ -126,6 +157,69 @@ export class OpenAiResponsesProvider implements AiProvider {
 
     return parsed;
   }
+
+  async generateExecutionRun(context: ExecutionContext): Promise<ExecutionRun> {
+    const fetcher = this.options.fetcher ?? fetch;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), this.options.timeoutMs ?? DEFAULT_OPENAI_TIMEOUT_MS);
+
+    const response = await fetcher("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.apiKey}`
+      },
+      body: JSON.stringify({
+        model: this.options.model ?? DEFAULT_OPENAI_MODEL,
+        store: false,
+        input: [
+          {
+            role: "system",
+            content:
+              "You execute a governed synthetic enterprise workflow. Return only structured JSON matching the schema. Use simulated tool calls only; do not claim real external side effects."
+          },
+          {
+            role: "user",
+            content: JSON.stringify({
+              scenario: context.scenario,
+              selectedProposal: context.proposal,
+              newIncomingTrace: context.requestTrace,
+              relevantPolicyRules: context.policyRules,
+              simulationSummary: context.simulation
+            })
+          }
+        ],
+        text: {
+          format: {
+            type: "json_schema",
+            name: "execution_run",
+            strict: true,
+            schema: executionRunSchema
+          }
+        }
+      }),
+      signal: controller.signal
+    }).finally(() => clearTimeout(timeout));
+
+    if (!response.ok) {
+      throw new AiProviderError(`openai_http_${response.status}`, `OpenAI execution request failed with ${response.status}`);
+    }
+
+    const payload = (await response.json()) as OpenAiResponsePayload;
+    let parsed: unknown;
+
+    try {
+      parsed = parseOutputJson(payload);
+    } catch (error) {
+      throw new AiProviderError("openai_parse_failed", error instanceof Error ? error.message : "OpenAI response parse failed");
+    }
+
+    if (!isExecutionRun(parsed)) {
+      throw new AiProviderError("openai_contract_mismatch", "OpenAI execution response did not match ExecutionRun contract");
+    }
+
+    return parsed;
+  }
 }
 
 export class AiProviderError extends Error {
@@ -186,6 +280,32 @@ const automationProposalSchema = {
   }
 };
 
+const executionRunSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["id", "proposalId", "requestTraceId", "status", "mockToolCalls", "auditTrail"],
+  properties: {
+    id: { type: "string" },
+    proposalId: { type: "string" },
+    requestTraceId: { type: "string" },
+    status: { type: "string", enum: ["blocked", "running", "completed", "needs_human", "failed"] },
+    mockToolCalls: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["tool", "input", "output"],
+        properties: {
+          tool: { type: "string" },
+          input: { type: "string" },
+          output: { type: "string" }
+        }
+      }
+    },
+    auditTrail: { type: "array", items: { type: "string" } }
+  }
+};
+
 interface OpenAiResponsePayload {
   output?: Array<{
     type?: string;
@@ -229,5 +349,35 @@ function isAutomationProposal(value: unknown): value is AutomationProposal {
     typeof proposal.expectedValue === "string" &&
     typeof proposal.auditRationale === "string" &&
     typeof proposal.version === "number"
+  );
+}
+
+function isExecutionRun(value: unknown): value is ExecutionRun {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const run = value as Partial<ExecutionRun>;
+
+  return (
+    typeof run.id === "string" &&
+    typeof run.proposalId === "string" &&
+    typeof run.requestTraceId === "string" &&
+    (run.status === "blocked" ||
+      run.status === "running" ||
+      run.status === "completed" ||
+      run.status === "needs_human" ||
+      run.status === "failed") &&
+    Array.isArray(run.mockToolCalls) &&
+    run.mockToolCalls.every(
+      (call) =>
+        call &&
+        typeof call === "object" &&
+        typeof call.tool === "string" &&
+        typeof call.input === "string" &&
+        typeof call.output === "string"
+    ) &&
+    Array.isArray(run.auditTrail) &&
+    run.auditTrail.every((item) => typeof item === "string")
   );
 }

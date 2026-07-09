@@ -1,32 +1,30 @@
-# Samruna Implementation Summary
+# Samruna Hackathon Readiness Tasks
 
-This document summarizes the historical implementation phases and tasks completed to build and refine **Samruna** (formerly Work Graph Foundry). The detailed historical logs have been condensed into this overview to maintain clarity.
+## Operating Rules
 
-## 1. Live OpenAI Integration & Production Parity
-- **Backend AI Provider**: Routed proposal generation through a server-owned AI provider (`AiProvider` injected into `WorkspaceService`), ensuring that API keys (`OPENAI_API_KEY`) and secrets never leak to the browser.
-- **Deterministic Fallback**: Maintained the deterministic Historical validation engine for scenarios where the backend or live keys are unavailable.
-- **Security Scans**: Added automated script (`scan:frontend-secrets`) to ensure no keys or backend endpoints are exposed in the frontend bundle.
+- Main thread acts as orchestrator and reviews all subagent output before integration.
+- Implementation work is delegated to `worker_nano` or `worker_major`.
+- Verification is delegated to `worker_test`.
+- A phase is complete only after `worker_test` confirms tests or API checks pass.
+- Commit after each verified phase before starting the next phase.
+- Stop and document blockers if the same task fails after 3 consecutive iterations.
 
-## 2. Frontend Confidence & Backend Authority
-- **State Authority**: Updated `useWorkGraphDemoController` to treat backend `WorkspaceSnapshot` as the single source of truth when connected, while preserving deterministic local computation strictly for browser fallback mode.
-- **UI State Clarity**: Added clear visual indicators for backend-connected vs. browser fallback modes, ensuring users understand when they are running simulated vs. live generations.
-- **Action Gating**: Ensured generation and execution actions accurately reflect their simulated and governed boundaries, explicitly preventing real enterprise write actions.
+## Phase Plan
 
-## 3. UI/UX Refinement & Dashboard Polish
-- **Landing Page**: Implemented a reviewer-first landing page with a direct "Launch" CTA and compact workflow preview.
-- **Dashboard Consistency**: Normalized typography, repaired component spacing, and applied a consistent, premium design system (e.g., Apple-inspired select inputs, bordered definition lists).
-- **Workflow Graph**: Enhanced the node graph auto-sizing with a dotted background, ensuring responsively correct layouts without node overlapping at 100% desktop scaling or mobile viewports.
-- **Visual Accuracy**: Corrected premature "success" states, ensuring UI components (like execution metrics) remain in neutral/pending states until the workflow actually runs.
+| Phase | Objective | Owner | Verifier | Status |
+| --- | --- | --- | --- | --- |
+| 1 | Backend Execution & OpenAI Integration | `worker_major` for architecture, `worker_nano` for localized implementation | `worker_test` | Complete |
+| 2 | Synthetic Data Expansion | `worker_nano` | `worker_test` | Planned |
+| 3 | Terminology Standardization | `worker_nano` | `worker_test` | Planned |
+| 4 | Documentation Overhaul | `worker_nano` | `worker_test` | Planned |
+| 5 | Quality Assurance & Remediation | `worker_major` for audit, `worker_nano` for fixes | `worker_test` | Planned |
 
-## 4. Full Project Rebranding
-- **Name Change**: Rebranded the entire repository, documentation, and user interfaces from "Work Graph Foundry" to "Samruna".
-- **Configuration Updates**: Updated all environment variables (`SAMRUNA_DB_PATH`, `SAMRUNA_BACKEND_PORT`), internal persistence keys (`samruna.demo-state.v1`), and the default SQLite storage folder to `.samruna`.
-- **Tagline**: Replaced the legacy description with the new product vision: *"Fusing fragmented enterprise operations into autonomous, self-healing workflows."*
+## Progress Log
 
-## Verification Status
-Throughout all phases, a strict verification baseline was maintained. The project currently passes:
-- `npm run typecheck` and `npm run typecheck:e2e`
-- `npm test` (Vitest suite)
-- `npm run build` (Vite production build)
-- `npm run test:e2e` (Playwright Chromium suite)
-- `npm audit` (0 vulnerabilities)
+- 2026-07-09: Created orchestration tracker and initial worker mapping.
+- 2026-07-09: Phase 1 started. Initial scan found an existing OpenAI proposal provider and deterministic execution runner; scope is to add OpenAI-backed execution while keeping fallback behavior.
+- 2026-07-09: Phase 1 verified by `worker_test`. `npm run typecheck:server`, `npm run test:backend`, and targeted provider/execution tests passed. Live local API smoke used `.env` OpenAI settings and succeeded for both proposal and execution generation.
+
+## Blockers
+
+- Full `npm run typecheck` currently fails on frontend module resolution for `clsx` and `tailwind-merge` in `src/features/landing/utils.ts`. Backend Phase 1 verification is not blocked; track for Phase 5 QA remediation.

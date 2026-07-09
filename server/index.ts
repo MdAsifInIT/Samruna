@@ -126,7 +126,7 @@ async function routeApi(
   }
 
   if (method === "POST" && path === workspaceRoutes.run) {
-    sendOk(response, workspaceService.run());
+    sendOk(response, await workspaceService.run());
     return;
   }
 

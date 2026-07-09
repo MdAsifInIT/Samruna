@@ -3,8 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DEFAULT_DB_PATH, resolveWorkspaceDbPath, WorkspaceDatabase } from "./db";
-import { MockAiProvider, type AiProvider, type ProposalContext } from "../src/ai/providers";
-import type { AutomationProposal } from "../src/domain/types";
+import { MockAiProvider, type AiProvider, type ExecutionContext, type ProposalContext } from "../src/ai/providers";
+import type { AutomationProposal, ExecutionRun } from "../src/domain/types";
 import { createServerAiProvider } from "./ai";
 import { WorkspaceError, WorkspaceService } from "./workspace";
 
@@ -134,7 +134,7 @@ describe("WorkspaceService", () => {
     const approvedSnapshot = service.decideGovernance({ decision: "approved" });
     expect(approvedSnapshot.executionReady).toBe(true);
 
-    const runSnapshot = service.run();
+    const runSnapshot = await service.run();
     expect(runSnapshot.executionRun?.status).toBe("completed");
     expect(runSnapshot.executionRun?.mockToolCalls.map((call) => call.tool)).toContain("audit-log.write");
     expect(runSnapshot.learningRecommendation?.recommendation).toMatch(/human-review/i);
@@ -156,7 +156,7 @@ describe("WorkspaceService", () => {
     await service.createProposal();
     service.decideGovernance({ decision: "rejected" });
 
-    const snapshot = service.run();
+    const snapshot = await service.run();
 
     expect(snapshot.executionReady).toBe(false);
     expect(snapshot.state.runRequested).toBe(false);
@@ -169,7 +169,7 @@ describe("WorkspaceService", () => {
     service.analyze();
     await service.createProposal();
     service.decideGovernance({ decision: "approved" });
-    service.run();
+    await service.run();
 
     const exported = service.export();
     service.reset({ scenarioId: "procurement-intake" });
@@ -208,7 +208,7 @@ describe("WorkspaceService", () => {
     injected.analyze();
     const snapshot = await injected.createProposal();
 
-    expect(provider.calls).toBe(1);
+    expect(provider.proposalCalls).toBe(1);
     expect(snapshot.aiProvider).toMatchObject({
       mode: "openai",
       label: "Test OpenAI provider",
@@ -220,6 +220,33 @@ describe("WorkspaceService", () => {
       }
     });
     expect(injected.health().aiProvider.model).toBe("gpt-test");
+  });
+
+  it("uses an injected AI provider for execution and normalizes returned run fields", async () => {
+    const provider = new RecordingProvider();
+    const injected = new WorkspaceService(database, provider);
+
+    injected.load();
+    injected.analyze();
+    await injected.createProposal();
+    injected.decideGovernance({ decision: "approved" });
+    const snapshot = await injected.run();
+
+    expect(provider.executionCalls).toBe(1);
+    expect(provider.lastExecutionContext?.scenario.id).toBe("it-access");
+    expect(provider.lastExecutionContext?.requestTrace.id).toBe("case-2001-email-1");
+    expect(provider.lastExecutionContext?.policyRules.length).toBeGreaterThan(0);
+    expect(snapshot.executionRun).toMatchObject({
+      id: "run-case-2001",
+      proposalId: "proposal-pattern-standard_access-v1",
+      requestTraceId: "case-2001-email-1",
+      status: "completed"
+    });
+    expect(snapshot.aiProvider.lastInvocation).toMatchObject({
+      providerMode: "openai",
+      status: "succeeded",
+      validationStatus: "validated"
+    });
   });
 
   it("falls back to deterministic proposals when the live provider fails", async () => {
@@ -239,10 +266,34 @@ describe("WorkspaceService", () => {
     });
     expect(snapshot.auditEvents.some((event) => event.action === "Fallback proposal generated")).toBe(true);
   });
+
+  it("falls back to deterministic execution when the live provider fails during run", async () => {
+    const failing = new FailingProvider();
+    const injected = new WorkspaceService(database, failing);
+
+    injected.load();
+    injected.analyze();
+    await injected.createProposal();
+    injected.decideGovernance({ decision: "approved" });
+    const snapshot = await injected.run();
+
+    expect(snapshot.executionRun).toMatchObject({
+      id: "run-case-2001",
+      status: "completed"
+    });
+    expect(snapshot.aiProvider.lastInvocation).toMatchObject({
+      providerMode: "openai",
+      status: "fallback",
+      validationStatus: "failed",
+      errorCode: "provider_error"
+    });
+  });
 });
 
 class RecordingProvider extends MockAiProvider {
-  calls = 0;
+  proposalCalls = 0;
+  executionCalls = 0;
+  lastExecutionContext?: ExecutionContext;
   override status = {
     mode: "openai" as const,
     label: "Test OpenAI provider",
@@ -251,13 +302,27 @@ class RecordingProvider extends MockAiProvider {
   };
 
   override async generateProposal(context: ProposalContext): Promise<AutomationProposal> {
-    this.calls += 1;
+    this.proposalCalls += 1;
     const proposal = await super.generateProposal(context);
 
     return {
       ...proposal,
       id: "model-returned-id",
       version: 99
+    };
+  }
+
+  override async generateExecutionRun(context: ExecutionContext): Promise<ExecutionRun> {
+    this.executionCalls += 1;
+    this.lastExecutionContext = context;
+    const execution = await super.generateExecutionRun(context);
+
+    return {
+      ...execution,
+      id: "model-returned-run-id",
+      proposalId: "model-returned-proposal-id",
+      requestTraceId: "model-returned-trace-id",
+      status: "running"
     };
   }
 }
@@ -271,6 +336,10 @@ class FailingProvider implements AiProvider {
   };
 
   async generateProposal(): Promise<AutomationProposal> {
+    throw new Error("raw provider failure with no secrets");
+  }
+
+  async generateExecutionRun(): Promise<ExecutionRun> {
     throw new Error("raw provider failure with no secrets");
   }
 }

@@ -1,9 +1,16 @@
-import type { AutomationProposal, ExecutionRun, LearningRecommendation, RawWorkTrace, SimulationResult } from "./types";
+import type { AutomationProposal, ExecutionRun, LearningRecommendation, PolicyRule, RawWorkTrace, SimulationResult } from "./types";
 
 export function runApprovedWorkflow(input: {
   proposal: AutomationProposal;
   requestTrace: RawWorkTrace;
   approved: boolean;
+  scenario?: {
+    id: string;
+    label: string;
+    workflowName: string;
+  };
+  policyRules?: PolicyRule[];
+  simulation?: Pick<SimulationResult, "passed" | "needsHuman" | "policyRisk" | "avoidedDelayHours">;
 }): ExecutionRun {
   if (!input.approved) {
     return {
@@ -16,8 +23,13 @@ export function runApprovedWorkflow(input: {
     };
   }
 
-  const system = input.requestTrace.metadata.system ?? "unknown system";
+  const workflowName = input.scenario?.workflowName ?? input.scenario?.label ?? input.requestTrace.metadata.system ?? "synthetic workflow";
   const ticketId = input.requestTrace.metadata.ticketId ?? input.requestTrace.caseId;
+  const policySummary = summarizePolicies(input.policyRules, input.proposal);
+  const actionSummary = input.proposal.actions.slice(0, 3).join("; ");
+  const simulationSummary = input.simulation
+    ? `${input.simulation.passed} historical cases passed; ${input.simulation.needsHuman + input.simulation.policyRisk} routed for review; ${input.simulation.avoidedDelayHours}h avoided delay.`
+    : "No simulation summary was available.";
 
   return {
     id: `run-${input.requestTrace.caseId}`,
@@ -26,19 +38,19 @@ export function runApprovedWorkflow(input: {
     status: "completed",
     mockToolCalls: [
       {
-        tool: "employee-directory.validate",
-        input: input.requestTrace.actor,
-        output: "active employee"
+        tool: "trace-classifier.extract-request",
+        input: input.requestTrace.subject,
+        output: `${input.requestTrace.metadata.department} request captured for ${workflowName}`
       },
       {
         tool: "policy-catalog.evaluate",
-        input: `${system} standard access`,
-        output: "eligible with manager approval"
+        input: policySummary,
+        output: input.simulation && input.simulation.policyRisk > 0 ? "eligible with exception review controls" : "eligible under selected policy controls"
       },
       {
         tool: "work-orchestrator.create-task",
-        input: `${input.requestTrace.actor} -> ${system}`,
-        output: `simulated task ${ticketId} created`
+        input: actionSummary,
+        output: `simulated ${workflowName} task ${ticketId} created`
       },
       {
         tool: "audit-log.write",
@@ -48,11 +60,18 @@ export function runApprovedWorkflow(input: {
     ],
     auditTrail: [
       "Confirmed proposal approval.",
-      "Validated request eligibility.",
-      "Created simulated provisioning task.",
+      `Validated request eligibility for ${workflowName}.`,
+      simulationSummary,
+      "Created simulated execution task.",
       "Recorded execution audit event."
     ]
   };
+}
+
+function summarizePolicies(policyRules: PolicyRule[] | undefined, proposal: AutomationProposal): string {
+  const labels = policyRules?.length ? policyRules.map((policy) => policy.label) : proposal.policyChecks;
+
+  return labels.length ? labels.slice(0, 4).join("; ") : "No explicit policy checks were selected.";
 }
 
 export function recommendLearningUpdate(input: {
