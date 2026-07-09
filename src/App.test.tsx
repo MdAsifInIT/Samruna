@@ -27,14 +27,14 @@ describe("App", () => {
     await launchDemo();
 
     expect(window.location.pathname).toBe("/dashboard");
-    expect(screen.getByRole("button", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+    expect(getSidebarNavButton("Overview")).toHaveAttribute("aria-current", "page");
     expect(screen.getAllByRole("img", { name: "Samruna" }).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: "Overview" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Access request operations" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Evidence" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Graph" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Review & Run" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Audit" })).toBeInTheDocument();
+    expect(getSidebarNavButton("Evidence")).toBeInTheDocument();
+    expect(getSidebarNavButton("Graph")).toBeInTheDocument();
+    expect(getSidebarNavButton("Review & Run")).toBeInTheDocument();
+    expect(getSidebarNavButton("Audit")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Load workflow/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Next" })).toBeEnabled();
     expect(screen.getByLabelText("System status")).toHaveTextContent("Provider");
@@ -108,7 +108,7 @@ describe("App", () => {
     expect(appShell).toHaveClass("sidebar-collapsed");
     expect(appShell.style.getPropertyValue("--sidebar-width")).toBe("72px");
     expect(screen.getByRole("button", { name: "Expand sidebar" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Overview" }).querySelector("svg")).toBeInTheDocument();
+    expect(getSidebarNavButton("Overview").querySelector("svg")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reset workflow" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Expand sidebar" }));
@@ -122,7 +122,7 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(await screen.findByRole("button", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+    expect(await findSidebarNavButton("Overview")).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("heading", { name: "Overview" })).toBeInTheDocument();
   });
 
@@ -135,7 +135,7 @@ describe("App", () => {
       expect(window.location.pathname).toBe("/dashboard");
     });
     expect(window.location.hash).toBe("");
-    expect(await screen.findByRole("button", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+    expect(await findSidebarNavButton("Overview")).toHaveAttribute("aria-current", "page");
   });
 
   it("returns to the landing page on browser back navigation", async () => {
@@ -406,11 +406,21 @@ describe("App", () => {
 
 async function launchDemo() {
   fireEvent.click(screen.getByRole("button", { name: "Launch" }));
-  await screen.findByRole("button", { name: "Overview" });
+  await findSidebarNavButton("Overview");
 }
 
 function openView(name: string) {
-  fireEvent.click(screen.getByRole("button", { name }));
+  fireEvent.click(getSidebarNavButton(name));
+}
+
+function getSidebarNavButton(name: string) {
+  return within(screen.getByLabelText("Primary navigation")).getByRole("button", { name });
+}
+
+async function findSidebarNavButton(name: string) {
+  const primaryNavigation = await screen.findByLabelText("Primary navigation");
+
+  return within(primaryNavigation).findByRole("button", { name });
 }
 
 function openTechnicalDetails() {
