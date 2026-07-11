@@ -121,12 +121,17 @@ export function loadPersistedDemoState(storage = resolveDemoStorage()): Persiste
   }
 }
 
-export function saveDemoState(state: PersistedDemoState, storage = resolveDemoStorage()): void {
+export function saveDemoState(state: PersistedDemoState, storage = resolveDemoStorage()): boolean {
   if (!storage) {
-    return;
+    return false;
   }
 
-  storage.setItem(DEMO_STORAGE_KEY, JSON.stringify(state));
+  try {
+    storage.setItem(DEMO_STORAGE_KEY, JSON.stringify(state));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function resetPersistedDemoState(
@@ -136,7 +141,11 @@ export function resetPersistedDemoState(
   const seed = createSeedDemoState(selectedScenarioId);
 
   if (storage) {
-    storage.removeItem(DEMO_STORAGE_KEY);
+    try {
+      storage.removeItem(DEMO_STORAGE_KEY);
+    } catch {
+      // The in-memory seed remains usable when browser storage is unavailable.
+    }
     saveDemoState(seed, storage);
   }
 
@@ -174,7 +183,7 @@ function resolveDemoStorage(): DemoStorage | undefined {
     return undefined;
   }
 
-  return window.localStorage;
+  return window.sessionStorage;
 }
 
 function isRunSummaryExport(value: unknown): value is RunSummaryExport {

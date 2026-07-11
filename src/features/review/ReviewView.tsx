@@ -1,17 +1,16 @@
 import { Download, RotateCcw, Upload } from "lucide-react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import { SectionPanel } from "../../components/shared/SectionPanel";
 import type { WorkGraphDemoController } from "../../app/useWorkGraphDemoController";
 
 interface ReviewViewProps {
   controller: WorkGraphDemoController;
-  onReset: () => void;
 }
 
-export function ReviewView({ controller, onReset }: ReviewViewProps) {
-  const { actions, auditEvents, exportText, importError, importText } = controller;
-  const resetWorkflow = () => {
-    actions.resetDemo();
-    onReset();
+export function ReviewView({ controller }: ReviewViewProps) {
+  const { actions, auditEvents, exportText, importError, importText, isWorkspaceBusy } = controller;
+  const resetWorkflow = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    actions.requestReset(event.currentTarget);
   };
 
   return (
@@ -23,15 +22,15 @@ export function ReviewView({ controller, onReset }: ReviewViewProps) {
         title="Persisted run summary"
         actions={
           <div className="governance-actions">
-            <button className="export-button" type="button" onClick={actions.exportSummary}>
+            <button className="export-button" type="button" disabled={isWorkspaceBusy} onClick={actions.exportSummary}>
               <Download size={16} />
               <span>Export Summary</span>
             </button>
-            <button className="export-button" type="button" onClick={actions.importSummary} disabled={!importText.trim()}>
+            <button className="export-button" type="button" onClick={actions.importSummary} disabled={!importText.trim() || isWorkspaceBusy}>
               <Upload size={16} />
               <span>Import Summary</span>
             </button>
-            <button className="export-button" type="button" onClick={resetWorkflow}>
+            <button className="export-button" type="button" disabled={isWorkspaceBusy} onClick={resetWorkflow}>
               <RotateCcw size={16} />
               <span>Reset workflow state</span>
             </button>

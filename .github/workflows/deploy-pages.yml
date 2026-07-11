@@ -32,13 +32,57 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Typecheck
+      - name: Typecheck application
         run: npm run typecheck
+
+      - name: Typecheck server
+        run: npm run typecheck:server
+
+      - name: Typecheck browser tests
+        run: npm run typecheck:e2e
 
       - name: Unit tests
         run: npm test
 
-      - name: Build
+      - name: Backend tests
+        env:
+          OPENAI_API_KEY: ""
+          SAMRUNA_DB_PATH: .samruna/ci-backend.sqlite
+        run: npm run test:backend
+
+      - name: Build validation assets
+        env:
+          OPENAI_API_KEY: ""
+        run: npm run build
+
+      - name: Scan frontend bundle for secrets
+        run: npm run scan:frontend-secrets
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=low
+
+      - name: Install Playwright Chromium
+        run: npm run test:e2e:install -- --with-deps
+
+      - name: Preview browser tests
+        env:
+          CI: "true"
+          OPENAI_API_KEY: ""
+          SAMRUNA_DB_PATH: .samruna/ci-playwright-preview.sqlite
+        run: npm run test:e2e:preview
+
+      - name: Upload browser failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-failure-artifacts
+          path: |
+            test-results
+            playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Build Pages artifact
         env:
           VITE_BASE_PATH: /Samruna/
           VITE_API_BASE_URL: https://samruna-api.onrender.com/api

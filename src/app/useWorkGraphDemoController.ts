@@ -122,7 +122,11 @@ export function useWorkGraphDemoController() {
   const [backendSyncError, setBackendSyncError] = useState("");
   const [healthProvider, setHealthProvider] = useState<AiProviderSnapshot>();
   const [backendWorkspace, setBackendWorkspace] = useState<WorkspaceSnapshot>();
-  const backendQueue = useRef<Promise<void>>(Promise.resolve());
+  const [pendingActionLabel, setPendingActionLabel] = useState("Connecting demo workspace");
+  const [storageRecoveryWarning, setStorageRecoveryWarning] = useState("");
+  const [resetConfirmationOpen, setResetConfirmationOpen] = useState(false);
+  const busyRef = useRef(true);
+  const resetReturnFocusRef = useRef<HTMLElement | null>(null);
 
   const aiProvider = useMemo(
     () => ({ status: backendWorkspace?.aiProvider ?? demoState.aiProvider ?? healthProvider ?? createMockAiProviderSnapshot() }),
@@ -376,7 +380,8 @@ export function useWorkGraphDemoController() {
           setBackendSyncStatus("fallback");
           setBackendSyncError(messageFromApiError(error, "Backend is unavailable; changes are using the browser fallback mirror."));
         }
-      });
+      })
+      .finally(finishBusy);
 
     return () => {
       active = false;
@@ -384,8 +389,30 @@ export function useWorkGraphDemoController() {
   }, [apiClient]);
 
   useEffect(() => {
-    saveDemoState(snapshot);
+    if (!saveDemoState(snapshot)) {
+      setStorageRecoveryWarning("Refresh recovery is unavailable in this browser session. The current demo remains usable.");
+    }
   }, [snapshot]);
+
+  const startBusy = (label: string): boolean => {
+    if (busyRef.current) return false;
+    busyRef.current = true;
+    setPendingActionLabel(label);
+    return true;
+  };
+
+  function finishBusy() {
+    busyRef.current = false;
+    setPendingActionLabel("");
+  }
+
+  const closeResetConfirmation = () => {
+    setResetConfirmationOpen(false);
+    queueMicrotask(() => {
+      if (resetReturnFocusRef.current?.isConnected) resetReturnFocusRef.current.focus();
+      resetReturnFocusRef.current = null;
+    });
+  };
 
   const applyWorkspaceSnapshot = (workspace: WorkspaceSnapshot) => {
     setBackendWorkspace(workspace);
@@ -410,8 +437,10 @@ export function useWorkGraphDemoController() {
   const runWorkspaceAction = (
     remoteAction: () => Promise<WorkspaceSnapshot>,
     fallbackAction: () => void,
-    failureMessage = "Backend sync failed; the workspace did not accept that action. Use Retry backend or Reset workflow state before continuing."
+    failureMessage = "Backend sync failed; the workspace did not accept that action. Use Retry backend or Reset workflow state before continuing.",
+    actionLabel = "Updating demo workspace"
   ) => {
+    if (!startBusy(actionLabel)) return;
     const shouldTryBackend = backendAvailable || backendSyncStatus === "connecting" || backendSyncStatus === "syncing";
     const canFallbackAfterConnectFailure = !backendAvailable && backendSyncStatus === "connecting";
 
@@ -420,12 +449,12 @@ export function useWorkGraphDemoController() {
       fallbackAction();
       setBackendSyncStatus("fallback");
       setBackendSyncError("Backend is unavailable; changes are using the browser fallback mirror.");
+      finishBusy();
       return;
     }
 
     setBackendSyncStatus("syncing");
-    backendQueue.current = backendQueue.current
-      .then(remoteAction)
+    void remoteAction()
       .then((workspace) => {
         setBackendAvailable(true);
         setBackendSyncStatus("synced");
@@ -446,7 +475,8 @@ export function useWorkGraphDemoController() {
         setBackendAvailable(false);
         setBackendSyncStatus("error");
         setBackendSyncError(messageFromApiError(error, failureMessage));
-      });
+      })
+      .finally(finishBusy);
   };
 
   const updateState = (updater: (state: PersistedDemoState) => PersistedDemoState) => {
@@ -473,7 +503,9 @@ export function useWorkGraphDemoController() {
     setImportError("");
     runWorkspaceAction(
       () => apiClient.resetWorkspace({ scenarioId: activeState.selectedScenarioId }),
-      () => setDemoState(resetPersistedDemoState(activeState.selectedScenarioId))
+      () => setDemoState(resetPersistedDemoState(activeState.selectedScenarioId)),
+      undefined,
+      "Resetting demo workspace"
     );
   };
 
@@ -626,6 +658,10 @@ export function useWorkGraphDemoController() {
     providerStatusLabel,
     providerStatusDetail,
     providerFallbackMessage,
+    isWorkspaceBusy: Boolean(pendingActionLabel),
+    pendingActionLabel: pendingActionLabel || undefined,
+    resetConfirmationOpen,
+    storageRecoveryWarning,
     actions: {
       analyzeWorkflow: () =>
         {
@@ -651,6 +687,7 @@ export function useWorkGraphDemoController() {
         },
       createSelectedProposalRevision,
       exportSummary: () => {
+        if (!startBusy("Exporting demo run summary")) return;
         if (backendAvailable) {
           setBackendSyncStatus("syncing");
           apiClient
@@ -666,13 +703,15 @@ export function useWorkGraphDemoController() {
               setBackendSyncStatus("error");
               setBackendSyncError(messageFromApiError(error, "Backend export failed; showing browser fallback export."));
               setExportText(exportRunSummary(snapshot));
-            });
+            })
+            .finally(finishBusy);
           return;
         }
 
         setBackendSyncStatus("fallback");
         setBackendSyncError("Backend is unavailable; export was generated from the browser fallback mirror.");
         setExportText(exportRunSummary(snapshot));
+        finishBusy();
       },
       generateProposalFromCurrentState,
       importSummary,
@@ -699,7 +738,17 @@ export function useWorkGraphDemoController() {
           );
         },
       resetDemo,
+      requestReset: (invoker?: HTMLElement) => {
+        resetReturnFocusRef.current = invoker ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+        setResetConfirmationOpen(true);
+      },
+      cancelReset: closeResetConfirmation,
+      confirmReset: () => {
+        closeResetConfirmation();
+        resetDemo();
+      },
       retryBackendSync: () => {
+        if (!startBusy("Reconnecting demo workspace")) return;
         refreshBackend()
           .then(applyWorkspaceSnapshot)
           .catch((error) => {
@@ -707,7 +756,8 @@ export function useWorkGraphDemoController() {
             setBackendAvailable(false);
             setBackendSyncStatus("fallback");
             setBackendSyncError(messageFromApiError(error, "Backend is still unavailable; browser fallback mirror remains active."));
-          });
+          })
+          .finally(finishBusy);
       },
       runMockExecution: () =>
         {
@@ -1139,8 +1189,8 @@ function buildFoundationPanels(
       icon: Database,
       value: state.sampleLoaded ? scenario.label : "Baseline state",
       detail: state.sampleLoaded
-        ? scenario.syntheticDataNotice
-        : "Load the selected workflow to inspect synthetic traces."
+        ? "Demo workflow fixtures are loaded and ready for analysis."
+        : "Load the selected workflow to inspect demo traces."
     },
     {
       title: "Work Pattern Clusters",

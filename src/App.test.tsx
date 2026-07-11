@@ -7,6 +7,7 @@ import { createSeedDemoState, DEMO_STORAGE_KEY, saveDemoState } from "./domain/p
 describe("App", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    window.sessionStorage.clear();
     window.history.pushState(null, "", "/");
   });
 
@@ -20,6 +21,7 @@ describe("App", () => {
     expect(screen.getByLabelText("Workflow visualization")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Landing workflow blocks" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Impact evidence" })).toBeInTheDocument();
+    expect(screen.getByText(/Demo data · simulated execution · no external systems modified/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Overview" })).not.toBeInTheDocument();
   });
 
@@ -44,8 +46,8 @@ describe("App", () => {
     const summary = screen.getByRole("region", { name: /Operational summary/i });
 
     expect(within(summary).getByRole("heading", { name: /Access request operations/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Before - Manual Process" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "After - Governed Automation" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Fixture baseline - Manual Process" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Scenario forecast - Governed Automation" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Review boundary" })).toBeInTheDocument();
     expect(screen.getByLabelText("Select app view")).toHaveValue("overview");
   });
@@ -95,13 +97,17 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Collapse sidebar" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reset workflow" })).toBeInTheDocument();
     expect(resizeHandle).toBeInTheDocument();
+    expect(resizeHandle).toHaveAttribute("aria-valuenow", "240");
+
+    fireEvent.keyDown(resizeHandle, { key: "ArrowRight", shiftKey: true });
+    expect(appShell.style.getPropertyValue("--sidebar-width")).toBe("264px");
 
     fireEvent.pointerDown(resizeHandle, { clientX: 240, pointerId: 1 });
     fireEvent.pointerMove(window, { clientX: 320, pointerId: 1 });
     fireEvent.pointerUp(window, { pointerId: 1 });
 
     await waitFor(() => {
-      expect(appShell.style.getPropertyValue("--sidebar-width")).toBe("320px");
+      expect(appShell.style.getPropertyValue("--sidebar-width")).toBe("340px");
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Collapse sidebar" }));
@@ -115,7 +121,7 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: "Expand sidebar" }));
 
     expect(appShell).not.toHaveClass("sidebar-collapsed");
-    expect(appShell.style.getPropertyValue("--sidebar-width")).toBe("320px");
+    expect(appShell.style.getPropertyValue("--sidebar-width")).toBe("340px");
   });
 
   it("opens the workspace directly at /dashboard", async () => {
@@ -161,6 +167,30 @@ describe("App", () => {
     });
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reset" })).toBeInTheDocument();
+  });
+
+  it("labels the demo boundary and cancels reset without losing state", async () => {
+    render(<App />);
+    await launchDemo();
+    expect(screen.getByText(/Demo environment/i)).toBeInTheDocument();
+    expect(screen.getByText(/no external systems modified/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/All access request names, tickets, approvals, and systems are synthetic evaluation fixtures/i)).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: /Load workflow/i }));
+    const resetButton = screen.getByRole("button", { name: "Reset workflow" });
+    fireEvent.click(resetButton);
+    const dialog = screen.getByRole("dialog", { name: /Reset workflow/i });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() => expect(resetButton).toHaveFocus());
+    expect(screen.getByLabelText("Workflow context")).toHaveTextContent("Loaded");
+
+    fireEvent.click(resetButton);
+    const reopenedDialog = screen.getByRole("dialog", { name: /Reset workflow/i });
+    fireEvent.click(reopenedDialog);
+    expect(reopenedDialog).toBeInTheDocument();
+    fireEvent.click(reopenedDialog.parentElement as HTMLElement);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() => expect(resetButton).toHaveFocus());
   });
 
   it("shows a compact task-loading indicator while backend sync is in progress", async () => {
@@ -228,8 +258,8 @@ describe("App", () => {
     expect(screen.queryByText(/Bearer/i)).not.toBeInTheDocument();
   });
 
-  it("recovers from malformed persisted localStorage state", async () => {
-    window.localStorage.setItem(DEMO_STORAGE_KEY, "{not-json");
+  it("recovers from malformed persisted sessionStorage state", async () => {
+    window.sessionStorage.setItem(DEMO_STORAGE_KEY, "{not-json");
 
     render(<App />);
 
@@ -237,7 +267,7 @@ describe("App", () => {
     await launchDemo();
 
     await waitFor(() => {
-      expect(window.localStorage.getItem(DEMO_STORAGE_KEY)).toContain('"selectedScenarioId":"it-access"');
+      expect(window.sessionStorage.getItem(DEMO_STORAGE_KEY)).toContain('"selectedScenarioId":"it-access"');
     });
   });
 
@@ -280,24 +310,24 @@ describe("App", () => {
     openTechnicalDetails();
     expect(screen.getByRole("heading", { name: /Governed automation proposal/i })).toBeInTheDocument();
     expect(screen.getByText(/Write immutable audit event/i)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Review before execution/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Review before simulation/i })).toBeInTheDocument();
     openView("Review & Run");
-    await screen.findByRole("button", { name: /Execute workflow/i });
-    expect(screen.getByRole("button", { name: /Execute workflow/i })).toBeDisabled();
+    await screen.findByRole("button", { name: /Run simulation/i });
+    expect(screen.getByRole("button", { name: /Run simulation/i })).toBeDisabled();
 
     fireEvent.click(screen.getAllByRole("button", { name: /Approve/i })[0]);
 
     expect(screen.getAllByText("Available").length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: /Execute workflow/i })).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: /Run simulation/i })).not.toBeDisabled();
 
-    fireEvent.click(screen.getByRole("button", { name: /Execute workflow/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Run simulation/i }));
 
     openTechnicalDetails();
     expect(screen.getByRole("heading", { name: /Workflow runner/i })).toBeInTheDocument();
     expect(screen.getByText(/simulated .* task IT-2001 created/i)).toBeInTheDocument();
     expect(screen.getAllByText(/human-review lane/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Workflow executed successfully/i)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Execution audit trail/i })).toBeInTheDocument();
+    expect(screen.getByText(/Simulation completed/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Simulation audit trail/i })).toBeInTheDocument();
 
     openView("Audit");
     expect(screen.getByText(/Simulated execution run/i)).toBeInTheDocument();
@@ -311,6 +341,9 @@ describe("App", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /Reset workflow state/i }));
+    const resetDialog = screen.getByRole("dialog", { name: /Reset workflow/i });
+    expect(resetDialog).toBeInTheDocument();
+    fireEvent.click(within(resetDialog).getByRole("button", { name: "Reset workflow" }));
 
     expect(screen.queryByRole("heading", { name: /Workflow runner/i })).not.toBeInTheDocument();
     openView("Overview");
@@ -327,7 +360,7 @@ describe("App", () => {
     fireEvent.click(screen.getAllByRole("button", { name: /Reject/i })[0]);
 
     expect(screen.getAllByText(/Rejected/i).length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: /Execute workflow/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Run simulation/i })).toBeDisabled();
     expect(screen.getAllByText(/Blocked/i).length).toBeGreaterThan(0);
   });
 
@@ -414,7 +447,7 @@ describe("App", () => {
     });
 
     await waitFor(() => {
-      expect(window.localStorage.getItem(DEMO_STORAGE_KEY)).toContain('"selectedProposalId":"proposal-pattern-standard_access-v2"');
+      expect(window.sessionStorage.getItem(DEMO_STORAGE_KEY)).toContain('"selectedProposalId":"proposal-pattern-standard_access-v2"');
     });
   });
 
@@ -443,6 +476,7 @@ describe("App", () => {
 async function launchDemo() {
   fireEvent.click(screen.getByRole("button", { name: "Launch" }));
   await findSidebarNavButton("Overview");
+  await waitFor(() => expect(screen.getByRole("button", { name: /Load workflow/i })).toBeEnabled());
 }
 
 function openView(name: string) {

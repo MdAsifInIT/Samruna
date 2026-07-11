@@ -23,6 +23,15 @@ function makeStorage(): DemoStorage & { values: Map<string, string> } {
 }
 
 describe("POC - Proof Of Concept persistence", () => {
+  it("keeps the demo usable when browser storage rejects writes", () => {
+    const storage: DemoStorage = {
+      getItem: () => null,
+      setItem: () => { throw new DOMException("Quota exceeded", "QuotaExceededError"); },
+      removeItem: () => undefined
+    };
+    expect(saveDemoState(createSeedDemoState(), storage)).toBe(false);
+  });
+
   it("seeds and persists selected scenario state", () => {
     const storage = makeStorage();
     const state = createSeedDemoState("procurement-intake");

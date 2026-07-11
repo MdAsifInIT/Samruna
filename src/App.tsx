@@ -1,5 +1,6 @@
 import { Suspense, lazy, startTransition, useEffect, useState } from "react";
 import { LandingPage } from "./features/landing/LandingPage";
+import { WorkspaceErrorBoundary } from "./app/WorkspaceErrorBoundary";
 
 const loadDashboardWorkspace = () =>
   import("./app/DashboardWorkspace").then((module) => ({ default: module.DashboardWorkspace }));
@@ -52,14 +53,18 @@ export function App() {
     );
   }
 
+  const closeWorkspace = () => {
+    window.history.pushState(window.history.state, "", basePath || "/");
+    setWorkspaceOpen(false);
+  };
+
   return (
-    <Suspense fallback={null}>
+    <WorkspaceErrorBoundary onBack={closeWorkspace}>
+    <Suspense fallback={<main className="workspace-load-state" role="status">Loading demo workspace…</main>}>
       <DashboardWorkspace
-        onClose={() => {
-          window.history.pushState(window.history.state, "", basePath || "/");
-          setWorkspaceOpen(false);
-        }}
+        onClose={closeWorkspace}
       />
     </Suspense>
+    </WorkspaceErrorBoundary>
   );
 }

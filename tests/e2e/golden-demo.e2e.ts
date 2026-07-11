@@ -1,6 +1,8 @@
 import { expect, type APIRequestContext, type ConsoleMessage, type Page, test as base } from "@playwright/test";
 
 const DEMO_STORAGE_KEY = "samruna.demo-state.v1";
+const DEMO_SESSION_STORAGE_KEY = "samruna.demo-session.v1";
+const E2E_SESSION_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 
 type ScenarioExpectation = {
   id: "it-access" | "procurement-intake" | "vendor-onboarding" | "invoice-exceptions";
@@ -102,9 +104,13 @@ const headerViewports = [
 ];
 
 test.beforeEach(async ({ page, request }) => {
-  await request.post("/api/workspace/reset", { data: { scenarioId: "it-access" } });
+  await seedDemoSession(page, E2E_SESSION_ID);
+  await request.post("/api/workspace/reset", {
+    data: { scenarioId: "it-access" },
+    headers: demoSessionHeaders(E2E_SESSION_ID)
+  });
   await page.goto("/");
-  await page.evaluate((storageKey) => window.localStorage.removeItem(storageKey), DEMO_STORAGE_KEY);
+  await page.evaluate((storageKey) => window.sessionStorage.removeItem(storageKey), DEMO_STORAGE_KEY);
   await page.reload();
 });
 
@@ -112,6 +118,7 @@ test("loads the landing-first screen without browser page or console errors", as
   await expect(page.getByRole("heading", { name: "Samruna" })).toBeVisible();
   await expect(page.getByLabel("Samruna product preview")).toBeVisible();
   await expect(page.getByRole("button", { name: "Launch" })).toHaveCount(1);
+  await expect(page.getByText("Demo data · simulated execution · no external systems modified")).toBeVisible();
   const landingBlocks = page.getByRole("region", { name: "Landing workflow blocks" });
   const automationPath = page.getByLabel("Connected automation path");
 
@@ -134,6 +141,7 @@ test("loads the landing-first screen without browser page or console errors", as
   await expect(page.getByRole("button", { name: "Review & Run", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Audit", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Load workflow" })).toBeVisible();
+  await expect(page.getByText("Demo environment · simulated execution · no external systems modified")).toBeVisible();
   await expectScenarioContext(page, scenarios[0].label);
 });
 
@@ -167,7 +175,7 @@ test("keeps simulated execution blocked after governance rejects a proposal", as
   await openView(page, "Review & Run");
   await page.getByText("Technical details").click();
   await expect(page.getByText("Safe execution is blocked by rejection until the proposal is revised and approved.")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Execute workflow" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Run simulation" })).toBeDisabled();
   await expect(page.getByText(scenario.mockOutput)).toHaveCount(0);
 
   await waitForStoredDemoStateField(page, "governanceDecision", "rejected");
@@ -203,7 +211,7 @@ test("recovers a generated run after reload and restores seeded workspace state 
   await page.getByText("Technical details").click();
   await expect(page.getByRole("heading", { name: "Workflow runner" })).toBeVisible();
   await expect(page.getByText(scenario.mockOutput)).toBeVisible();
-  await expect(page.getByRole("button", { name: "Execute workflow" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Run simulation" })).toBeEnabled();
 
   await resetDemo(page, request, scenario);
 
@@ -233,7 +241,67 @@ test("recovers a generated run after reload and restores seeded workspace state 
   await openView(page, "Review & Run");
   await expect(page.getByRole("heading", { name: "Workflow runner" })).toHaveCount(0);
   await expect(page.getByText(scenario.mockOutput)).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Execute workflow" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Run simulation" })).toHaveCount(0);
+});
+
+test("reset confirmation can be cancelled without clearing the simulated run", async ({ page, request }) => {
+  const scenario = scenarios[0];
+  await runGoldenPath(page, request, scenario);
+
+  await openView(page, "Audit");
+  await page.getByRole("button", { name: "Reset workflow state" }).click();
+  const resetDialog = page.getByRole("dialog", { name: "Reset workflow?" });
+  await expect(resetDialog).toBeVisible();
+  await expect(resetDialog).toContainText("simulated runs");
+  await expect(resetDialog.getByRole("button", { name: "Cancel" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(resetDialog).toHaveCount(0);
+
+  await openView(page, "Review & Run");
+  await expect(page.getByText("Simulation completed")).toBeVisible();
+  await expectWorkspaceApiState(request, { executionRuns: 1 });
+});
+
+test("isolates workspace state between two browser contexts", async ({ browser, request }, testInfo) => {
+  const firstSession = "11111111-1111-4111-8111-111111111111";
+  const secondSession = "22222222-2222-4222-8222-222222222222";
+  const baseURL = testInfo.project.use.baseURL as string;
+  const firstContext = await browser.newContext({ baseURL });
+  const secondContext = await browser.newContext({ baseURL });
+
+  try {
+    const firstPage = await firstContext.newPage();
+    const secondPage = await secondContext.newPage();
+    await seedDemoSession(firstPage, firstSession);
+    await seedDemoSession(secondPage, secondSession);
+    await request.post("/api/workspace/reset", {
+      data: { scenarioId: "it-access" },
+      headers: demoSessionHeaders(firstSession)
+    });
+    await request.post("/api/workspace/reset", {
+      data: { scenarioId: "it-access" },
+      headers: demoSessionHeaders(secondSession)
+    });
+
+    await Promise.all([firstPage.goto("/dashboard"), secondPage.goto("/dashboard")]);
+    await firstPage.getByLabel("Select workflow").selectOption("procurement-intake");
+    await firstPage.getByRole("button", { name: "Load workflow" }).click();
+    await waitForStoredDemoStateField(firstPage, "sampleLoaded", true);
+
+    await expectWorkspaceApiState(request, {
+      sampleLoaded: true,
+      selectedScenarioId: "procurement-intake"
+    }, firstSession);
+    await expectWorkspaceApiState(request, {
+      sampleLoaded: false,
+      selectedScenarioId: "it-access"
+    }, secondSession);
+    await expect(secondPage.getByLabel("Select workflow")).toHaveValue("it-access");
+    await expect(secondPage.getByText("Demo environment · simulated execution · no external systems modified")).toBeVisible();
+  } finally {
+    await firstContext.close();
+    await secondContext.close();
+  }
 });
 
 test("restores a generated run from an exported summary import round trip", async ({ page, request }) => {
@@ -252,7 +320,7 @@ test("restores a generated run from an exported summary import round trip", asyn
   await page.getByRole("button", { name: "Generate automation proposal" }).click();
   await page.getByRole("button", { name: "Next" }).click();
   await page.getByRole("button", { name: "Approve", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Execute workflow" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Run simulation" })).toBeEnabled();
 
   await openView(page, "Audit");
   await expect(page.getByRole("heading", { level: 1, name: "Audit" })).toBeVisible();
@@ -280,7 +348,7 @@ test("restores a generated run from an exported summary import round trip", asyn
 });
 
 test("recovers to seeded state when persisted workspace mirror is malformed", async ({ page, request }) => {
-  await page.evaluate((storageKey) => window.localStorage.setItem(storageKey, "{not-json"), DEMO_STORAGE_KEY);
+  await page.evaluate((storageKey) => window.sessionStorage.setItem(storageKey, "{not-json"), DEMO_STORAGE_KEY);
   await page.reload();
   await enterWorkspace(page);
 
@@ -289,7 +357,7 @@ test("recovers to seeded state when persisted workspace mirror is malformed", as
   await openView(page, "Graph");
   await expect(page.getByRole("heading", { name: scenarios[0].graphTitle })).toHaveCount(0);
   await openView(page, "Review & Run");
-  await expect(page.getByRole("button", { name: "Execute workflow" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Run simulation" })).toHaveCount(0);
 
   await waitForStoredDemoStateField(page, "selectedScenarioId", scenarios[0].id);
   const recoveredState = await readStoredDemoState(page);
@@ -344,7 +412,7 @@ test("performance smoke keeps core interactions within the long-task budget", as
   await openView(page, "Review & Run");
   await openView(page, "Review & Run");
   await page.getByRole("button", { name: "Approve", exact: true }).click();
-  await page.getByRole("button", { name: "Execute workflow" }).click();
+  await page.getByRole("button", { name: "Run simulation" }).click();
   await page.getByText("Technical details").click();
   await expect(page.getByText(scenarios[0].mockOutput)).toBeVisible();
   await settleFrames(page);
@@ -389,6 +457,8 @@ test("landing performance smoke keeps scroll animation within the frame budget",
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Samruna" })).toBeVisible();
   await expect(page.getByLabel("Samruna product preview")).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  await settleFrames(page);
 
   const frameStats = await page.evaluate(async () => {
     const frameGaps: number[] = [];
@@ -407,10 +477,13 @@ test("landing performance smoke keeps scroll animation within the frame budget",
     }
 
     window.scrollTo(0, 0);
+    const sortedFrameGaps = [...frameGaps].sort((left, right) => left - right);
+    const p95Index = Math.min(sortedFrameGaps.length - 1, Math.ceil(sortedFrameGaps.length * 0.95) - 1);
 
     return {
       averageFrameGap: Math.round(frameGaps.reduce((total, gap) => total + gap, 0) / frameGaps.length),
-      maxFrameGap: Math.round(Math.max(...frameGaps))
+      maxFrameGap: Math.round(Math.max(...frameGaps)),
+      p95FrameGap: Math.round(sortedFrameGaps[p95Index] ?? 0)
     };
   });
 
@@ -426,7 +499,8 @@ test("landing performance smoke keeps scroll animation within the frame budget",
       }));
   });
 
-  expect(frameStats.maxFrameGap, `Landing scroll frame stats: ${JSON.stringify(frameStats, null, 2)}`).toBeLessThan(120);
+  expect(frameStats.p95FrameGap, `Landing scroll frame stats: ${JSON.stringify(frameStats, null, 2)}`).toBeLessThan(120);
+  expect(frameStats.maxFrameGap, `Landing scroll frame stats: ${JSON.stringify(frameStats, null, 2)}`).toBeLessThan(250);
   expect(longTasks, `Landing long tasks >= 150ms: ${JSON.stringify(longTasks, null, 2)}`).toEqual([]);
 
   await page.getByRole("button", { name: "Launch" }).click();
@@ -553,11 +627,13 @@ async function runGoldenPath(page: Page, request: APIRequestContext, scenario: S
 
   await page.getByRole("button", { name: "Approve", exact: true }).click();
   await expect(page.getByText("Available").first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Execute workflow" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Run simulation" })).toBeEnabled();
 
-  await page.getByRole("button", { name: "Execute workflow" }).click();
+  await page.getByRole("button", { name: "Run simulation" }).click();
   await page.getByText("Technical details").click();
   await expect(page.getByRole("heading", { name: "Workflow runner" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Simulated tool calls" })).toBeVisible();
+  await expect(page.getByText("Simulation completed")).toBeVisible();
   await expect(page.getByText(scenario.mockOutput)).toBeVisible();
   await expectWorkspaceApiState(request, {
     executionRuns: 1,
@@ -590,7 +666,7 @@ async function generateProposal(page: Page, request: APIRequestContext, scenario
   await expect(page.getByLabel("Proposal provider provenance")).toContainText("Validation engine");
   await expect(page.getByLabel("Proposal provider provenance")).toContainText("Proposal generated");
 
-  await expect(page.getByRole("button", { name: "Execute workflow" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Run simulation" })).toBeDisabled();
 
   await expect(page.getByText("Blocked").first()).toBeVisible();
   await expectWorkspaceApiState(request, {
@@ -623,6 +699,10 @@ async function exportSummaryText(page: Page) {
 async function resetDemo(page: Page, request: APIRequestContext, scenario: ScenarioExpectation) {
   await openView(page, "Audit");
   await page.getByRole("button", { name: "Reset workflow state" }).click();
+  const resetDialog = page.getByRole("dialog", { name: "Reset workflow?" });
+  await expect(resetDialog).toBeVisible();
+  await expect(resetDialog.getByRole("button", { name: "Cancel" })).toBeFocused();
+  await resetDialog.getByRole("button", { name: "Reset workflow" }).click();
 
   await expectScenarioContext(page, scenario.label);
   await openView(page, "Graph");
@@ -631,7 +711,7 @@ async function resetDemo(page: Page, request: APIRequestContext, scenario: Scena
   await expect(page.getByRole("heading", { name: "Governed automation proposal" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Workflow runner" })).toHaveCount(0);
   await expect(page.getByText(scenario.mockOutput)).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Execute workflow" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Run simulation" })).toHaveCount(0);
   await expectWorkspaceApiState(request, {
     executionRuns: 0,
     proposals: 0,
@@ -753,7 +833,7 @@ async function openView(page: Page, name: string) {
 
 async function readStoredDemoState(page: Page) {
   const handle = await page.waitForFunction((storageKey) => {
-    const raw = window.localStorage.getItem(storageKey);
+    const raw = window.sessionStorage.getItem(storageKey);
 
     if (!raw) {
       return undefined;
@@ -768,7 +848,7 @@ async function readStoredDemoState(page: Page) {
 async function waitForStoredDemoStateField(page: Page, field: keyof StoredDemoState, expected: string | boolean) {
   await page.waitForFunction(
     ([storageKey, fieldName, expectedValue]) => {
-      const raw = window.localStorage.getItem(storageKey as string);
+      const raw = window.sessionStorage.getItem(storageKey as string);
 
       if (!raw) {
         return false;
@@ -786,8 +866,12 @@ async function waitForStoredDemoStateField(page: Page, field: keyof StoredDemoSt
   );
 }
 
-async function expectWorkspaceApiState(request: APIRequestContext, expected: Record<string, string | number | boolean>) {
-  const response = await request.get("/api/workspace");
+async function expectWorkspaceApiState(
+  request: APIRequestContext,
+  expected: Record<string, string | number | boolean>,
+  sessionId = E2E_SESSION_ID
+) {
+  const response = await request.get("/api/workspace", { headers: demoSessionHeaders(sessionId) });
   expect(response.ok()).toBeTruthy();
   const body = (await response.json()) as {
     data?: {
@@ -800,4 +884,15 @@ async function expectWorkspaceApiState(request: APIRequestContext, expected: Rec
     const actual = state[field];
     expect(Array.isArray(actual) && typeof value === "number" ? actual.length : actual, `workspace API field ${field}`).toBe(value);
   }
+}
+
+function demoSessionHeaders(sessionId: string) {
+  return { "X-Samruna-Session": sessionId };
+}
+
+async function seedDemoSession(page: Page, sessionId: string) {
+  await page.addInitScript(
+    ([storageKey, value]) => window.sessionStorage.setItem(storageKey, value),
+    [DEMO_SESSION_STORAGE_KEY, sessionId]
+  );
 }

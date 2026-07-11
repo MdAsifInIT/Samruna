@@ -1,5 +1,6 @@
 import { StatusPill } from "../../components/shared/StatusPill";
 import type { WorkGraphDemoController } from "../../app/useWorkGraphDemoController";
+import { executionStatusPresentation } from "../../domain/executionPresentation";
 
 interface OverviewViewProps {
   controller: WorkGraphDemoController;
@@ -27,12 +28,14 @@ export function OverviewView({ controller }: OverviewViewProps) {
   const hasGraph = demoState.analysisRequested && Boolean(graph);
   const hasProposal = demoState.proposalRequested && Boolean(simulation);
   const hasExecutedWorkflow = Boolean(executionRun);
+  const simulationCompleted = executionRun?.status === "completed";
+  const executionPresentation = executionRun ? executionStatusPresentation(executionRun.status) : undefined;
   const stateItems = [
     ["Workflow", hasLoadedWorkflow ? "Loaded" : "Not loaded"],
     ["Analysis", hasGraph ? "Graph ready" : "Not analyzed"],
     ["Proposal", hasProposal ? "Generated" : "Not generated"],
     ["Governance", hasProposal ? governanceDecisionLabel : "Awaiting proposal"],
-    ["Execution", hasExecutedWorkflow ? "Completed" : executionReady ? "Available" : "Blocked"]
+    ["Simulation", executionPresentation?.label ?? (executionReady ? "Available" : "Blocked")]
   ];
   const beforeMetrics = {
     cycleTime: hasGraph ? `${graph?.metrics.averageCycleTimeHours}h` : "Pending",
@@ -42,21 +45,21 @@ export function OverviewView({ controller }: OverviewViewProps) {
   const afterMetrics = {
     cycleTime: hasExecutedWorkflow && graph && simulation
       ? `${Math.max(0, Math.round(graph.metrics.averageCycleTimeHours - simulation.avoidedDelayHours))}h`
-      : "Execute to view",
-    approvalDelay: hasExecutedWorkflow ? "2h" : "Execute to view",
-    exceptionRate: hasExecutedWorkflow ? "0%" : "Execute to view",
-    manualSteps: hasExecutedWorkflow ? "1" : "Execute to view",
-    auditTrail: hasExecutedWorkflow ? "Full" : "Execute to view"
+      : "Run to forecast",
+    approvalDelay: hasExecutedWorkflow ? "2h" : "Run to forecast",
+    exceptionRate: hasExecutedWorkflow ? "0%" : "Run to forecast",
+    manualSteps: hasExecutedWorkflow ? "1" : "Run to forecast",
+    auditTrail: hasExecutedWorkflow ? "Full" : "Run to forecast"
   };
   const nextActionTone = hasExecutedWorkflow
-    ? "good"
+    ? simulationCompleted ? "good" : "blocked"
     : demoState.governanceDecision === "rejected"
       ? "blocked"
       : "warn";
   const nextActionLabel = hasExecutedWorkflow
-    ? "Workflow executed"
+    ? executionPresentation?.headline ?? "Simulation recorded"
     : executionReady
-      ? "Ready to execute"
+      ? "Ready to simulate"
       : governanceDecisionLabel;
   const boundaryNotice =
     scenario.id === "procurement-intake" && scenario.syntheticDataNotice.startsWith("All procurement requesters")
@@ -95,7 +98,7 @@ export function OverviewView({ controller }: OverviewViewProps) {
       </section>
 
       <section className="bento-card metrics-card before-panel">
-        <h2>Before - Manual Process</h2>
+        <h2>Fixture baseline - Manual Process</h2>
         <dl>
           <div>
             <dt>Cycle time</dt>
@@ -120,8 +123,8 @@ export function OverviewView({ controller }: OverviewViewProps) {
         </dl>
       </section>
 
-      <section className="bento-card metrics-card after-panel" data-executed={hasExecutedWorkflow ? "true" : "false"}>
-        <h2>After - Governed Automation</h2>
+      <section className="bento-card metrics-card after-panel" data-executed={simulationCompleted ? "true" : "false"}>
+        <h2>Scenario forecast - Governed Automation</h2>
         <dl>
           <div>
             <dt>Cycle time</dt>

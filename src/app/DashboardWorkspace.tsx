@@ -36,7 +36,7 @@ function renderView(
     case "review-run":
       return <ReviewRunView controller={controller} />;
     case "audit":
-      return <ReviewView controller={controller} onReset={() => onViewChange("overview")} />;
+      return <ReviewView controller={controller} />;
     case "overview":
     default:
       return <OverviewView controller={controller} />;

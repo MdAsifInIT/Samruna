@@ -27,7 +27,7 @@ This prototype moves beyond traditional RPA (Robotic Process Automation). Instea
 1. **Observe & Understand:** It ingests noisy operational traces (tickets, emails, approval logs) and detects repeated work patterns to build a graph.
 2. **Agentic Proposal:** The OpenAI engine reasons over the graph to generate a structured automation proposal—identifying required data, policy rules, and escalation paths.
 3. **Governance Gate:** Control is never handed fully to the model. The AI plans the automation, but a human must review the policy checks and approve it.
-4. **Safe Simulation:** Execution runs only in a synthetic simulation mode to preserve an audit trail without risking enterprise systems.
+4. **Safe Simulation:** Execution runs only in simulation mode to preserve an audit trail without risking enterprise systems.
 
 ## What It Proves
 
@@ -39,7 +39,7 @@ This prototype moves beyond traditional RPA (Robotic Process Automation). Instea
 
 ## Scenario Set
 
-Samruna includes four synthetic enterprise workflows:
+Samruna includes four seeded enterprise workflows:
 
 - `it-access`: employee access requests, approvals, and safe simulated provisioning.
 - `procurement-intake`: purchase intake, routing, policy review, and approval flow.
@@ -48,7 +48,7 @@ Samruna includes four synthetic enterprise workflows:
 
 ## OpenAI Mode (Backend)
 
-When `OPENAI_API_KEY` is set for the backend process, Samruna uses the OpenAI Responses API to generate proposal content and synthetic execution runs from already-analyzed workflow context. When the key is absent, or if the live call fails, the backend falls back to a deterministic historical validation engine.
+When `OPENAI_API_KEY` is set for the backend process, Samruna uses the OpenAI Responses API to generate proposal content and simulated execution runs from already-analyzed workflow context. When the key is absent, or if the live call fails, the backend falls back to a deterministic historical validation engine.
 
 Use backend-only environment variables. **Do not expose API keys to the browser or frontend code.**
 
@@ -88,6 +88,8 @@ npm run dev:fullstack
 
 Open the local URL printed by Vite.
 
+For a deterministic presentation fallback, run `npm run demo:backup`. It rebuilds the app, resets a dedicated local database, disables live OpenAI for the child process, and serves the full stack at `http://127.0.0.1:4174`.
+
 If you want to test the **Live OpenAI Mode** locally:
 
 ```powershell
@@ -102,6 +104,7 @@ npm run dev:fullstack
 ```powershell
 npm run demo:dev          # Start the local frontend demo
 npm run dev:fullstack     # Start backend and frontend together
+npm run demo:backup       # Rebuild and start the deterministic presentation backup
 npm run backend:seed      # Reset local backend state
 npm run build             # Typecheck and build production assets
 npm test                  # Run unit tests

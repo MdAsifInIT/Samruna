@@ -222,6 +222,60 @@ describe("WorkspaceService", () => {
     expect(injected.health().aiProvider.model).toBe("gpt-test");
   });
 
+  it("persists identical deterministic artifact IDs independently across sessions", async () => {
+    const firstId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const secondId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    const first = service.forWorkspace(firstId);
+    const second = service.forWorkspace(secondId);
+
+    first.load();
+    first.analyze();
+    await first.createProposal();
+    second.load();
+    second.analyze();
+    await second.createProposal();
+
+    const firstProposal = database.listArtifacts(firstId).find((artifact) => artifact.kind === "proposal");
+    const secondProposal = database.listArtifacts(secondId).find((artifact) => artifact.kind === "proposal");
+
+    expect(firstProposal).toBeDefined();
+    expect(secondProposal?.artifactId).toBe(firstProposal?.artifactId);
+    expect((firstProposal?.payload as AutomationProposal).id).toBe("proposal-pattern-standard_access-v1");
+    expect((secondProposal?.payload as AutomationProposal).id).toBe("proposal-pattern-standard_access-v1");
+  });
+
+  it("expires idle demo sessions while preserving the CLI workspace", () => {
+    let now = new Date("2026-07-11T10:00:00.000Z");
+    const dbPath = join(mkdtempSync(join(tmpdir(), "samruna-expiry-")), "expiry.sqlite");
+    const expiryDatabase = new WorkspaceDatabase(dbPath, () => now);
+    const owner = new WorkspaceService(expiryDatabase);
+    const scoped = owner.forWorkspace("44444444-4444-4444-8444-444444444444");
+
+    scoped.load();
+    expect(scoped.snapshot().state.sampleLoaded).toBe(true);
+    now = new Date("2026-07-11T12:00:01.000Z");
+
+    expect(owner.purgeExpiredSessions()).toBe(1);
+    expect(scoped.snapshot().state.sampleLoaded).toBe(false);
+    expect(owner.snapshot().state.selectedScenarioId).toBe("it-access");
+    owner.close();
+  });
+
+  it("reseeds an expired session on access without waiting for periodic cleanup", () => {
+    let now = new Date("2026-07-11T10:00:00.000Z");
+    const dbPath = join(mkdtempSync(join(tmpdir(), "samruna-access-expiry-")), "expiry.sqlite");
+    const expiryDatabase = new WorkspaceDatabase(dbPath, () => now);
+    const owner = new WorkspaceService(expiryDatabase);
+    const scoped = owner.forWorkspace("77777777-7777-4777-8777-777777777777");
+
+    scoped.load();
+    expect(scoped.snapshot().state.sampleLoaded).toBe(true);
+    now = new Date("2026-07-11T12:00:01.000Z");
+
+    expect(scoped.snapshot().state.sampleLoaded).toBe(false);
+    owner.close();
+  });
+
   it("uses an injected AI provider for execution and normalizes returned run fields", async () => {
     const provider = new RecordingProvider();
     const injected = new WorkspaceService(database, provider);

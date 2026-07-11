@@ -12,7 +12,7 @@ import {
   Circle,
   Loader2
 } from "lucide-react";
-import { type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode, useState, useEffect } from "react";
+import { type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode, useState, useEffect } from "react";
 import { BrandLogo } from "../components/shared/BrandLogo";
 import { ToolbarButton } from "../components/shared/ToolbarButton";
 import type { ScenarioId } from "../domain/types";
@@ -45,8 +45,12 @@ export function AppShell({ activeView, children, controller, onClose, onViewChan
     providerFallbackMessage,
     providerStatusDetail,
     providerStatusLabel,
+    isWorkspaceBusy,
+    pendingActionLabel,
+    resetConfirmationOpen,
     scenario,
-    scenarioOptions
+    scenarioOptions,
+    storageRecoveryWarning
   } = controller;
   
   const activeNavigationItem = navigationItems.find((item) => item.id === activeView) ?? navigationItems[0];
@@ -150,13 +154,25 @@ export function AppShell({ activeView, children, controller, onClose, onViewChan
     onViewChange(nextNavigationItem.id);
   };
 
-  const resetWorkflow = () => {
-    actions.resetDemo();
-    onViewChange("overview");
+  const resetWorkflow = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    actions.requestReset(event.currentTarget);
+  };
+
+  const resizeSidebarWithKeyboard = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (sidebarCollapsed) return;
+    const step = event.shiftKey ? 24 : 8;
+    let nextWidth: number | undefined;
+    if (event.key === "ArrowLeft") nextWidth = sidebarWidth - step;
+    if (event.key === "ArrowRight") nextWidth = sidebarWidth + step;
+    if (event.key === "Home") nextWidth = SIDEBAR_MIN_WIDTH;
+    if (event.key === "End") nextWidth = SIDEBAR_MAX_WIDTH;
+    if (nextWidth === undefined) return;
+    event.preventDefault();
+    setSidebarWidth(Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, nextWidth)));
   };
 
   return (
-    <div className={shellClassName} style={shellStyle}>
+    <div className={shellClassName} style={shellStyle} aria-busy={isWorkspaceBusy}>
       <aside className="sidebar" aria-label="Primary navigation" aria-expanded={!sidebarCollapsed}>
         <div className="brand-block">
           <a
@@ -206,7 +222,7 @@ export function AppShell({ activeView, children, controller, onClose, onViewChan
         </nav>
         
         <div className="sidebar-footer">
-          <button type="button" className="sidebar-reset-button" aria-label="Reset workflow" onClick={resetWorkflow}>
+          <button type="button" className="sidebar-reset-button" aria-label="Reset workflow" disabled={isWorkspaceBusy} onClick={resetWorkflow}>
             <RotateCcw size={16} />
             <span className="sidebar-label">Reset workflow</span>
           </button>
@@ -228,6 +244,12 @@ export function AppShell({ activeView, children, controller, onClose, onViewChan
           role="separator"
           aria-label="Resize sidebar"
           aria-orientation="vertical"
+          aria-valuemin={SIDEBAR_MIN_WIDTH}
+          aria-valuemax={SIDEBAR_MAX_WIDTH}
+          aria-valuenow={sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth}
+          aria-valuetext={`${sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth} pixels`}
+          tabIndex={sidebarCollapsed ? -1 : 0}
+          onKeyDown={resizeSidebarWithKeyboard}
           onPointerDown={beginSidebarResize}
         />
       </aside>
@@ -237,15 +259,17 @@ export function AppShell({ activeView, children, controller, onClose, onViewChan
           <div className="toast-banner error-toast" role="status">
             <span>{backendSyncError}</span>
             <div className="toast-actions">
-              <button type="button" onClick={actions.retryBackendSync}>
+              <button type="button" disabled={isWorkspaceBusy} onClick={actions.retryBackendSync}>
                 <RefreshCw size={14} /> Retry
               </button>
-              <button type="button" onClick={actions.resetDemo}>
+              <button type="button" disabled={isWorkspaceBusy} onClick={(event) => actions.requestReset(event.currentTarget)}>
                 <RotateCcw size={14} /> Reset
               </button>
             </div>
           </div>
         )}
+
+        {storageRecoveryWarning ? <div className="toast-banner" role="status">{storageRecoveryWarning}</div> : null}
 
         <header className="compact-header" aria-label="Workflow controls">
           <div className="header-left">
@@ -260,6 +284,7 @@ export function AppShell({ activeView, children, controller, onClose, onViewChan
                 aria-label="Select app view"
                 className="apple-select"
                 value={activeView}
+                disabled={isWorkspaceBusy}
                 onChange={(event) => onViewChange(event.target.value as ViewId)}
               >
                 {navigationItems.map((item) => {
@@ -280,6 +305,7 @@ export function AppShell({ activeView, children, controller, onClose, onViewChan
                   aria-label="Select workflow"
                   className="apple-select"
                   value={demoState.selectedScenarioId}
+                  disabled={isWorkspaceBusy}
                   onChange={(event) => {
                     actions.selectScenario(event.target.value as ScenarioId);
                     onViewChange("overview");
@@ -297,6 +323,7 @@ export function AppShell({ activeView, children, controller, onClose, onViewChan
                 aria-label="Load workflow"
                 title="Load workflow"
                 className="toolbar-button-primary"
+                disabled={isWorkspaceBusy}
                 onClick={actions.loadSelectedScenario}
               >
                 Load
@@ -306,7 +333,7 @@ export function AppShell({ activeView, children, controller, onClose, onViewChan
                 aria-label="Analyze workflow"
                 title="Analyze workflow"
                 className="toolbar-button-primary"
-                disabled={!demoState.sampleLoaded}
+                disabled={!demoState.sampleLoaded || isWorkspaceBusy}
                 onClick={actions.analyzeWorkflow}
               >
                 Analyze
@@ -316,7 +343,7 @@ export function AppShell({ activeView, children, controller, onClose, onViewChan
                 aria-label="Generate automation proposal"
                 title="Generate automation proposal"
                 className="toolbar-button-primary"
-                disabled={!demoState.analysisRequested || !proposalGenerationReady}
+                disabled={!demoState.analysisRequested || !proposalGenerationReady || isWorkspaceBusy}
                 onClick={actions.generateProposalFromCurrentState}
               >
                 Generate
@@ -329,7 +356,7 @@ export function AppShell({ activeView, children, controller, onClose, onViewChan
               type="button"
               className="next-flow-button"
               aria-label="Next"
-              disabled={nextDisabled}
+              disabled={nextDisabled || isWorkspaceBusy}
               title={nextTitle}
               onClick={goToNextStep}
             >
@@ -339,8 +366,29 @@ export function AppShell({ activeView, children, controller, onClose, onViewChan
           </div>
         </header>
 
+        <div className="demo-boundary-banner" role="note">
+          <strong>Demo environment</strong> · simulated execution · no external systems modified
+        </div>
+        {pendingActionLabel ? <p className="workspace-progress" role="status" aria-live="polite">{pendingActionLabel}…</p> : null}
         <div className="view-content">{children}</div>
       </main>
+      {resetConfirmationOpen ? (
+        <div
+          className="dialog-backdrop"
+          role="presentation"
+          onClick={(event) => event.target === event.currentTarget && actions.cancelReset()}
+          onKeyDown={(event) => event.key === "Escape" && actions.cancelReset()}
+        >
+          <div className="reset-dialog" role="dialog" aria-modal="true" aria-labelledby="reset-dialog-title" aria-describedby="reset-dialog-description">
+            <h2 id="reset-dialog-title">Reset workflow?</h2>
+            <p id="reset-dialog-description">This clears analysis, proposals, governance decisions, simulated runs, and audit events for {scenario.workflowName}.</p>
+            <div className="reset-dialog-actions">
+              <button type="button" autoFocus onClick={actions.cancelReset}>Cancel</button>
+              <button type="button" className="reject-button" onClick={() => { actions.confirmReset(); onViewChange("overview"); }}>Reset workflow</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

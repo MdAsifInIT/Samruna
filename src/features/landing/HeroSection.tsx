@@ -77,6 +77,7 @@ export function HeroSection({ onLaunch, onPrepareWorkspace }: HeroSectionProps) 
               <path d="M8 3.33337L12.6667 8.00004L8 12.6667" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
+          <p className="mt-4 text-sm font-semibold text-[#475569]">Demo data · simulated execution · no external systems modified</p>
         </div>
       </motion.div>
     </section>

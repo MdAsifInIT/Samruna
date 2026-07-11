@@ -11,12 +11,13 @@ npm run dev:fullstack
 
 Open the local URL printed by Vite.
 
-If Vite dev dependency optimization is blocked in a restricted environment, use the built one-origin server:
+Prepare and start the deterministic presentation backup:
 
 ```powershell
-npm run build
-npm run preview:fullstack -- --port 4174
+npm run demo:backup
 ```
+
+This command builds the production assets, recreates `.samruna/backup-demo.sqlite`, strips `OPENAI_API_KEY` from its child environment, resets seeded state, and starts the one-origin full-stack app at `http://127.0.0.1:4174`. Stop it with Ctrl+C; the launcher forwards shutdown signals to the server.
 
 Local POC verification without browser automation:
 
@@ -68,8 +69,8 @@ All scenario data is synthetic and stored in `src/fixtures/demoData.ts`.
 10. Confirm the shell progress stepper shows staged progress and Overview shows the before/after impact panel.
 11. Click `Approve` or `Reject` in `Review & Run`.
 12. Confirm the approval gate state changes.
-13. Click `Execute workflow` after approval.
-14. Confirm Review & Run shows the execution success banner, incoming request, safe simulated actions, execution audit trail, learning recommendation, and `Completed` execution gate after execution.
+13. Click `Run simulation` after approval.
+14. Confirm Review & Run shows the truthful simulation result, incoming request, simulated tool calls, execution audit trail, learning recommendation, and the matching execution gate state.
 15. Open Audit and click `Export Summary`.
 16. Confirm the exported run summary JSON appears.
 17. Click `Reset` in `Audit`.
@@ -141,7 +142,7 @@ If the UI looks stale:
 2. Refresh the browser.
 3. Restart `npm run dev:fullstack`.
 4. Use the Overview menu to confirm the current scenario state, then open Graph, Review & Run, and Audit to check whether generated artifacts remain.
-5. Use `npm run build` and `npm run preview:fullstack -- --port 4174` as a fallback.
+5. Stop any process using port 4174, then run `npm run demo:backup` and open `http://127.0.0.1:4174`.
 6. If backend or browser mirror state still appears stale, run the Playwright e2e suite to validate reload and reset recovery.
 
 If tests or build fail, run:
@@ -173,5 +174,14 @@ When browser automation is not available, verify the local POC with:
 3. `npm run dev:fullstack` or `npm run preview:fullstack -- --port 4174` to confirm the API-backed app starts
 4. `npm run verify:fullstack` to confirm typecheck, app tests, backend tests, build, and audit
 5. `npm run backend:reset` to confirm the backend operator helper restores deterministic output
+
+## 10.9 Presenter Preflight
+
+1. Run `npm ci`, `npm run verify:fullstack`, and `npm run test:e2e:preview` before demo day.
+2. Open the public frontend and confirm `/api/health` succeeds on the Render backend.
+3. Confirm the persistent demo-boundary and simulated-execution labels are visible.
+4. Rehearse the golden path once, including reset confirmation and a non-completed simulation state.
+5. Start `npm run demo:backup` in a separate terminal and keep `http://127.0.0.1:4174` ready as the local fallback.
+6. If the public API is cold or unavailable, switch to the local backup; do not add a live key during the presentation.
 
 When browser automation is available, `npm run test:e2e` and `npm run test:e2e:preview` are the browser verification gates. The commands require Playwright browser binaries; if Chromium is missing, install it after dependencies with `npm run test:e2e:install`.

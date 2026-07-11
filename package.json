@@ -11,6 +11,7 @@
     "demo:dev": "vite --host 127.0.0.1 --configLoader runner",
     "demo:reset": "node scripts/demo-state.mjs reset",
     "demo:seed": "node scripts/demo-state.mjs seed",
+    "demo:backup": "node scripts/run-backup-demo.mjs",
     "backend:dev": "tsx server/index.ts",
     "backend:seed": "tsx server/cli.ts seed",
     "backend:reset": "tsx server/cli.ts reset",

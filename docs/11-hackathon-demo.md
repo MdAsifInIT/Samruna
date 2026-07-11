@@ -24,7 +24,7 @@ For the live pitch or for judges reviewing the project asynchronously, use the h
    - **Crucial Pitch Moment:** Explain that this is where the **Agentic AI** steps in. The OpenAI backend acts as a reasoning engine, planning the triggers, policies, and actions based on the graph.
 6. Emphasize **Governance** (HCLTech focus). Point out that the Agentic AI cannot act on its own. It requires the `Approve` button to be clicked.
 7. Click `Approve`.
-8. Click `Execute workflow`. Emphasize that execution happens in a **Safe Simulation** to avoid enterprise risks.
+8. Click `Run simulation`. Emphasize that no external system changes occur.
 9. Open `Audit`, then click `Export Summary` to show the transparent audit trail.
 10. Click `Reset workflow state` to prove the POC can be safely replayed.
 
@@ -35,8 +35,8 @@ For the live pitch or for judges reviewing the project asynchronously, use the h
 
 If a judge chooses to evaluate the repository locally, the local POC is safe because:
 - The default AI provider is the deterministic Historical validation engine.
-- Optional live OpenAI proposal and synthetic execution runs server-side only.
-- The scenario data is synthetic.
+- Optional live OpenAI proposal and simulated execution runs server-side only.
+- The scenario data uses clearly disclosed evaluation fixtures.
 - No `OPENAI_API_KEY` is strictly required to test the core UX flow.
 - Reset, seed, import, and export are local operations.
 
@@ -65,6 +65,11 @@ Start the full-stack app in one shell:
 npm run dev:fullstack
 ```
 
+Keep the deterministic presentation fallback ready in another shell:
+```powershell
+npm run demo:backup
+```
+
 Run verification commands in a separate shell:
 ```powershell
 npm run verify:fullstack
@@ -83,4 +88,4 @@ npm run backend:seed
 npm run dev:fullstack
 ```
 
-Do not paste keys into the browser, fixtures, docs, exported run summaries, or screenshots. Live OpenAI affects proposal and synthetic execution generation only.
+Do not paste keys into the browser, fixtures, docs, exported run summaries, or screenshots. Live OpenAI affects proposal and simulated execution generation only.

@@ -1,6 +1,7 @@
 import { GitBranch, Play, ShieldCheck, XCircle } from "lucide-react";
 import { formatProposalTimestamp, type WorkGraphDemoController } from "../../app/useWorkGraphDemoController";
 import { EmptyState } from "../../components/shared/EmptyState";
+import { executionStatusPresentation } from "../../domain/executionPresentation";
 
 interface ReviewRunViewProps {
   controller: WorkGraphDemoController;
@@ -28,6 +29,8 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
     simulation,
     simulationCasePreview
   } = controller;
+  const isBusy = controller.isWorkspaceBusy;
+  const executionPresentation = executionRun ? executionStatusPresentation(executionRun.status) : undefined;
   const hasSuccessfulSimulation = Boolean(simulation && simulation.totalCases > 0 && simulation.passed > 0 && simulation.avoidedDelayHours > 0);
   const validationDisplay = validationStatusLabel(aiProvider.status.lastInvocation?.validationStatus);
 
@@ -69,6 +72,7 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
             className="approve-button"
             type="button"
             aria-pressed={demoState.governanceDecision === "approved"}
+            disabled={isBusy}
             onClick={actions.approveProposal}
           >
             <ShieldCheck size={16} />
@@ -78,6 +82,7 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
             className="reject-button"
             type="button"
             aria-pressed={demoState.governanceDecision === "rejected"}
+            disabled={isBusy}
             onClick={actions.rejectProposal}
           >
             <XCircle size={16} />
@@ -86,11 +91,11 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
           <button
             className="toolbar-button-run"
             type="button"
-            disabled={!executionReady}
+            disabled={!executionReady || isBusy}
             onClick={actions.runMockExecution}
           >
             <Play size={16} />
-            <span>Execute workflow</span>
+            <span>Run simulation</span>
           </button>
         </div>
       </div>
@@ -117,8 +122,8 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
         <div>
           <span>Execution gate</span>
           <strong>
-            {executionRun
-              ? "Completed"
+            {executionPresentation
+              ? executionPresentation.label
               : executionReady
                 ? "Available"
                 : demoState.governanceDecision === "rejected"
@@ -133,8 +138,8 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
           </strong>
         </div>
         <div className="status-highlight status-primary">
-          <span>{executionRun ? "Avoided delay" : "Forecast delay"}</span>
-          <strong>{hasSuccessfulSimulation ? `${simulation.avoidedDelayHours}h ${executionRun ? "saved" : "forecast"}` : "Needs review"}</strong>
+          <span>Forecast delay</span>
+          <strong>{hasSuccessfulSimulation ? `${simulation.avoidedDelayHours}h forecast` : "Needs review"}</strong>
         </div>
         <div>
           <span>Enterprise execution</span>
@@ -149,6 +154,7 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
             className="apple-select"
             aria-label="Select proposal version"
             value={proposal.id}
+            disabled={isBusy}
             onChange={(event) => actions.selectProposalVersion(event.target.value)}
           >
             {proposalVersions.map((versionedProposal) => (
@@ -161,7 +167,7 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
         <button
           className="revision-button"
           type="button"
-          disabled={!proposalGenerationReady}
+          disabled={!proposalGenerationReady || isBusy}
           onClick={actions.createSelectedProposalRevision}
         >
           <GitBranch size={16} />
@@ -219,7 +225,7 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
           </article>
 
           <article>
-            <h3>Review before execution</h3>
+            <h3>Review before simulation</h3>
             <div className="simulation-grid simulation-grid-compact">
               <div>
                 <span>Human review</span>
@@ -255,7 +261,7 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
             </p>
             <h4>Incoming request</h4>
             <p>{fixtures.newIncomingTrace.body}</p>
-            <h4>Executed actions</h4>
+            <h4>Simulated tool calls</h4>
             {executionRun?.mockToolCalls.length ? (
               <ul>
                 {executionRun.mockToolCalls.map((call) => (
@@ -267,7 +273,7 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
             ) : (
               <p>
                 {executionReady
-                  ? "Run the workflow to see executed actions."
+                  ? "Run the simulation to see simulated tool calls."
                   : demoState.governanceDecision === "rejected"
                     ? "Safe execution is blocked by rejection until the proposal is revised and approved."
                     : "Safe execution is blocked until approval opens the gate."}
@@ -277,7 +283,7 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
             <p>
               {learningRecommendation
                 ? `${learningRecommendation.recommendation} ${learningRecommendation.expectedImpact}`
-                : "Learning recommendation appears after a workflow run."}
+                : "Learning recommendation appears after a simulation run."}
             </p>
           </article>
         </div>
@@ -285,18 +291,15 @@ export function ReviewRunView({ controller }: ReviewRunViewProps) {
 
       {executionRun ? (
         <>
-          <div className="execution-success" aria-live="polite">
+          <div className={`execution-success execution-${executionPresentation?.tone}`} aria-live="polite">
             <div className="success-icon" aria-hidden="true">
-              ✓
+              {executionPresentation?.tone === "success" ? "✓" : executionPresentation?.tone === "warning" ? "!" : "×"}
             </div>
-            <strong>Workflow executed successfully</strong>
-            <p>
-              {executionRun.mockToolCalls.length} actions completed | Full audit trail recorded | Learning
-              recommendation generated
-            </p>
+            <strong>{executionPresentation?.headline}</strong>
+            <p>{executionPresentation?.detail} {executionRun.mockToolCalls.length} simulated tool calls recorded.</p>
           </div>
           <div className="execution-audit">
-            <h3>Execution audit trail</h3>
+            <h3>Simulation audit trail</h3>
             <ol>
               {executionRun.auditTrail.map((entry) => (
                 <li key={entry}>{entry}</li>

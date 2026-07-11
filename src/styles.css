@@ -138,6 +138,64 @@
   --landing-bg: var(--canvas);
 }
 
+.demo-boundary-banner {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+}
+
+.demo-boundary-banner strong { color: #075985; }
+
+.workspace-progress {
+  margin: 0;
+  padding: 6px 24px;
+  background: #eff6ff;
+  color: #1e40af;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(15 23 42 / 55%);
+}
+
+.reset-dialog {
+  width: min(460px, 100%);
+  padding: 24px;
+  border-radius: 20px;
+  background: white;
+  box-shadow: 0 24px 64px rgb(15 23 42 / 25%);
+}
+
+.reset-dialog h2 { margin-top: 0; }
+.reset-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+.reset-dialog-actions button { min-height: 40px; padding: 0 16px; border-radius: 10px; }
+
+.workspace-load-state {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+}
+
+.workspace-load-state div { display: flex; justify-content: center; gap: 10px; }
+.execution-warning { border-color: #f59e0b; background: #fffbeb; }
+.execution-blocked { border-color: #ef4444; background: #fef2f2; }
+
 * {
   box-sizing: border-box;
 }

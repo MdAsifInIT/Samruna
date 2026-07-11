@@ -1,5 +1,6 @@
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { isIP } from "node:net";
 import { extname, isAbsolute, join, normalize, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import type {
@@ -24,6 +25,8 @@ const DEFAULT_ALLOWED_ORIGINS = [
   "http://127.0.0.1:5173",
   "http://localhost:4173",
   "http://127.0.0.1:4173",
+  "http://localhost:4174",
+  "http://127.0.0.1:4174",
   "http://localhost:8787",
   "http://127.0.0.1:8787"
 ];
@@ -36,11 +39,61 @@ const allowedOrigins = parseAllowedOrigins(process.env.CORS_ORIGINS);
 
 const scenarioIds = new Set(listDemoScenarios().map((scenario) => scenario.id));
 const governanceDecisions = new Set<GovernanceDecision>(["approved", "rejected", "changes_requested"]);
+const DEMO_SESSION_HEADER = "x-samruna-session";
+const MAX_FORWARDED_FOR_LENGTH = 256;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const WORKSPACE_PATHS = new Set<string>(
+  Object.values(workspaceRoutes).filter((path) => path !== workspaceRoutes.health && path !== workspaceRoutes.scenarios)
+);
 
-export function createApp(workspaceService: WorkspaceService) {
-  return createServer(async (request, response) => {
+export interface AppOptions {
+  now?: () => number;
+  trustedProxy?: boolean;
+  limits?: Partial<RateLimitConfig>;
+}
+
+export interface RateLimitConfig {
+  generalPerMinute: number;
+  mutationsPerMinute: number;
+  expensivePerTenMinutesPerSession: number;
+  expensivePerTenMinutesPerIp: number;
+}
+
+const DEFAULT_RATE_LIMITS: RateLimitConfig = {
+  generalPerMinute: 120,
+  mutationsPerMinute: 60,
+  expensivePerTenMinutesPerSession: 10,
+  expensivePerTenMinutesPerIp: 30
+};
+
+export function readRateLimits(env: NodeJS.ProcessEnv = process.env): RateLimitConfig {
+  return {
+    generalPerMinute: readPositiveInteger(env.SAMRUNA_RATE_LIMIT_GENERAL_PER_MINUTE) ?? DEFAULT_RATE_LIMITS.generalPerMinute,
+    mutationsPerMinute:
+      readPositiveInteger(env.SAMRUNA_RATE_LIMIT_MUTATIONS_PER_MINUTE) ?? DEFAULT_RATE_LIMITS.mutationsPerMinute,
+    expensivePerTenMinutesPerSession:
+      readPositiveInteger(env.SAMRUNA_RATE_LIMIT_EXPENSIVE_SESSION_PER_10_MINUTES) ??
+      DEFAULT_RATE_LIMITS.expensivePerTenMinutesPerSession,
+    expensivePerTenMinutesPerIp:
+      readPositiveInteger(env.SAMRUNA_RATE_LIMIT_EXPENSIVE_IP_PER_10_MINUTES) ??
+      DEFAULT_RATE_LIMITS.expensivePerTenMinutesPerIp
+  };
+}
+
+export function createApp(workspaceService: WorkspaceService, options: AppOptions = {}) {
+  const now = options.now ?? Date.now;
+  const limiter = new FixedWindowRateLimiter(now);
+  const limits = { ...readRateLimits(), ...options.limits };
+  const trustedProxy = options.trustedProxy ?? Boolean(process.env.RENDER || process.env.SAMRUNA_TRUST_PROXY === "1");
+  workspaceService.purgeExpiredSessions();
+  const expiryCleanup = setInterval(() => workspaceService.purgeExpiredSessions(), 15 * 60 * 1000);
+  const limiterCleanup = setInterval(() => limiter.cleanup(), 5 * 60 * 1000);
+  unrefTimer(expiryCleanup);
+  unrefTimer(limiterCleanup);
+
+  const server = createServer(async (request, response) => {
     try {
-      await routeRequest(request, response, workspaceService);
+      await routeRequest(request, response, workspaceService, limiter, limits, trustedProxy);
     } catch (error) {
       const status = error instanceof WorkspaceError ? 400 : 500;
       const code = error instanceof WorkspaceError ? error.code : "internal_error";
@@ -55,12 +108,22 @@ export function createApp(workspaceService: WorkspaceService) {
       });
     }
   });
+
+  server.once("close", () => {
+    clearInterval(expiryCleanup);
+    clearInterval(limiterCleanup);
+  });
+
+  return server;
 }
 
 async function routeRequest(
   request: IncomingMessage,
   response: ServerResponse,
-  workspaceService: WorkspaceService
+  workspaceService: WorkspaceService,
+  limiter: FixedWindowRateLimiter,
+  limits: RateLimitConfig,
+  trustedProxy: boolean
 ): Promise<void> {
   if (!applyCors(request, response)) {
     return;
@@ -69,7 +132,7 @@ async function routeRequest(
   const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "127.0.0.1"}`);
 
   if (url.pathname.startsWith("/api/")) {
-    await routeApi(request, response, url.pathname, workspaceService);
+    await routeApi(request, response, url.pathname, workspaceService, limiter, limits, trustedProxy);
     return;
   }
 
@@ -91,7 +154,10 @@ async function routeApi(
   request: IncomingMessage,
   response: ServerResponse,
   path: string,
-  workspaceService: WorkspaceService
+  workspaceService: WorkspaceService,
+  limiter: FixedWindowRateLimiter,
+  limits: RateLimitConfig,
+  trustedProxy: boolean
 ): Promise<void> {
   const method = request.method ?? "GET";
 
@@ -100,68 +166,100 @@ async function routeApi(
     return;
   }
 
+  const ip = clientIp(request, trustedProxy);
+  if (!consumeLimit(response, limiter, `general:${ip}`, limits.generalPerMinute, 60_000)) {
+    return;
+  }
+
   if (method === "GET" && path === workspaceRoutes.scenarios) {
     sendOk(response, workspaceService.scenarios());
     return;
   }
 
+  if (!WORKSPACE_PATHS.has(path)) {
+    sendJson(response, 404, {
+      ok: false,
+      error: { code: "not_found", message: "API route not found" }
+    });
+    return;
+  }
+
+  const sessionId = request.headers[DEMO_SESSION_HEADER];
+  if (typeof sessionId !== "string" || !UUID_PATTERN.test(sessionId)) {
+    throw new WorkspaceError("invalid_demo_session", "A valid X-Samruna-Session UUID header is required.");
+  }
+  const scopedService = workspaceService.forWorkspace(sessionId);
+
+  if (method === "POST" && !consumeLimit(response, limiter, `mutation:${sessionId}`, limits.mutationsPerMinute, 60_000)) {
+    return;
+  }
+
+  if (method === "POST" && (path === workspaceRoutes.proposals || path === workspaceRoutes.run)) {
+    if (!consumeLimit(response, limiter, `expensive-session:${sessionId}`, limits.expensivePerTenMinutesPerSession, 600_000)) {
+      return;
+    }
+    if (!consumeLimit(response, limiter, `expensive-ip:${ip}`, limits.expensivePerTenMinutesPerIp, 600_000)) {
+      return;
+    }
+  }
+
   if (method === "GET" && path === workspaceRoutes.workspace) {
-    sendOk(response, workspaceService.snapshot());
+    sendOk(response, scopedService.snapshot());
     return;
   }
 
   if (method === "POST" && path === workspaceRoutes.selectScenario) {
-    sendOk(response, workspaceService.selectScenario(await readScenarioSelection(request)));
+    sendOk(response, scopedService.selectScenario(await readScenarioSelection(request)));
     return;
   }
 
   if (method === "POST" && path === workspaceRoutes.load) {
-    sendOk(response, workspaceService.load());
+    sendOk(response, scopedService.load());
     return;
   }
 
   if (method === "POST" && path === workspaceRoutes.analyze) {
-    sendOk(response, workspaceService.analyze());
+    sendOk(response, scopedService.analyze());
     return;
   }
 
   if (method === "POST" && path === workspaceRoutes.proposals) {
-    sendOk(response, await workspaceService.createProposal(await readProposalCreate(request)));
+    sendOk(response, await scopedService.createProposal(await readProposalCreate(request)));
     return;
   }
 
   if (method === "POST" && path === workspaceRoutes.selectProposal) {
-    sendOk(response, workspaceService.selectProposal(await readProposalSelect(request)));
+    sendOk(response, scopedService.selectProposal(await readProposalSelect(request)));
     return;
   }
 
   if (method === "POST" && path === workspaceRoutes.governance) {
-    sendOk(response, workspaceService.decideGovernance(await readGovernanceDecision(request)));
+    sendOk(response, scopedService.decideGovernance(await readGovernanceDecision(request)));
     return;
   }
 
   if (method === "POST" && path === workspaceRoutes.run) {
-    sendOk(response, await workspaceService.run());
+    sendOk(response, await scopedService.run());
     return;
   }
 
   if (method === "POST" && path === workspaceRoutes.reset) {
-    sendOk(response, workspaceService.reset(await readWorkspaceReset(request)));
+    sendOk(response, scopedService.reset(await readWorkspaceReset(request)));
     return;
   }
 
   if (method === "GET" && path === workspaceRoutes.export) {
-    sendOk(response, workspaceService.export());
+    sendOk(response, scopedService.export());
     return;
   }
 
   if (method === "POST" && path === workspaceRoutes.import) {
-    sendOk(response, workspaceService.import(await readWorkspaceImport(request)));
+    sendOk(response, scopedService.import(await readWorkspaceImport(request)));
     return;
   }
 
   if (method === "GET" && path === workspaceRoutes.audit) {
-    sendOk(response, workspaceService.audit());
+    sendOk(response, scopedService.audit());
     return;
   }
 
@@ -184,6 +282,92 @@ function sendJson<T>(response: ServerResponse, status: number, payload: ApiRespo
     "Cache-Control": "no-store"
   });
   response.end(JSON.stringify(payload));
+}
+
+interface RateLimitResult {
+  allowed: boolean;
+  limit: number;
+  remaining: number;
+  resetAt: number;
+  retryAfter: number;
+}
+
+class FixedWindowRateLimiter {
+  private readonly buckets = new Map<string, { count: number; resetAt: number }>();
+
+  constructor(private readonly now: () => number) {}
+
+  consume(key: string, limit: number, windowMs: number): RateLimitResult {
+    const currentTime = this.now();
+    let bucket = this.buckets.get(key);
+
+    if (!bucket || bucket.resetAt <= currentTime) {
+      bucket = { count: 0, resetAt: currentTime + windowMs };
+      this.buckets.set(key, bucket);
+    }
+
+    const allowed = bucket.count < limit;
+    if (allowed) {
+      bucket.count += 1;
+    }
+
+    return {
+      allowed,
+      limit,
+      remaining: Math.max(0, limit - bucket.count),
+      resetAt: Math.ceil(bucket.resetAt / 1000),
+      retryAfter: Math.max(1, Math.ceil((bucket.resetAt - currentTime) / 1000))
+    };
+  }
+
+  cleanup(): void {
+    const currentTime = this.now();
+    for (const [key, bucket] of this.buckets) {
+      if (bucket.resetAt <= currentTime) {
+        this.buckets.delete(key);
+      }
+    }
+  }
+}
+
+function consumeLimit(
+  response: ServerResponse,
+  limiter: FixedWindowRateLimiter,
+  key: string,
+  limit: number,
+  windowMs: number
+): boolean {
+  const result = limiter.consume(key, limit, windowMs);
+  response.setHeader("RateLimit-Limit", String(result.limit));
+  response.setHeader("RateLimit-Remaining", String(result.remaining));
+  response.setHeader("RateLimit-Reset", String(result.resetAt));
+
+  if (result.allowed) {
+    return true;
+  }
+
+  response.setHeader("Retry-After", String(result.retryAfter));
+  sendJson(response, 429, {
+    ok: false,
+    error: {
+      code: "rate_limited",
+      message: "Too many demo requests. Retry after the current rate-limit window."
+    }
+  });
+  return false;
+}
+
+function clientIp(request: IncomingMessage, trustedProxy: boolean): string {
+  if (trustedProxy) {
+    const forwarded = request.headers["x-forwarded-for"];
+    const raw = Array.isArray(forwarded) ? forwarded[0] : forwarded;
+    const first = raw && raw.length <= MAX_FORWARDED_FOR_LENGTH ? raw.split(",")[0]?.trim() : undefined;
+    if (first && isIP(first)) {
+      return first;
+    }
+  }
+
+  return request.socket.remoteAddress ?? "unknown";
 }
 
 async function readJsonBody<T>(request: IncomingMessage, fallback?: T): Promise<T> {
@@ -348,7 +532,7 @@ function applyCors(request: IncomingMessage, response: ServerResponse): boolean 
     response.setHeader("Access-Control-Allow-Origin", origin);
     response.setHeader("Vary", "Origin");
     response.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-    response.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    response.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Samruna-Session");
   }
 
   if (request.method === "OPTIONS") {
@@ -397,6 +581,22 @@ function readNumberArg(name: string): number | undefined {
   const value = index >= 0 ? process.argv[index + 1] : undefined;
 
   return value ? Number(value) : undefined;
+}
+
+function readPositiveInteger(raw: string | undefined): number | undefined {
+  if (!raw || !/^\d+$/.test(raw)) {
+    return undefined;
+  }
+
+  const value = Number(raw);
+  return Number.isSafeInteger(value) && value > 0 ? value : undefined;
+}
+
+function unrefTimer(handle: ReturnType<typeof setInterval>): void {
+  const candidate = handle as unknown as { unref?: () => void };
+  if (typeof candidate.unref === "function") {
+    candidate.unref();
+  }
 }
 
 function parseAllowedOrigins(raw: string | undefined): Set<string> {

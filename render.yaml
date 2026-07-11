@@ -14,4 +14,4 @@ services:
       - key: OPENAI_MODEL
         value: gpt-5.5
       - key: CORS_ORIGINS
-        value: https://mdasifinit.github.io,http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173
+        value: https://mdasifinit.github.io,http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173,http://localhost:4174,http://127.0.0.1:4174

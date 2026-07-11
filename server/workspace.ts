@@ -40,7 +40,7 @@ import type {
   ScenarioId,
   SimulationResult
 } from "../src/domain/types";
-import { openWorkspaceDatabase, type WorkspaceDatabase } from "./db";
+import { DEFAULT_WORKSPACE_ID, openWorkspaceDatabase, type WorkspaceDatabase } from "./db";
 
 const PROPOSAL_GENERATED_AT_BASE = Date.UTC(2026, 4, 16, 9, 40, 0);
 const EXECUTION_REQUESTED_AT = "2026-05-16T11:20:00.000Z";
@@ -71,8 +71,18 @@ interface WorkspaceComputation {
 export class WorkspaceService {
   constructor(
     private readonly database: WorkspaceDatabase = openWorkspaceDatabase(),
-    private readonly aiProvider: AiProvider = new MockAiProvider()
+    private readonly aiProvider: AiProvider = new MockAiProvider(),
+    private readonly workspaceId = DEFAULT_WORKSPACE_ID,
+    private readonly ownsDatabase = true
   ) {}
+
+  forWorkspace(id: string): WorkspaceService {
+    return new WorkspaceService(this.database, this.aiProvider, id, false);
+  }
+
+  purgeExpiredSessions(): number {
+    return this.database.purgeExpiredWorkspaces();
+  }
 
   health() {
     this.ensureState();
@@ -354,7 +364,7 @@ export class WorkspaceService {
   }
 
   reset(input: WorkspaceResetRequest = {}): WorkspaceSnapshot {
-    const current = this.database.getState();
+    const current = this.database.getState(this.workspaceId);
     const scenarioId = input.scenarioId ?? current?.selectedScenarioId ?? "it-access";
     const state = createSeedDemoState(scenarioId);
     this.persist(state);
@@ -386,11 +396,13 @@ export class WorkspaceService {
   }
 
   close(): void {
-    this.database.close();
+    if (this.ownsDatabase) {
+      this.database.close();
+    }
   }
 
   private ensureState(): PersistedDemoState {
-    const current = this.database.getState();
+    const current = this.database.getState(this.workspaceId);
 
     if (current) {
       return current;
@@ -419,7 +431,7 @@ export class WorkspaceService {
   }
 
   private persist(state: PersistedDemoState): void {
-    this.database.saveState(state, artifactsFromState(state));
+    this.database.saveState(state, artifactsFromState(state), this.workspaceId);
   }
 
   private async generateProposalWithFallback(input: {
