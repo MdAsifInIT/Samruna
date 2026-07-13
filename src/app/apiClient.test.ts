@@ -59,8 +59,40 @@ describe("createApiClient", () => {
       init?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
     }));
     const client = createApiClient({ fetcher: fetcher as typeof fetch, storage: createStorage(), uuid: () => SESSION_ID, timeoutMs: 25 });
-    const assertion = expect(client.getWorkspace()).rejects.toMatchObject({ code: "request_timeout" });
+    const assertion = expect(client.getWorkspace()).rejects.toMatchObject({
+      code: "request_timeout",
+      message: "Request timed out after 25ms."
+    });
     await vi.advanceTimersByTimeAsync(25);
+    await assertion;
+  });
+
+  it.each([
+    ["proposal generation", (client: ReturnType<typeof createApiClient>) => client.createProposal()],
+    ["workflow simulation", (client: ReturnType<typeof createApiClient>) => client.runApprovedWorkflow()]
+  ])("uses the extended timeout for %s", async (_label, startRequest) => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => new Promise<Response>((_resolve, reject) => {
+      init?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+    }));
+    const client = createApiClient({
+      fetcher: fetcher as typeof fetch,
+      storage: createStorage(),
+      uuid: () => SESSION_ID,
+      timeoutMs: 25,
+      longRunningTimeoutMs: 75
+    });
+    const request = startRequest(client);
+    const assertion = expect(request).rejects.toMatchObject({
+      code: "request_timeout",
+      message: "Request timed out after 75ms."
+    });
+
+    await vi.advanceTimersByTimeAsync(25);
+    expect(fetcher.mock.calls[0][1]?.signal?.aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(49);
+    expect(fetcher.mock.calls[0][1]?.signal?.aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
     await assertion;
   });
 

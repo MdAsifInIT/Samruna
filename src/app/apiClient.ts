@@ -39,6 +39,7 @@ export interface WorkspaceApiClient {
 
 export const DEMO_SESSION_STORAGE_KEY = "samruna.demo-session.v1";
 const DEFAULT_TIMEOUT_MS = 10_000;
+const DEFAULT_LONG_RUNNING_TIMEOUT_MS = 30_000;
 
 export interface ApiClientStorage {
   getItem(key: string): string | null;
@@ -49,6 +50,7 @@ export interface ApiClientConfig {
   baseUrl?: string;
   fetcher?: typeof fetch;
   timeoutMs?: number;
+  longRunningTimeoutMs?: number;
   storage?: ApiClientStorage;
   uuid?: () => string;
   signal?: AbortSignal;
@@ -58,9 +60,15 @@ export function createApiClient(config: ApiClientConfig = {}): WorkspaceApiClien
   const baseUrl = normalizeBaseUrl(config.baseUrl) ?? configuredApiBaseUrl;
   const fetcher = config.fetcher ?? globalThis.fetch?.bind(globalThis);
   const timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const longRunningTimeoutMs = config.longRunningTimeoutMs ?? DEFAULT_LONG_RUNNING_TIMEOUT_MS;
   const sessionId = getOrCreateSessionId(config.storage ?? resolveSessionStorage(), config.uuid ?? createUuid);
 
-  async function request<T>(path: string, init?: RequestInit, includeSession = true): Promise<T> {
+  async function request<T>(
+    path: string,
+    init?: RequestInit,
+    includeSession = true,
+    requestTimeoutMs = timeoutMs
+  ): Promise<T> {
     if (!fetcher) {
       throw new ApiClientError("fetch_unavailable", "Fetch is not available in this runtime.");
     }
@@ -70,7 +78,7 @@ export function createApiClient(config: ApiClientConfig = {}): WorkspaceApiClien
     const timeoutId = setTimeout(() => {
       timedOut = true;
       controller.abort();
-    }, timeoutMs);
+    }, requestTimeoutMs);
     const externalSignal = init?.signal ?? config.signal;
     const abortFromCaller = () => controller.abort();
     externalSignal?.addEventListener("abort", abortFromCaller, { once: true });
@@ -113,7 +121,7 @@ export function createApiClient(config: ApiClientConfig = {}): WorkspaceApiClien
       if (error instanceof ApiClientError) throw error;
       if (controller.signal.aborted) {
         throw timedOut
-          ? new ApiClientError("request_timeout", `Request timed out after ${timeoutMs}ms.`)
+          ? new ApiClientError("request_timeout", `Request timed out after ${requestTimeoutMs}ms.`)
           : new ApiClientError("request_aborted", "Request was aborted.");
       }
       throw new ApiClientError("network_error", "Could not reach the demo API.");
@@ -123,11 +131,11 @@ export function createApiClient(config: ApiClientConfig = {}): WorkspaceApiClien
     }
   }
 
-  function post<T>(path: string, body?: unknown): Promise<T> {
+  function post<T>(path: string, body?: unknown, requestTimeoutMs = timeoutMs): Promise<T> {
     return request<T>(path, {
       method: "POST",
       body: body === undefined ? undefined : JSON.stringify(body)
-    });
+    }, true, requestTimeoutMs);
   }
 
   return {
@@ -136,10 +144,10 @@ export function createApiClient(config: ApiClientConfig = {}): WorkspaceApiClien
     selectScenario: (input) => post<WorkspaceSnapshot>(routes.selectScenario, input),
     loadWorkflow: () => post<WorkspaceSnapshot>(routes.load),
     analyzeWorkflow: () => post<WorkspaceSnapshot>(routes.analyze),
-    createProposal: (input = {}) => post<WorkspaceSnapshot>(routes.proposals, input),
+    createProposal: (input = {}) => post<WorkspaceSnapshot>(routes.proposals, input, longRunningTimeoutMs),
     selectProposal: (input) => post<WorkspaceSnapshot>(routes.selectProposal, input),
     decideGovernance: (input) => post<WorkspaceSnapshot>(routes.governance, input),
-    runApprovedWorkflow: () => post<WorkspaceSnapshot>(routes.run),
+    runApprovedWorkflow: () => post<WorkspaceSnapshot>(routes.run, undefined, longRunningTimeoutMs),
     resetWorkspace: (input = {}) => post<WorkspaceSnapshot>(routes.reset, input),
     exportWorkspace: () => request<string>(routes.export),
     importWorkspace: (input) => post<WorkspaceSnapshot>(routes.import, input)
